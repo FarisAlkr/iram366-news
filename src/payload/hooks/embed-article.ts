@@ -1,13 +1,9 @@
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from 'payload'
 
-// Use relative imports here — this file is loaded by Payload's CLI
-// (`payload generate:importmap`) as raw Node ESM, where the `@/lib`
-// TypeScript path alias is not resolved. Webpack/next-build handles
-// the alias fine, but the CLI does not.
-import { isChatbotEnabled } from '../../lib/chatbot/config.ts'
-import { embedText, vectorLiteral } from '../../lib/chatbot/embeddings.ts'
-import { getChatbotPool } from '../../lib/chatbot/db.ts'
-import { extractText } from '../../lib/article-stats.ts'
+import { isChatbotEnabled } from '@/lib/chatbot/config'
+import { embedText, vectorLiteral } from '@/lib/chatbot/embeddings'
+import { getChatbotPool } from '@/lib/chatbot/db'
+import { extractText } from '@/lib/article-stats'
 
 interface ArticleLite {
   id: number | string

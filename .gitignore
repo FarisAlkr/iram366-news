@@ -30,7 +30,9 @@ next-env.d.ts
 
 # payload
 /src/payload-types.ts
-/src/app/(payload)/admin/importMap.js
+# importMap.js is committed (NOT gitignored) — it's regenerated on every
+# dev/build, but CI environments (GitHub Actions) need it present at
+# clone time. Keeping it in git makes `next build` self-contained.
 
 # media uploads
 /media
