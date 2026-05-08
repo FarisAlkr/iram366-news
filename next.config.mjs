@@ -20,6 +20,10 @@ const nextConfig = {
       { protocol: 'https', hostname: '**.r2.dev' },
       { protocol: 'https', hostname: '**.cloudflare.com' },
       { protocol: 'https', hostname: '**.r2.cloudflarestorage.com' },
+      // Custom CDN domain for R2 (e.g. media.iram366news.com).
+      // Hardcoded because R2_PUBLIC_URL is not exposed as a Docker build
+      // arg — at build time the dynamic block below sees `undefined`.
+      { protocol: 'https', hostname: '**.iram366news.com' },
       ...(r2Public
         ? [
             {
