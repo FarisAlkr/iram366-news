@@ -22,14 +22,20 @@ services:
         max-file: "3"
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        # Build-time inlining for client JS bundles (NEXT_PUBLIC_* vars
-        # are baked into the bundle by Next.js at build time, not runtime).
-        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
-        NEXT_PUBLIC_CF_ANALYTICS_TOKEN: ${NEXT_PUBLIC_CF_ANALYTICS_TOKEN}
+    # Prebuilt image from GitHub Container Registry. Built and pushed by
+    # .github/workflows/deploy.yml on every push to main. The VPS just
+    # `docker compose pull`s it — no local build, no resource crunch.
+    #
+    # The legacy `deploy/deploy.sh` workflow (which rsyncs source and
+    # `--build`s on the VPS) still works as an emergency fallback by
+    # uncommenting the `build:` block below.
+    image: ghcr.io/farisalkr/iram366-app:latest
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    #   args:
+    #     NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
+    #     NEXT_PUBLIC_CF_ANALYTICS_TOKEN: ${NEXT_PUBLIC_CF_ANALYTICS_TOKEN}
     restart: unless-stopped
     depends_on:
       db:
