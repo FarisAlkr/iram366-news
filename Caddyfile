@@ -1,0 +1,52 @@
+{
+	# Global options
+	email {$ACME_EMAIL}
+	servers {
+		trusted_proxies static private_ranges
+	}
+}
+
+{$DOMAIN:localhost} {
+	reverse_proxy app:3000
+
+	encode gzip zstd
+
+	header {
+		# HSTS — 1y, all subdomains, preload-eligible
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		# SAMEORIGIN (not DENY) — the admin's Live Preview embeds the preview
+		# route inside an iframe at the same origin. DENY broke that with a
+		# blank panel after publish on mobile.
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+		Cross-Origin-Opener-Policy "same-origin"
+		# CSP — frame-ancestors 'self' allows the admin's own Live Preview
+		# iframe while still defending against clickjacking by external
+		# sites. Images allowed from R2 + data URIs (Lexical pasted images);
+		# inline styles allowed because Tailwind ships some critical inline
+		# styles.
+		Content-Security-Policy "default-src 'self'; img-src 'self' data: https: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+		-Server
+		-X-Powered-By
+	}
+
+	# Cache static assets aggressively (immutable, content-hashed).
+	@static path /_next/static/* /favicon.ico /robots.txt /sitemap.xml /manifest.webmanifest
+	header @static Cache-Control "public, max-age=31536000, immutable"
+
+	# Cache image responses for a day.
+	@images path /_next/image/*
+	header @images Cache-Control "public, max-age=86400"
+
+	# Don't cache the admin panel.
+	@admin path /admin* /api/*
+	header @admin Cache-Control "no-store"
+
+	log {
+		output stdout
+		format json
+		level INFO
+	}
+}

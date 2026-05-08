@@ -1,0 +1,79 @@
+import type { Metadata, Viewport } from 'next'
+import React from 'react'
+import { IBM_Plex_Sans_Arabic, Noto_Kufi_Arabic } from 'next/font/google'
+import '../globals.css'
+
+import { Chatbot } from '@/components/Chatbot'
+import { ScrollProgress } from '@/components/ScrollProgress'
+import { SplashScreen } from '@/components/SplashScreen'
+
+const ibmPlex = IBM_Plex_Sans_Arabic({
+  subsets: ['arabic'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-ibm',
+  display: 'swap',
+})
+
+const notoKufi = Noto_Kufi_Arabic({
+  subsets: ['arabic'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-kufi',
+  display: 'swap',
+})
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+
+export const metadata: Metadata = {
+  // Without this, Next.js prefixes relative og:image / twitter:image URLs
+  // with `http://localhost:3000` as a default. Setting it explicitly so
+  // share previews on WhatsApp / Facebook / Twitter resolve to the right
+  // host instead of localhost.
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: 'إرم 366 الإخبارية',
+    template: '%s | إرم 366 الإخبارية',
+  },
+  description: 'منصة إخبارية مستقلة برؤية مختلفة — نواكب الأحداث لحظة بلحظة من رهط والنقب',
+  authors: [{ name: 'Faris Alkrenawe' }],
+  creator: 'Faris Alkrenawe',
+  icons: {
+    icon: '/logo.jpeg',
+    apple: '/logo.jpeg',
+    shortcut: '/logo.jpeg',
+  },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5, // allow accessibility zoom; don't lock at 1
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#fafaf9' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a2a2f' },
+  ],
+}
+
+const CF_ANALYTICS_TOKEN = process.env.NEXT_PUBLIC_CF_ANALYTICS_TOKEN
+
+export default function FrontendLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="ar" dir="rtl" className={`${ibmPlex.variable} ${notoKufi.variable}`}>
+      <body className="bg-cream text-ink font-body antialiased">
+        <SplashScreen siteName="إرم 366 الإخبارية" />
+        <ScrollProgress />
+        {children}
+        <Chatbot />
+        {/* Cloudflare Web Analytics — privacy-first, no cookies, no banner.
+            The beacon is public per CF design (token is visible in page HTML
+            anyway). Loaded as `defer` so it never blocks rendering. */}
+        {CF_ANALYTICS_TOKEN && (
+          <script
+            defer
+            src="https://static.cloudflareinsights.com/beacon.min.js"
+            data-cf-beacon={JSON.stringify({ token: CF_ANALYTICS_TOKEN })}
+          />
+        )}
+      </body>
+    </html>
+  )
+}
