@@ -32,14 +32,14 @@ export const dynamic = 'force-dynamic'
 
 const STATUS_LABEL: Record<string, string> = {
   draft: 'مسودة',
-  inReview: 'قيد المراجعة',
+  'in-review': 'قيد المراجعة',
   published: 'منشور',
   archived: 'مؤرشف',
 }
 
 const STATUS_CLASS: Record<string, string> = {
   draft: 'm-status m-status--draft',
-  inReview: 'm-status m-status--inReview',
+  'in-review': 'm-status m-status--inReview',
   published: 'm-status m-status--published',
   archived: 'm-status m-status--archived',
 }
@@ -51,13 +51,13 @@ export default async function MobileDashboardPage() {
   const payload = await getPayloadClient()
 
   const [published, inReview, breaking, recent, totalViews] = await Promise.all([
-    payload.count({ collection: 'articles', where: { status: { equals: 'published' } } }),
-    payload.count({ collection: 'articles', where: { status: { equals: 'inReview' } } }),
+    payload.count({ collection: 'articles', where: { status: { equals: ArticleStatus.Published } } }),
+    payload.count({ collection: 'articles', where: { status: { equals: ArticleStatus.InReview } } }),
     payload.count({
       collection: 'articles',
       where: {
         and: [
-          { status: { equals: 'published' } },
+          { status: { equals: ArticleStatus.Published } },
           { isBreaking: { equals: true } },
         ],
       },

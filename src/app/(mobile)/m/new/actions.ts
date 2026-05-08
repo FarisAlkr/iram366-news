@@ -55,7 +55,7 @@ export async function createArticleAction(_prev: CreateState, formData: FormData
   if (!title || !excerpt || !bodyText || !categoryId) {
     return { error: 'العنوان والمقتطف ونص المقال والتصنيف كلها مطلوبة' }
   }
-  if (status !== 'draft' && status !== 'published' && status !== 'inReview') {
+  if (status !== 'draft' && status !== 'published' && status !== 'in-review') {
     return { error: 'حالة غير صالحة' }
   }
 
