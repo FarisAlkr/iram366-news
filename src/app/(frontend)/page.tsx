@@ -1,3 +1,9 @@
+// `force-dynamic` because page.tsx queries Postgres at render time. Without
+// it Next.js tries to statically prerender the homepage during `next build`,
+// when the DB is not reachable from inside the Docker build context, and
+// the build crashes with `cannot connect to Postgres`.
+export const dynamic = 'force-dynamic'
+
 import { ArticleStatus, HeroMode } from '@/domain/enums'
 import { getPayloadClient } from '@/lib/payload'
 import {
