@@ -11,7 +11,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/iram366-app
+  # GHCR requires the owner segment be lowercase. github.repository_owner
+  # preserves case (FarisAlkr → fails). Hardcode lowercase here.
+  IMAGE_NAME: ghcr.io/farisalkr/iram366-app
 
 jobs:
   build-and-deploy:
