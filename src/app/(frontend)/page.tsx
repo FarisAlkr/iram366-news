@@ -163,6 +163,15 @@ export default async function HomePage() {
               <AdSlot placement="sidebar-bottom" />
             </div>
           </div>
+
+          {/* Mobile-only ad break — surfaces sidebar-top so editors don't
+              need a separate placement. The sidebar column above is
+              hidden below the lg breakpoint, so its ads never reached
+              phone readers; this puts one ad in the natural mobile
+              flow without dragging in the social/most-read sidebar. */}
+          <div className="lg:hidden mt-6">
+            <AdSlot placement="sidebar-top" />
+          </div>
         </div>
 
         {categoryArticles
