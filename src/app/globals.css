@@ -522,11 +522,13 @@
 
 .zoom-controls {
   /* Floating, fixed-position pill — always reachable while reading,
-     on both desktop and mobile. Bottom inline-start corner (visual left in
-     LTR, visual right in RTL) with safe-area padding for iOS notch screens. */
+     on both desktop and mobile. Bottom inline-end corner (visual right
+     in LTR, visual left in RTL) so it doesn't collide with the chatbot
+     toggle that lives at the inline-start. Safe-area padding for iOS
+     notch screens. */
   position: fixed;
   bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-  inset-inline-start: calc(20px + env(safe-area-inset-left, 0px));
+  inset-inline-end: calc(20px + env(safe-area-inset-right, 0px));
   z-index: 80;
   display: inline-flex;
   align-items: center;
@@ -632,12 +634,12 @@
 @media (max-width: 640px) {
   .zoom-controls {
     bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-    inset-inline-start: 14px;
+    inset-inline-end: 14px;
     transform: scale(0.92);
-    transform-origin: bottom left;
+    transform-origin: bottom right;
   }
   [dir='rtl'] .zoom-controls {
-    transform-origin: bottom right;
+    transform-origin: bottom left;
   }
 }
 
