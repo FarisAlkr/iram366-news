@@ -1,0 +1,365 @@
+/* ===== Admin "Professional Statistics" view ===== */
+.iram-stats {
+  --iram-gold: #c8a84e;
+  --iram-gold-dark: #b0923e;
+  --iram-gold-50: rgba(200, 168, 78, 0.08);
+  --iram-navy: #0a2a2f;
+  --iram-ink: #1a1a1a;
+  --iram-ink-2: #4b5563;
+  --iram-muted: #6b7280;
+  --iram-bg: #fafaf9;
+  --iram-surface: #ffffff;
+  --iram-border: #e5e5e0;
+
+  padding: 24px clamp(16px, 4vw, 40px);
+  max-width: 1200px;
+  margin-inline: auto;
+  font-family: var(--font-ibm), system-ui, sans-serif;
+  color: var(--iram-ink);
+
+  &__locked {
+    background: var(--iram-surface);
+    border: 1px solid var(--iram-border);
+    border-radius: 12px;
+    padding: 32px;
+    text-align: center;
+    h1 { margin: 0 0 8px; color: var(--iram-navy); }
+    p  { color: var(--iram-muted); margin: 0; }
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  &__title {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--iram-navy);
+    margin: 0;
+    font-family: var(--font-kufi), sans-serif;
+  }
+  &__subtitle {
+    font-size: 13.5px;
+    color: var(--iram-muted);
+    margin: 4px 0 0;
+  }
+  &__hint {
+    font-size: 11.5px;
+    color: var(--iram-muted);
+    background: var(--iram-gold-50);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+    @media (min-width: 900px) {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  &__section {
+    background: var(--iram-surface);
+    border: 1px solid var(--iram-border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+    &--compact { margin-bottom: 0; }
+  }
+  &__section-title {
+    font-family: var(--font-kufi), sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--iram-navy);
+    margin: 0 0 14px;
+    padding-inline-start: 10px;
+    border-inline-start: 3px solid var(--iram-gold);
+    line-height: 1.2;
+  }
+  &__empty {
+    color: var(--iram-muted);
+    font-size: 13.5px;
+    margin: 0;
+  }
+
+  /* KPI cards */
+  &__kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+  }
+}
+
+.iram-kpi {
+  background: var(--iram-bg);
+  border: 1px solid var(--iram-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: transform 0.12s, border-color 0.12s;
+
+  &:hover {
+    border-color: var(--iram-gold);
+    transform: translateY(-1px);
+  }
+
+  &__icon { font-size: 18px; margin-bottom: 4px; }
+  &__label {
+    font-size: 12px;
+    color: var(--iram-muted);
+    font-weight: 500;
+  }
+  &__value {
+    font-family: var(--font-kufi), sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--iram-navy);
+    line-height: 1.1;
+  }
+
+  &--accent {
+    background: linear-gradient(135deg, #0a2a2f, #133a40);
+    border-color: transparent;
+    .iram-kpi__label { color: rgba(255, 255, 255, 0.65); }
+    .iram-kpi__value { color: #efe2b8; }
+  }
+}
+
+/* Ranked lists (top articles, authors) */
+.iram-stats {
+  &__rank {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  &__rank-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--iram-bg);
+    border: 1px solid transparent;
+    transition: border-color 0.12s;
+    &:hover { border-color: var(--iram-border); }
+  }
+  &__rank-num {
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    background: var(--iram-navy);
+    color: white;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 12.5px;
+    font-family: var(--font-kufi), sans-serif;
+  }
+  &__rank-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--iram-ink);
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    &:hover { color: var(--iram-gold-dark); }
+  }
+  &__rank-views {
+    color: var(--iram-muted);
+    font-size: 12.5px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  &__rank-double {
+    text-align: end;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+  &__rank-sub {
+    color: var(--iram-muted);
+    font-size: 11.5px;
+    font-weight: 500;
+  }
+}
+
+/* Category bars */
+.iram-stats {
+  &__bars {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  &__bar-row {
+    display: grid;
+    grid-template-columns: minmax(120px, 1fr) 3fr auto;
+    gap: 10px;
+    align-items: center;
+    font-size: 13px;
+  }
+  &__bar-label {
+    padding-inline-start: 8px;
+    font-weight: 600;
+    color: var(--iram-ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  &__bar-track {
+    background: var(--iram-bg);
+    border-radius: 999px;
+    height: 10px;
+    overflow: hidden;
+    border: 1px solid var(--iram-border);
+  }
+  &__bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.3s ease;
+  }
+  &__bar-count {
+    font-weight: 700;
+    color: var(--iram-navy);
+    min-width: 32px;
+    text-align: end;
+  }
+}
+
+/* Daily sparkbar */
+.iram-stats {
+  &__spark {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  &__spark-track {
+    display: grid;
+    grid-template-columns: repeat(30, 1fr);
+    gap: 2px;
+    height: 70px;
+    align-items: end;
+    direction: ltr; /* date axis reads left-to-right even on RTL page */
+  }
+  &__spark-col {
+    height: 100%;
+    display: flex;
+    align-items: end;
+  }
+  &__spark-bar {
+    width: 100%;
+    min-height: 2px;
+    background: var(--iram-gold);
+    border-radius: 2px 2px 0 0;
+  }
+  &__spark-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--iram-muted);
+    font-family: 'IBM Plex Mono', monospace;
+    direction: ltr;
+  }
+}
+
+/* Health */
+.iram-stats {
+  &__health {
+    display: grid;
+    gap: 8px;
+  }
+  &__health-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: var(--iram-bg);
+    border-radius: 8px;
+    border: 1px solid var(--iram-border);
+    font-size: 13.5px;
+  }
+  &__health-label { color: var(--iram-muted); }
+  &__health-value { color: var(--iram-ink); font-weight: 600; }
+}
+
+/* Cloudflare panel (placeholder/connected) */
+.iram-stats {
+  &__cf {
+    background: var(--iram-bg);
+    border: 1.5px dashed var(--iram-border);
+    border-radius: 10px;
+    padding: 16px;
+    color: var(--iram-ink-2);
+    font-size: 13.5px;
+    line-height: 1.6;
+
+    &--connected {
+      background: rgba(34, 197, 94, 0.08);
+      border-style: solid;
+      border-color: rgba(34, 197, 94, 0.4);
+    }
+
+    p { margin: 0 0 8px; }
+    code {
+      background: rgba(0, 0, 0, 0.06);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12.5px;
+    }
+    pre {
+      background: var(--iram-navy);
+      color: #e5e5e0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      overflow-x: auto;
+      margin: 8px 0;
+    }
+  }
+  &__cf-note {
+    font-size: 12px !important;
+    color: var(--iram-muted);
+  }
+  &__cf-howto {
+    margin-top: 10px;
+    summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--iram-navy);
+    }
+    ol { padding-inline-start: 20px; margin: 8px 0 0; }
+    li { margin-bottom: 6px; }
+  }
+  &__cf-checklist {
+    list-style: none;
+    padding: 0;
+    margin: 12px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    li {
+      &.ok      { color: #166534; }
+      &.pending { color: var(--iram-muted); }
+    }
+  }
+}

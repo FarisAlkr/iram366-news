@@ -546,6 +546,10 @@ export const AnalyticsWidget: React.FC = async () => {
             <I.Media />
             <span>رفع وسائط</span>
           </a>
+          <a href="/admin/stats" className="iram-btn iram-btn--ghost">
+            <span aria-hidden>📊</span>
+            <span>الإحصائيات الاحترافية</span>
+          </a>
           <a href="/" className="iram-btn iram-btn--ghost" target="_blank" rel="noopener">
             <I.World />
             <span>عرض الموقع</span>

@@ -58,6 +58,14 @@ export default buildConfig({
         '/components/admin/OnboardingTour#OnboardingTour',
         '/components/admin/NotificationBell#NotificationBell',
       ],
+      // Custom admin route at /admin/stats — full-page editorial + audience
+      // stats. See src/components/admin/StatsView.tsx.
+      views: {
+        stats: {
+          Component: '/components/admin/StatsView#default',
+          path: '/stats',
+        },
+      },
     },
     livePreview: {
       url: ({ data, collectionConfig }) => {
