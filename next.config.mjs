@@ -15,6 +15,15 @@ const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
 
+  experimental: {
+    serverActions: {
+      // Phone photos easily exceed Next's 1 MB default. Editors uploading
+      // featured images via the mobile dashboard should tolerate ~15 MB
+      // raw uploads (sharp resizes to the imageSizes variants on save).
+      bodySizeLimit: '15mb',
+    },
+  },
+
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '**.r2.dev' },
