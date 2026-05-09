@@ -7,11 +7,20 @@ import {
   getAuthorLeaderboard,
   getCategoryDistribution,
   getDailyPublishCounts,
+  getDataQuality,
+  getDowActivity,
+  getStatusBreakdown,
+  getTagFrequencies,
+  getTimeToPublish,
   getTopArticles,
-  type ArticleCounts,
+  getViewStats,
   type AuthorStat,
   type CategoryStat,
   type DailyPublishCount,
+  type DataQuality,
+  type DowActivity,
+  type StatusBreakdown,
+  type TagFreq,
   type TopArticle,
 } from '@/lib/stats/queries'
 import './StatsView.scss'
@@ -32,6 +41,11 @@ function readCloudflareEnv(): CloudflareEnv {
   }
 }
 
+function pctChange(current: number, previous: number): number | null {
+  if (previous === 0) return null
+  return Math.round(((current - previous) / previous) * 100)
+}
+
 /**
  * Custom Payload admin view: full-page editorial + audience stats.
  * Renders at /admin/stats. Server component — all DB queries happen
@@ -40,7 +54,6 @@ function readCloudflareEnv(): CloudflareEnv {
 export default async function StatsView({ initPageResult }: AdminViewServerProps) {
   const user = initPageResult?.req?.user as { role?: string; name?: string; email?: string } | null
 
-  // Restrict to admin + editor — authors don't need cross-team stats
   const allowed = user && (user.role === UserRole.Admin || user.role === UserRole.Editor)
   if (!allowed) {
     return (
@@ -53,30 +66,94 @@ export default async function StatsView({ initPageResult }: AdminViewServerProps
     )
   }
 
-  const [counts, top, authors, cats, daily] = await Promise.all([
+  const [
+    counts,
+    top,
+    authors,
+    cats,
+    daily,
+    status,
+    views,
+    ttp,
+    dow,
+    tags,
+    quality,
+  ] = await Promise.all([
     getArticleCounts(),
     getTopArticles(10),
     getAuthorLeaderboard(10),
     getCategoryDistribution(),
     getDailyPublishCounts(30),
+    getStatusBreakdown(),
+    getViewStats(),
+    getTimeToPublish(),
+    getDowActivity(12),
+    getTagFrequencies(30),
+    getDataQuality(),
   ])
 
   const cf = readCloudflareEnv()
+  const renderedAt = new Date()
 
   return (
     <div className="iram-stats" dir="rtl">
+      {/* === Header === */}
       <header className="iram-stats__header">
         <div>
           <h1 className="iram-stats__title">الإحصائيات الاحترافية</h1>
           <p className="iram-stats__subtitle">
-            ملخّص شامل لأداء المحتوى والجمهور — يُحدَّث تلقائياً كل دقيقة.
+            لوحة شاملة لأداء المحتوى والجمهور — يُعاد حساب كل شيء كل دقيقة.
           </p>
         </div>
-        <span className="iram-stats__hint">⌛ مُحدَّث منذ أقل من دقيقة</span>
+        <RefreshBadge renderedAt={renderedAt} />
       </header>
 
-      {/* === SECTION B: AUDIENCE — placeholder until CF token is set === */}
-      <Section title="الجمهور والزيارات (Cloudflare)">
+      {/* === SECTION 1: SNAPSHOT — KPIs with trends === */}
+      <Section title="📊 لمحة سريعة" subtitle="الأرقام الأهم مع اتجاه التغيّر مقابل الفترة السابقة">
+        <div className="iram-stats__kpis">
+          <Kpi
+            emoji="📅"
+            label="منشور اليوم"
+            value={counts.publishedToday}
+          />
+          <Kpi
+            emoji="🗓️"
+            label="هذا الأسبوع"
+            value={counts.publishedThisWeek}
+            trend={pctChange(counts.publishedThisWeek, counts.publishedLastWeek)}
+            trendLabel="مقابل الأسبوع الماضي"
+          />
+          <Kpi
+            emoji="📆"
+            label="هذا الشهر"
+            value={counts.publishedThisMonth}
+            spark={daily.slice(-30).map((d) => d.count)}
+          />
+          <Kpi
+            emoji="📰"
+            label="إجمالي المنشور"
+            value={counts.publishedTotal}
+            tone="accent"
+          />
+          <Kpi
+            emoji="👁️"
+            label="إجمالي المشاهدات"
+            value={counts.totalViews}
+            tone="accent"
+          />
+          <Kpi
+            emoji="⏳"
+            label="قيد المراجعة"
+            value={counts.awaitingReview}
+            tone={counts.awaitingReview > 5 ? 'warn' : undefined}
+          />
+          <Kpi emoji="✏️" label="مسودات" value={counts.draftCount} />
+          <Kpi emoji="🚨" label="عاجل حالياً" value={counts.breakingCount} />
+        </div>
+      </Section>
+
+      {/* === SECTION 2: AUDIENCE (Cloudflare placeholder) === */}
+      <Section title="🌍 الجمهور والزيارات (Cloudflare)" subtitle="عدد الزوار الفعليين عبر Cloudflare Analytics">
         {cf.hasToken && cf.hasAccount && cf.hasSiteTag ? (
           <CloudflareReadyPanel />
         ) : (
@@ -84,76 +161,201 @@ export default async function StatsView({ initPageResult }: AdminViewServerProps
         )}
       </Section>
 
-      {/* === SECTION A: EDITORIAL === */}
-      <Section title="المحتوى التحريري">
-        <EditorialKpis counts={counts} />
+      {/* === SECTION 3: PERFORMANCE — top articles + authors === */}
+      <Section title="🏆 الأداء" subtitle="أكثر المقالات قراءةً والكتّاب الأعلى تأثيراً">
+        <div className="iram-stats__metrics-row">
+          <MiniMetric
+            emoji="📊"
+            label="متوسط المشاهدات"
+            value={fmt(views.mean)}
+            sub={`الوسيط: ${fmt(views.median)}`}
+          />
+          <MiniMetric
+            emoji="🔥"
+            label="أعلى مقال مشاهدةً"
+            value={fmt(views.max)}
+            sub="مشاهدات"
+          />
+          <MiniMetric
+            emoji="⏱️"
+            label="متوسط وقت النشر"
+            value={ttp.medianHours != null ? `${ttp.medianHours} ساعة` : '—'}
+            sub={ttp.avgHours != null ? `المتوسط: ${ttp.avgHours} س` : 'من المسودة إلى النشر'}
+          />
+        </div>
+
+        <div className="iram-stats__row iram-stats__row--gapped">
+          <div className="iram-stats__panel">
+            <h3 className="iram-stats__panel-title">أكثر المقالات قراءةً</h3>
+            <TopArticlesList items={top} />
+          </div>
+
+          <div className="iram-stats__panel">
+            <h3 className="iram-stats__panel-title">ترتيب الكتّاب</h3>
+            <AuthorsList items={authors} />
+          </div>
+        </div>
       </Section>
 
-      <div className="iram-stats__row">
-        <Section title="أكثر المقالات قراءةً" compact>
-          <TopArticlesList items={top} />
-        </Section>
+      {/* === SECTION 4: DISTRIBUTION — categories + status + tags === */}
+      <Section title="📁 التوزيع" subtitle="كيف يتوزّع المحتوى عبر التصنيفات والحالات والوسوم">
+        <div className="iram-stats__row iram-stats__row--gapped">
+          <div className="iram-stats__panel iram-stats__panel--narrow">
+            <h3 className="iram-stats__panel-title">حالة المقالات</h3>
+            <StatusDonut status={status} />
+          </div>
 
-        <Section title="ترتيب الكتّاب" compact>
-          <AuthorsList items={authors} />
-        </Section>
-      </div>
+          <div className="iram-stats__panel">
+            <h3 className="iram-stats__panel-title">التصنيفات</h3>
+            <CategoriesBars items={cats} />
+          </div>
+        </div>
 
-      <Section title="توزيع التصنيفات">
-        <CategoriesBars items={cats} />
+        {tags.length > 0 && (
+          <div className="iram-stats__panel" style={{ marginTop: 16 }}>
+            <h3 className="iram-stats__panel-title">سحابة الوسوم</h3>
+            <TagCloud items={tags} />
+          </div>
+        )}
       </Section>
 
-      <Section title="إيقاع النشر — آخر ٣٠ يوماً">
-        <DailySpark items={daily} />
+      {/* === SECTION 5: ACTIVITY — daily + day-of-week === */}
+      <Section title="📈 النشاط" subtitle="إيقاع النشر اليومي والأسبوعي">
+        <div className="iram-stats__panel">
+          <h3 className="iram-stats__panel-title">إيقاع النشر — آخر ٣٠ يوماً</h3>
+          <DailySpark items={daily} />
+        </div>
+
+        <div className="iram-stats__panel" style={{ marginTop: 16 }}>
+          <h3 className="iram-stats__panel-title">خريطة النشاط الأسبوعي — آخر ١٢ أسبوعاً</h3>
+          <DowHeatmap items={dow} />
+        </div>
       </Section>
 
-      {/* === SECTION C: HEALTH === */}
-      <Section title="حالة النظام">
-        <HealthGrid />
+      {/* === SECTION 6: OPERATIONS — quality + health === */}
+      <Section title="🛠️ التشغيل" subtitle="جودة البيانات وحالة النظام">
+        <div className="iram-stats__row iram-stats__row--gapped">
+          <div className="iram-stats__panel">
+            <h3 className="iram-stats__panel-title">جودة البيانات</h3>
+            <QualityList items={quality} />
+          </div>
+
+          <div className="iram-stats__panel">
+            <h3 className="iram-stats__panel-title">حالة النظام</h3>
+            <HealthGrid />
+          </div>
+        </div>
       </Section>
     </div>
   )
 }
 
-// ---------- Sub-components ----------
+// ===========================================================================
+// Sub-components
+// ===========================================================================
 
 function Section({
   title,
-  compact,
+  subtitle,
   children,
 }: {
   title: string
-  compact?: boolean
+  subtitle?: string
   children: React.ReactNode
 }) {
   return (
-    <section className={`iram-stats__section${compact ? ' iram-stats__section--compact' : ''}`}>
-      <h2 className="iram-stats__section-title">{title}</h2>
+    <section className="iram-stats__section">
+      <div className="iram-stats__section-head">
+        <h2 className="iram-stats__section-title">{title}</h2>
+        {subtitle && <p className="iram-stats__section-subtitle">{subtitle}</p>}
+      </div>
       <div className="iram-stats__section-body">{children}</div>
     </section>
   )
 }
 
-function EditorialKpis({ counts }: { counts: ArticleCounts }) {
-  const cards: Array<{ label: string; value: number; emoji: string; tone?: string }> = [
-    { label: 'منشور اليوم', value: counts.publishedToday, emoji: '📅' },
-    { label: 'هذا الأسبوع', value: counts.publishedThisWeek, emoji: '🗓️' },
-    { label: 'هذا الشهر', value: counts.publishedThisMonth, emoji: '📆' },
-    { label: 'إجمالي المنشور', value: counts.publishedTotal, emoji: '📰', tone: 'accent' },
-    { label: 'إجمالي المشاهدات', value: counts.totalViews, emoji: '👁️', tone: 'accent' },
-    { label: 'قيد المراجعة', value: counts.awaitingReview, emoji: '⏳' },
-    { label: 'مسودات', value: counts.draftCount, emoji: '✏️' },
-    { label: 'عاجل', value: counts.breakingCount, emoji: '🚨' },
-  ]
+function RefreshBadge({ renderedAt }: { renderedAt: Date }) {
+  const time = renderedAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
   return (
-    <div className="iram-stats__kpis">
-      {cards.map((c) => (
-        <div key={c.label} className={`iram-kpi${c.tone === 'accent' ? ' iram-kpi--accent' : ''}`}>
-          <span className="iram-kpi__icon" aria-hidden>{c.emoji}</span>
-          <span className="iram-kpi__label">{c.label}</span>
-          <span className="iram-kpi__value">{fmt(c.value)}</span>
-        </div>
+    <div className="iram-stats__refresh">
+      <span className="iram-stats__refresh-dot" aria-hidden />
+      <span>محدَّث الساعة {time}</span>
+    </div>
+  )
+}
+
+interface KpiProps {
+  emoji: string
+  label: string
+  value: number
+  tone?: 'accent' | 'warn'
+  trend?: number | null
+  trendLabel?: string
+  spark?: number[]
+}
+
+function Kpi({ emoji, label, value, tone, trend, trendLabel, spark }: KpiProps) {
+  return (
+    <div className={`iram-kpi${tone ? ` iram-kpi--${tone}` : ''}`}>
+      <div className="iram-kpi__top">
+        <span className="iram-kpi__icon" aria-hidden>{emoji}</span>
+        {trend != null && <TrendBadge value={trend} label={trendLabel} />}
+      </div>
+      <span className="iram-kpi__label">{label}</span>
+      <span className="iram-kpi__value">{fmt(value)}</span>
+      {spark && spark.length > 0 && <KpiSpark data={spark} />}
+    </div>
+  )
+}
+
+function TrendBadge({ value, label }: { value: number; label?: string }) {
+  const tone = value > 0 ? 'up' : value < 0 ? 'down' : 'flat'
+  const arrow = value > 0 ? '↑' : value < 0 ? '↓' : '→'
+  const display = `${arrow} ${Math.abs(value)}%`
+  return (
+    <span className={`iram-trend iram-trend--${tone}`} title={label}>
+      {display}
+    </span>
+  )
+}
+
+function KpiSpark({ data }: { data: number[] }) {
+  if (data.every((d) => d === 0)) {
+    return <div className="iram-kpi__spark iram-kpi__spark--empty">—</div>
+  }
+  const max = Math.max(1, ...data)
+  return (
+    <div className="iram-kpi__spark" aria-hidden>
+      {data.map((d, i) => (
+        <span
+          key={i}
+          className="iram-kpi__spark-bar"
+          style={{ height: `${(d / max) * 100}%` }}
+        />
       ))}
+    </div>
+  )
+}
+
+function MiniMetric({
+  emoji,
+  label,
+  value,
+  sub,
+}: {
+  emoji: string
+  label: string
+  value: string
+  sub?: string
+}) {
+  return (
+    <div className="iram-mini">
+      <span className="iram-mini__emoji" aria-hidden>{emoji}</span>
+      <div className="iram-mini__body">
+        <span className="iram-mini__label">{label}</span>
+        <span className="iram-mini__value">{value}</span>
+        {sub && <span className="iram-mini__sub">{sub}</span>}
+      </div>
     </div>
   )
 }
@@ -197,9 +399,7 @@ function AuthorsList({ items }: { items: AuthorStat[] }) {
 
 function CategoriesBars({ items }: { items: CategoryStat[] }) {
   const max = Math.max(1, ...items.map((c) => c.count))
-  if (items.length === 0) {
-    return <p className="iram-stats__empty">لا توجد تصنيفات بعد.</p>
-  }
+  if (items.length === 0) return <p className="iram-stats__empty">لا توجد تصنيفات بعد.</p>
   return (
     <div className="iram-stats__bars">
       {items.map((c) => (
@@ -215,13 +415,96 @@ function CategoriesBars({ items }: { items: CategoryStat[] }) {
               className="iram-stats__bar-fill"
               style={{
                 width: `${(c.count / max) * 100}%`,
-                background: c.color || 'var(--iram-gold-500, #c8a84e)',
+                background: c.color || '#c8a84e',
               }}
             />
           </div>
           <span className="iram-stats__bar-count">{fmt(c.count)}</span>
         </div>
       ))}
+    </div>
+  )
+}
+
+function StatusDonut({ status }: { status: StatusBreakdown }) {
+  const segments = [
+    { key: 'published', label: 'منشور', value: status.published, color: '#16a34a' },
+    { key: 'draft', label: 'مسودة', value: status.draft, color: '#9ca3af' },
+    { key: 'inReview', label: 'قيد المراجعة', value: status.inReview, color: '#f59e0b' },
+    { key: 'archived', label: 'مؤرشف', value: status.archived, color: '#6b7280' },
+  ]
+  const total = segments.reduce((s, x) => s + x.value, 0)
+  if (total === 0) return <p className="iram-stats__empty">لا توجد بيانات.</p>
+
+  // Build SVG arcs
+  const RADIUS = 60
+  const STROKE = 18
+  const CIRC = 2 * Math.PI * RADIUS
+  let cumulative = 0
+  const parts = segments.map((seg) => {
+    const len = (seg.value / total) * CIRC
+    const offset = cumulative
+    cumulative += len
+    return { ...seg, len, offset }
+  })
+
+  return (
+    <div className="iram-donut">
+      <svg viewBox="0 0 160 160" className="iram-donut__svg" aria-hidden>
+        <circle
+          cx="80"
+          cy="80"
+          r={RADIUS}
+          fill="none"
+          stroke="#f0eee6"
+          strokeWidth={STROKE}
+        />
+        {parts.map((p) => (
+          <circle
+            key={p.key}
+            cx="80"
+            cy="80"
+            r={RADIUS}
+            fill="none"
+            stroke={p.color}
+            strokeWidth={STROKE}
+            strokeDasharray={`${p.len} ${CIRC - p.len}`}
+            strokeDashoffset={-p.offset}
+            transform="rotate(-90 80 80)"
+          />
+        ))}
+        <text
+          x="80"
+          y="76"
+          textAnchor="middle"
+          fontSize="22"
+          fontWeight="800"
+          fill="#0a2a2f"
+          fontFamily="var(--font-kufi), sans-serif"
+        >
+          {fmt(total)}
+        </text>
+        <text
+          x="80"
+          y="96"
+          textAnchor="middle"
+          fontSize="11"
+          fill="#6b7280"
+        >
+          المجموع
+        </text>
+      </svg>
+      <ul className="iram-donut__legend">
+        {segments
+          .filter((s) => s.value > 0)
+          .map((s) => (
+            <li key={s.key}>
+              <span className="iram-donut__swatch" style={{ background: s.color }} />
+              <span className="iram-donut__label">{s.label}</span>
+              <span className="iram-donut__count">{fmt(s.value)}</span>
+            </li>
+          ))}
+      </ul>
     </div>
   )
 }
@@ -235,7 +518,7 @@ function DailySpark({ items }: { items: DailyPublishCount[] }) {
           <div
             key={d.day}
             className="iram-stats__spark-col"
-            title={`${d.day}: ${d.count}`}
+            title={`${d.day}: ${d.count} مقال`}
           >
             <div
               className="iram-stats__spark-bar"
@@ -252,12 +535,112 @@ function DailySpark({ items }: { items: DailyPublishCount[] }) {
   )
 }
 
+function DowHeatmap({ items }: { items: DowActivity[] }) {
+  // Build a grid: rows = days of week (Sun=0 → Sat=6), cols = weeks chronologically
+  const weeks = Array.from(new Set(items.map((i) => i.week))).sort()
+  if (weeks.length === 0) {
+    return <p className="iram-stats__empty">لا توجد بيانات نشاط بعد.</p>
+  }
+  const max = Math.max(1, ...items.map((i) => i.count))
+  const lookup = new Map<string, number>()
+  for (const it of items) lookup.set(`${it.week}:${it.dow}`, it.count)
+
+  const dowLabels = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
+  const dowOrder = [0, 1, 2, 3, 4, 5, 6]
+
+  return (
+    <div className="iram-heatmap" dir="ltr">
+      {dowOrder.map((dow) => (
+        <div key={dow} className="iram-heatmap__row">
+          <span className="iram-heatmap__row-label">{dowLabels[dow]}</span>
+          <div className="iram-heatmap__cells">
+            {weeks.map((wk) => {
+              const v = lookup.get(`${wk}:${dow}`) ?? 0
+              const intensity = v === 0 ? 0 : Math.max(0.15, v / max)
+              return (
+                <span
+                  key={wk}
+                  className="iram-heatmap__cell"
+                  style={{
+                    background:
+                      v === 0
+                        ? '#f0eee6'
+                        : `rgba(200, 168, 78, ${intensity.toFixed(2)})`,
+                  }}
+                  title={`${wk} — ${dowLabels[dow]}: ${v} مقال`}
+                />
+              )
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function TagCloud({ items }: { items: TagFreq[] }) {
+  const max = Math.max(1, ...items.map((t) => t.count))
+  return (
+    <div className="iram-tag-cloud">
+      {items.map((t) => {
+        const weight = t.count / max
+        const fontSize = 11 + weight * 12 // 11 → 23 px
+        const opacity = 0.55 + weight * 0.45
+        return (
+          <a
+            key={t.tag}
+            href={`/admin/collections/articles?where[tags.tag][equals]=${encodeURIComponent(t.tag)}`}
+            className="iram-tag-cloud__item"
+            style={{ fontSize: `${fontSize}px`, opacity }}
+            title={`${t.count} مقال`}
+          >
+            {t.tag}
+            <span className="iram-tag-cloud__count">{t.count}</span>
+          </a>
+        )
+      })}
+    </div>
+  )
+}
+
+function QualityList({ items }: { items: DataQuality }) {
+  if (items.totalPublished === 0) {
+    return <p className="iram-stats__empty">لا توجد مقالات منشورة لتقييم جودتها.</p>
+  }
+  const rows = [
+    { label: 'بدون صورة رئيسية', value: items.noImage, fix: 'أضف صورة لكل مقال — مهم للـ SEO وللمشاركات.' },
+    { label: 'بدون تصنيف', value: items.noCategory, fix: 'صنّف كل مقال — يساعد في العرض والتصفّح.' },
+    { label: 'بدون وسوم', value: items.noTags, fix: 'أضف وسوماً تصف المحتوى — تحسّن البحث والاكتشاف.' },
+    { label: 'بدون مقتطف', value: items.noExcerpt, fix: 'اكتب مقتطفاً (٢-٣ أسطر) لكل مقال.' },
+  ]
+  return (
+    <ul className="iram-quality">
+      {rows.map((r) => {
+        const pct = items.totalPublished > 0 ? Math.round((r.value / items.totalPublished) * 100) : 0
+        const tone = r.value === 0 ? 'good' : pct < 10 ? 'warn' : 'bad'
+        return (
+          <li key={r.label} className={`iram-quality__row iram-quality__row--${tone}`}>
+            <div className="iram-quality__head">
+              <span className="iram-quality__label">{r.label}</span>
+              <span className="iram-quality__count">
+                {fmt(r.value)} / {fmt(items.totalPublished)} ({pct}%)
+              </span>
+            </div>
+            {r.value > 0 && <span className="iram-quality__fix">{r.fix}</span>}
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
 function HealthGrid() {
   return (
     <div className="iram-stats__health">
       <HealthRow label="حالة الموقع" value="✅ يعمل بشكل طبيعي" />
       <HealthRow label="آخر تحديث" value={new Date().toLocaleString('en-GB')} />
       <HealthRow label="بيئة التشغيل" value={process.env.NODE_ENV ?? '—'} />
+      <HealthRow label="إصدار Node" value={process.versions?.node ?? '—'} />
     </div>
   )
 }
