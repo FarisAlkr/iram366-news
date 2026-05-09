@@ -44,7 +44,11 @@ export async function Header({ siteName, categories, breakingArticles = [] }: He
           On tablet+: just the weather/date bar (which itself centers the
           site name and logo on tablet+). */}
       <div className="bg-navy text-white">
-        <div className="sm:hidden flex items-center justify-center gap-2 py-1.5 border-b border-white/5">
+        <Link
+          href="/"
+          aria-label={`${siteName} — الصفحة الرئيسية`}
+          className="sm:hidden flex items-center justify-center gap-2 py-1.5 border-b border-white/5 hover:opacity-80 transition-opacity"
+        >
           <img
             src="/splash-logo.jpeg"
             alt=""
@@ -54,7 +58,7 @@ export async function Header({ siteName, categories, breakingArticles = [] }: He
           <span className="font-display font-extrabold tracking-tight text-sm text-white whitespace-nowrap">
             {siteName}
           </span>
-        </div>
+        </Link>
         <WeatherDateBar towns={towns} siteName={siteName} />
       </div>
 

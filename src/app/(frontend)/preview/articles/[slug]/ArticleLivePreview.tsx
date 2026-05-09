@@ -5,7 +5,7 @@ import { useLivePreview } from '@payloadcms/live-preview-react'
 
 import { CategoryBadge } from '@/components/CategoryBadge'
 import { RichText } from '@/components/RichText'
-import { estimateReadTime, formatDate } from '@/lib/date'
+import { formatDate } from '@/lib/date'
 import { ArticleStatus } from '@/domain/enums'
 import type { Article, Category, Media, User } from '@/types/payload'
 import { resolveRef, pickMediaUrl } from '@/types/payload'
@@ -53,7 +53,6 @@ export const ArticleLivePreview: React.FC<Props> = ({
   const author = resolveRef<User>(article.author ?? null)
   const image = resolveRef<Media>(article.featuredImage ?? null)
   const heroUrl = image ? pickMediaUrl(image, 'hero') : ''
-  const readTime = estimateReadTime(article.excerpt || '')
   const statusLabel =
     article.status && article.status !== ArticleStatus.Published
       ? STATUS_LABEL[article.status]
@@ -90,7 +89,6 @@ export const ArticleLivePreview: React.FC<Props> = ({
             <div className="flex flex-wrap items-center gap-4 text-sm text-[var(--color-ink-muted)] pb-5 border-b border-[var(--color-border)]">
               {author?.name && <span className="font-medium text-ink">{author.name}</span>}
               {article.publishedAt && <time>{formatDate(article.publishedAt)}</time>}
-              <span>{readTime} دقائق قراءة</span>
               {statusLabel && (
                 <span className="bg-amber-100 text-amber-700 px-3 py-0.5 rounded-full text-xs font-bold">
                   {statusLabel}

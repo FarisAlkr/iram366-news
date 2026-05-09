@@ -223,17 +223,19 @@ export function WeatherDateBar({ towns: customTowns, siteName }: WeatherDateBarP
       <div className="container-news">
         <div className="flex items-center justify-between h-16 relative">
           {siteName && (
-            <span
-              className="iram-bar-brand absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden sm:flex items-center gap-2 font-display font-extrabold tracking-tight text-white text-base md:text-lg lg:text-xl whitespace-nowrap pointer-events-none"
-              aria-hidden
+            <a
+              href="/"
+              aria-label={`${siteName} — الصفحة الرئيسية`}
+              className="iram-bar-brand absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden sm:flex items-center gap-2 font-display font-extrabold tracking-tight text-white text-base md:text-lg lg:text-xl whitespace-nowrap hover:opacity-80 transition-opacity"
             >
               <img
                 src="/splash-logo.jpeg"
                 alt=""
+                aria-hidden
                 className="iram-bar-brand__icon h-10 md:h-12 lg:h-14 w-auto flex-shrink-0"
               />
               <span>{siteName}</span>
-            </span>
+            </a>
           )}
           <div className="flex items-center gap-3">
             <span suppressHydrationWarning>

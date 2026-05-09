@@ -95,7 +95,7 @@ export function Footer({ siteName, footerText, socialLinks, categories }: Footer
           <div>
             {footerText || `جميع الحقوق محفوظة © ${new Date().getFullYear()} لشركة إرم 366 الإخبارية م.ض`}
           </div>
-          <div className="text-[11px]">
+          <div className="text-sm md:text-base mt-2">
             تطوير: <span className="iram-credit-shine">فارس القريناوي · Faris Alkrenawe</span>
           </div>
         </div>

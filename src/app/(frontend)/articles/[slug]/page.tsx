@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { ArticleStatus } from '@/domain/enums'
-import { estimateReadTime, formatDate } from '@/lib/date'
+import { formatDate } from '@/lib/date'
 import { getPayloadClient } from '@/lib/payload'
 import {
   getArticleBySlug,
@@ -138,7 +138,6 @@ export default async function ArticlePage({ params, searchParams }: PageProps) {
   const image = resolveRef<Media>(article.featuredImage ?? null)
   const heroUrl = image ? pickMediaUrl(image, 'hero') : ''
   const articleUrl = `${SITE_URL}/articles/${slug}`
-  const readTime = estimateReadTime(article.excerpt || '')
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -234,7 +233,6 @@ export default async function ArticlePage({ params, searchParams }: PageProps) {
                 </div>
               )}
               {article.publishedAt && <time>{formatDate(article.publishedAt)}</time>}
-              <span>{readTime} دقائق قراءة</span>
             </div>
           </header>
 
