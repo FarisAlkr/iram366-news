@@ -174,26 +174,45 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {categoryArticles
-          .filter((ca) => ca.articles.length > 0)
-          .map((ca) => (
-            <section key={ca.category.slug} className="container-news py-6">
-              <SectionHeading
-                title={ca.category.name}
-                href={`/category/${ca.category.slug}`}
-              />
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {ca.articles.map((article) => (
-                  <ArticleCard
-                    key={article.id}
-                    article={article}
-                    category={ca.category}
-                    variant="compact"
-                  />
-                ))}
-              </div>
-            </section>
-          ))}
+        {(() => {
+          const visibleCats = categoryArticles.filter((ca) => ca.articles.length > 0)
+          const midIndex = Math.max(0, Math.floor(visibleCats.length / 2) - 1)
+          return visibleCats.flatMap((ca, idx) => {
+            const items = [
+              <section key={ca.category.slug} className="container-news py-6">
+                <SectionHeading
+                  title={ca.category.name}
+                  href={`/category/${ca.category.slug}`}
+                />
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {ca.articles.map((article) => (
+                    <ArticleCard
+                      key={article.id}
+                      article={article}
+                      category={ca.category}
+                      variant="compact"
+                    />
+                  ))}
+                </div>
+              </section>,
+            ]
+            // Mobile-only ad break after the middle category section, so
+            // sidebar-bottom (which the desktop sidebar column hides on
+            // mobile) reaches phone readers without two ads stacking
+            // adjacent to the footer ad.
+            if (idx === midIndex && visibleCats.length > 1) {
+              items.push(
+                <div
+                  key={`ad-mid-${idx}`}
+                  className="container-news py-4 lg:hidden"
+                >
+                  <AdSlot placement="sidebar-bottom" />
+                </div>,
+              )
+            }
+            return items
+          })
+        })()}
 
         <div className="container-news py-4">
           <AdSlot placement="footer" />

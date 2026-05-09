@@ -38,6 +38,7 @@ import { KeyboardProvider as KeyboardProvider_c32853aea806db4e6df2a11df7b419f2 }
 import { OnboardingTour as OnboardingTour_04dcc379edad523bf22006025c43e134 } from '../../../components/admin/OnboardingTour'
 import { NotificationBell as NotificationBell_9b234b2343344c65ad3743ace38afb48 } from '../../../components/admin/NotificationBell'
 import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
+import { default as default_0b84f090b9d2570a8fedbffad015a4f7 } from '../../../components/admin/StatsView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 export const importMap = {
@@ -81,5 +82,6 @@ export const importMap = {
   "/components/admin/OnboardingTour#OnboardingTour": OnboardingTour_04dcc379edad523bf22006025c43e134,
   "/components/admin/NotificationBell#NotificationBell": NotificationBell_9b234b2343344c65ad3743ace38afb48,
   "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,
+  "/components/admin/StatsView#default": default_0b84f090b9d2570a8fedbffad015a4f7,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }
