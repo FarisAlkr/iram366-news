@@ -17,10 +17,10 @@ const nextConfig = {
 
   experimental: {
     serverActions: {
-      // Phone photos easily exceed Next's 1 MB default. Editors uploading
-      // featured images via the mobile dashboard should tolerate ~15 MB
-      // raw uploads (sharp resizes to the imageSizes variants on save).
-      bodySizeLimit: '15mb',
+      // Phone photos can be 10-20 MB raw; some editors paste DSLR images
+      // even larger. 30 MB ceiling lets normal use through while still
+      // capping accidental uploads of multi-hundred-MB files.
+      bodySizeLimit: '30mb',
     },
   },
 
