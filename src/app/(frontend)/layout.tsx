@@ -3,6 +3,7 @@ import React from 'react'
 import { IBM_Plex_Sans_Arabic, Noto_Kufi_Arabic } from 'next/font/google'
 import '../globals.css'
 
+import { BackToHomeFallback } from '@/components/BackToHomeFallback'
 import { Chatbot } from '@/components/Chatbot'
 import { ScrollProgress } from '@/components/ScrollProgress'
 import { SplashScreen } from '@/components/SplashScreen'
@@ -60,6 +61,7 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
     <html lang="ar" dir="rtl" className={`${ibmPlex.variable} ${notoKufi.variable}`}>
       <body className="bg-cream text-ink font-body antialiased">
         <SplashScreen siteName="إرم 366 الإخبارية" />
+        <BackToHomeFallback />
         <ScrollProgress />
         {children}
         <Chatbot />
