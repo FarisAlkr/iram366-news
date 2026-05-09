@@ -1,6 +1,10 @@
 services:
   db:
-    image: postgres:16-alpine
+    # pgvector/pgvector:pg16 = the official Postgres 16 image + the
+    # pgvector extension pre-installed. Required for the chatbot's
+    # vector-similarity search. Data volume from postgres:16-alpine
+    # is fully compatible (same major version, same on-disk format).
+    image: pgvector/pgvector:pg16
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -53,6 +57,15 @@ services:
       NEXT_PUBLIC_CF_ANALYTICS_TOKEN: ${NEXT_PUBLIC_CF_ANALYTICS_TOKEN:-}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       SEED_SECRET: ${SEED_SECRET:-}
+      # Chatbot — see deploy/CHATBOT-SETUP.md
+      NEXT_PUBLIC_CHATBOT_ENABLED: ${NEXT_PUBLIC_CHATBOT_ENABLED:-false}
+      EMBEDDINGS_PROVIDER: ${EMBEDDINGS_PROVIDER:-openai}
+      EMBEDDINGS_MODEL: ${EMBEDDINGS_MODEL:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      VOYAGE_API_KEY: ${VOYAGE_API_KEY:-}
+      # Cloudflare Analytics API (Stats page Section B — pending setup)
+      CF_ANALYTICS_API_TOKEN: ${CF_ANALYTICS_API_TOKEN:-}
+      CF_ACCOUNT_ID: ${CF_ACCOUNT_ID:-}
     expose:
       - "3000"
     healthcheck:
