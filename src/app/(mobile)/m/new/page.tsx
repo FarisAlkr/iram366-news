@@ -28,6 +28,7 @@ export default async function MobileNewArticlePage() {
     <>
       <header className="m-topbar">
         <div className="m-topbar__brand">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/splash-logo.jpeg" alt="" aria-hidden className="m-topbar__logo" />
           <span className="m-topbar__name">مقال جديد</span>
         </div>

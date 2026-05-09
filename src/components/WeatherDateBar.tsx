@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 export interface Town {
@@ -223,11 +224,12 @@ export function WeatherDateBar({ towns: customTowns, siteName }: WeatherDateBarP
       <div className="container-news">
         <div className="flex items-center justify-between h-16 relative">
           {siteName && (
-            <a
+            <Link
               href="/"
               aria-label={`${siteName} — الصفحة الرئيسية`}
               className="iram-bar-brand absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden sm:flex items-center gap-2 font-display font-extrabold tracking-tight text-white text-base md:text-lg lg:text-xl whitespace-nowrap hover:opacity-80 transition-opacity"
             >
+              {/* eslint-disable-next-line @next/next/no-img-element -- needs CSS mask, Next/Image strips style */}
               <img
                 src="/splash-logo.jpeg"
                 alt=""
@@ -235,7 +237,7 @@ export function WeatherDateBar({ towns: customTowns, siteName }: WeatherDateBarP
                 className="iram-bar-brand__icon h-10 md:h-12 lg:h-14 w-auto flex-shrink-0"
               />
               <span>{siteName}</span>
-            </a>
+            </Link>
           )}
           <div className="flex items-center gap-3">
             <span suppressHydrationWarning>

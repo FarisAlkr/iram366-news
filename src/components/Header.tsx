@@ -49,6 +49,7 @@ export async function Header({ siteName, categories, breakingArticles = [] }: He
           aria-label={`${siteName} — الصفحة الرئيسية`}
           className="sm:hidden flex items-center justify-center gap-2 py-1.5 border-b border-white/5 hover:opacity-80 transition-opacity"
         >
+          {/* eslint-disable-next-line @next/next/no-img-element -- needs CSS mask, Next/Image strips style */}
           <img
             src="/splash-logo.jpeg"
             alt=""

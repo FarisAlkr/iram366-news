@@ -123,21 +123,21 @@ export function NewArticleForm({ categories }: Props) {
 
         <Field label="الصورة الرئيسية" htmlFor="image" error={fieldError('image')} help="اختياري · حتى ٣٠ ميغابايت · أي صيغة (JPEG / PNG / WebP / SVG …)">
           <label className="m-file" htmlFor="image">
-            <span aria-hidden>📷</span>
+            <span aria-hidden>🖼️</span>
             <span className="m-file__text">
-              {imageInfo ? 'تغيير الصورة' : 'اختر صورة من الكاميرا أو الاستوديو'}
+              {imageInfo ? 'تغيير الصورة' : 'اختر صورة من معرض الصور أو الكاميرا'}
             </span>
             <input
               id="image"
               name="image"
               type="file"
               accept="image/*"
-              capture="environment"
               onChange={onPick}
             />
           </label>
           {imagePreview && (
             <div className="m-file__preview">
+              {/* eslint-disable-next-line @next/next/no-img-element -- blob: URL preview, not a remote image */}
               <img src={imagePreview} alt="معاينة" />
               {imageInfo && (
                 <div className="m-file__meta">

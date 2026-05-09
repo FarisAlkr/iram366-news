@@ -36,6 +36,7 @@ export function SplashScreen({ siteName }: SplashScreenProps) {
     >
       <div className="iram-splash__inner">
         <div className="iram-splash__halo" aria-hidden />
+        {/* eslint-disable-next-line @next/next/no-img-element -- needs CSS mask animation, Next/Image strips style */}
         <img
           src="/splash-logo.jpeg"
           alt=""
