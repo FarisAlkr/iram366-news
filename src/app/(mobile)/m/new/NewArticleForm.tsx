@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState, useRef, useState } from 'react'
 import { createArticleAction, type Placement } from './actions'
 
 interface Props {
@@ -21,12 +21,19 @@ const fmtBytes = (bytes: number): string => {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
 
+interface GalleryItem {
+  file: File
+  url: string
+}
+
 export function NewArticleForm({ categories }: Props) {
   const [state, action, pending] = useActionState(createArticleAction, {})
   const [status, setStatus] = useState<'draft' | 'published'>('published')
   const [placement, setPlacement] = useState<Placement>('none')
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [imageInfo, setImageInfo] = useState<{ name: string; size: number } | null>(null)
+  const [gallery, setGallery] = useState<GalleryItem[]>([])
+  const galleryInputRef = useRef<HTMLInputElement>(null)
 
   const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
@@ -39,10 +46,39 @@ export function NewArticleForm({ categories }: Props) {
     setImageInfo({ name: f.name, size: f.size })
   }
 
+  const onGalleryAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? [])
+    if (files.length === 0) return
+    const items = files.map((file) => ({ file, url: URL.createObjectURL(file) }))
+    setGallery((prev) => [...prev, ...items])
+    // Reset the input so the same file can be re-picked if removed
+    if (galleryInputRef.current) galleryInputRef.current.value = ''
+  }
+
+  const onGalleryRemove = (i: number) => {
+    setGallery((prev) => {
+      const copy = prev.slice()
+      const removed = copy.splice(i, 1)[0]
+      if (removed) URL.revokeObjectURL(removed.url)
+      return copy
+    })
+  }
+
+  const galleryTotalBytes = gallery.reduce((sum, g) => sum + g.file.size, 0)
+
   const fieldError = (k: keyof NonNullable<typeof state.fieldErrors>) => state.fieldErrors?.[k]
 
+  // Wrap the server action so we can append gallery files (which live in
+  // component state, not in any DOM input) into the submitted FormData.
+  const submit = (formData: FormData) => {
+    for (const item of gallery) {
+      formData.append('gallery', item.file)
+    }
+    return action(formData)
+  }
+
   return (
-    <form action={action} className="m-form">
+    <form action={submit} className="m-form">
       {state?.error && (
         <div className="m-error" role="alert">
           <strong>⚠️ {state.error}</strong>
@@ -146,6 +182,51 @@ export function NewArticleForm({ categories }: Props) {
                 </div>
               )}
             </div>
+          )}
+        </Field>
+
+        <Field
+          label="صور إضافية (معرض)"
+          htmlFor="gallery"
+          help="اختياري · صور إضافية تظهر كمعرض في نهاية المقال. اختر عدة صور دفعة واحدة."
+        >
+          <label className="m-file" htmlFor="gallery">
+            <span aria-hidden>🖼️</span>
+            <span className="m-file__text">
+              {gallery.length > 0 ? '+ أضف المزيد' : 'اختر صور للمعرض'}
+            </span>
+            <input
+              ref={galleryInputRef}
+              id="gallery"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={onGalleryAdd}
+            />
+          </label>
+
+          {gallery.length > 0 && (
+            <>
+              <div className="m-gallery-grid">
+                {gallery.map((item, i) => (
+                  <div key={item.url} className="m-gallery-item">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- blob: URL preview */}
+                    <img src={item.url} alt="" />
+                    <button
+                      type="button"
+                      className="m-gallery-remove"
+                      onClick={() => onGalleryRemove(i)}
+                      aria-label="إزالة الصورة"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <span className="m-help">
+                {gallery.length} صورة · إجمالي {fmtBytes(galleryTotalBytes)}
+              </span>
+            </>
           )}
         </Field>
       </Section>

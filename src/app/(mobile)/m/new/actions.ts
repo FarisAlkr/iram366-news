@@ -124,7 +124,30 @@ export async function createArticleAction(_prev: CreateState, formData: FormData
     }
   }
 
-  // 2) Create article
+  // 2) Upload gallery images (optional, multiple). Each is uploaded
+  //    individually; if one fails we continue with the rest so the
+  //    article still gets the others.
+  const galleryFiles = formData
+    .getAll('gallery')
+    .filter((f): f is File => f instanceof File && f.size > 0 && f.type.startsWith('image/'))
+
+  const galleryItems: { image: string | number }[] = []
+  for (const file of galleryFiles) {
+    try {
+      const buf = Buffer.from(await file.arrayBuffer())
+      const media = await payload.create({
+        collection: 'media',
+        data: { alt: title.slice(0, 120) },
+        file: { data: buf, mimetype: file.type, name: file.name, size: file.size },
+        user: auth.user,
+      })
+      galleryItems.push({ image: media.id })
+    } catch (err) {
+      console.error('[mobile] gallery upload failed for one file:', err)
+    }
+  }
+
+  // 3) Create article
   let createdId: string | number | undefined
   try {
     const created = await payload.create({
@@ -137,6 +160,7 @@ export async function createArticleAction(_prev: CreateState, formData: FormData
         author: auth.user.id,
         status,
         ...(mediaId ? { featuredImage: mediaId } : {}),
+        ...(galleryItems.length > 0 ? { gallery: galleryItems } : {}),
         ...(status === ArticleStatus.Published ? { publishedAt: new Date().toISOString() } : {}),
       },
       user: auth.user,
@@ -147,7 +171,7 @@ export async function createArticleAction(_prev: CreateState, formData: FormData
     return { error: friendlyError(err) }
   }
 
-  // 3) Apply hero placement (if non-default and article was published)
+  // 4) Apply hero placement (if non-default and article was published)
   if (placement !== 'none' && createdId && status === ArticleStatus.Published) {
     try {
       const settings = (await payload.findGlobal({
