@@ -22,16 +22,17 @@ const AI_ENABLED = process.env.NEXT_PUBLIC_CHATBOT_ENABLED === 'true'
 // shows visitors what they can ask. The "developer" question doubles as a
 // little easter-egg credit on the public site.
 const DEMO_MESSAGES: Message[] = [
-  { kind: 'user', text: 'من طوّر هذا الموقع بأكمله بنفسه؟' },
-  { kind: 'bot-text', text: 'فارس القريناوي 🌟' },
+  { kind: 'user', text: 'من مطوّر ومبرمج هذه المنصّة الإخبارية؟' },
+  { kind: 'bot-text', text: 'مهندس البرمجيّات فارس القريناوي 🌟' },
 ]
 
 // Hard-coded patterns that work without the AI. If a visitor types
 // something matching one of these, we answer locally — no API call.
 const EASTER_EGGS: Array<{ pattern: RegExp; reply: string }> = [
   {
-    pattern: /\b(من\s*طو[رّ]|من\s*بن[ىي]|من\s*صم[مّ]|المطو[رّ]|developed|built|made|created)\b/i,
-    reply: 'فارس القريناوي 🌟 — مطوّر هذا الموقع بالكامل.',
+    pattern:
+      /\b(من\s*طو[رّ]|من\s*بن[ىي]|من\s*صم[مّ]|من\s*برم[جّ]|المطو[رّ]|المبرم[جّ]|مهندس|developed|built|made|created|programmed|engineer)\b/i,
+    reply: 'مهندس البرمجيّات فارس القريناوي 🌟',
   },
   {
     pattern: /\b(تواصل|اتصال|اتواصل|contact|email)\b/i,
@@ -131,9 +132,19 @@ export function Chatbot() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? 'إغلاق المساعد' : 'افتح المساعد'}
-        className="fixed bottom-5 start-5 z-[60] w-14 h-14 rounded-full bg-navy text-white shadow-lg hover:bg-navy-light transition-transform hover:scale-105 flex items-center justify-center"
+        className="iram-chatbot-toggle fixed bottom-5 start-5 z-[60] w-14 h-14 rounded-full bg-navy shadow-lg hover:scale-105 transition-transform flex items-center justify-center"
       >
-        <span aria-hidden className="text-2xl">{open ? '×' : '💬'}</span>
+        {open ? (
+          <span aria-hidden className="text-2xl text-white">×</span>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element -- needs CSS mask
+          <img
+            src="/splash-logo.jpeg"
+            alt=""
+            aria-hidden
+            className="iram-chatbot-toggle__logo"
+          />
+        )}
       </button>
 
       {open && (

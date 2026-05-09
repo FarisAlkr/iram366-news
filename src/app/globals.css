@@ -1092,3 +1092,49 @@
   0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
   40%           { opacity: 1;   transform: translateY(-3px); }
 }
+
+/* Chatbot toggle button — calm gold-glow halo + masked platform logo */
+.iram-chatbot-toggle {
+  position: fixed; /* keep the position; allows ::before to anchor */
+  isolation: isolate;
+  overflow: visible;
+}
+.iram-chatbot-toggle::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle at center,
+    rgba(200, 168, 78, 0.55) 0%,
+    rgba(200, 168, 78, 0.25) 45%,
+    transparent 70%
+  );
+  filter: blur(6px);
+  opacity: 0.5;
+  z-index: -1;
+  pointer-events: none;
+  animation: chatbot-glow 4.5s ease-in-out infinite;
+}
+.iram-chatbot-toggle__logo {
+  width: 36px;
+  height: 36px;
+  -webkit-mask-image: radial-gradient(ellipse, black 55%, transparent 92%);
+  mask-image: radial-gradient(ellipse, black 55%, transparent 92%);
+  filter: drop-shadow(0 0 8px rgba(200, 168, 78, 0.5));
+  animation: chatbot-logo-pulse 4.5s ease-in-out infinite;
+}
+@keyframes chatbot-glow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50%      { opacity: 0.85; transform: scale(1.15); }
+}
+@keyframes chatbot-logo-pulse {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(200, 168, 78, 0.45)); }
+  50%      { filter: drop-shadow(0 0 14px rgba(200, 168, 78, 0.7)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .iram-chatbot-toggle::before,
+  .iram-chatbot-toggle__logo {
+    animation: none;
+  }
+}
