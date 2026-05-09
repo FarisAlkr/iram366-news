@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-interface ChatResult {
+interface ArticleHit {
   title: string
   excerpt: string | null
   url: string
@@ -10,36 +10,92 @@ interface ChatResult {
   score: number
 }
 
-const ENABLED = process.env.NEXT_PUBLIC_CHATBOT_ENABLED === 'true'
+type Message =
+  | { kind: 'user'; text: string }
+  | { kind: 'bot-text'; text: string }
+  | { kind: 'bot-articles'; articles: ArticleHit[] }
+  | { kind: 'bot-empty' }
 
-/**
- * Floating chatbot widget.
- *
- * Returns null entirely when the feature flag is off — no UI, no fetches,
- * no impact on bundle eval beyond a single env-var read. When enabled,
- * hits /api/chat with the question and renders the matching articles
- * as clickable cards.
- */
+const AI_ENABLED = process.env.NEXT_PUBLIC_CHATBOT_ENABLED === 'true'
+
+// Demo conversation shown on first open — gives the bot a personality and
+// shows visitors what they can ask. The "developer" question doubles as a
+// little easter-egg credit on the public site.
+const DEMO_MESSAGES: Message[] = [
+  { kind: 'user', text: 'من طوّر هذا الموقع بأكمله بنفسه؟' },
+  { kind: 'bot-text', text: 'فارس القريناوي 🌟' },
+]
+
+// Hard-coded patterns that work without the AI. If a visitor types
+// something matching one of these, we answer locally — no API call.
+const EASTER_EGGS: Array<{ pattern: RegExp; reply: string }> = [
+  {
+    pattern: /\b(من\s*طو[رّ]|من\s*بن[ىي]|من\s*صم[مّ]|المطو[رّ]|developed|built|made|created)\b/i,
+    reply: 'فارس القريناوي 🌟 — مطوّر هذا الموقع بالكامل.',
+  },
+  {
+    pattern: /\b(تواصل|اتصال|اتواصل|contact|email)\b/i,
+    reply: 'تستطيع التواصل معنا عبر الرقم الموجود في تذييل الموقع، أو من قائمة "تابعنا".',
+  },
+  {
+    pattern: /\b(عاجل|breaking|أخر الأخبار|اخر الاخبار)\b/i,
+    reply: 'الأخبار العاجلة تظهر في الشريط الأحمر أعلى الموقع 🚨',
+  },
+]
+
+function findEasterEgg(text: string): string | null {
+  for (const eg of EASTER_EGGS) {
+    if (eg.pattern.test(text)) return eg.reply
+  }
+  return null
+}
+
 export function Chatbot() {
   const [open, setOpen] = useState(false)
+  const [messages, setMessages] = useState<Message[]>(DEMO_MESSAGES)
   const [question, setQuestion] = useState('')
-  const [results, setResults] = useState<ChatResult[] | null>(null)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (open) inputRef.current?.focus()
   }, [open])
 
-  if (!ENABLED) return null
+  useEffect(() => {
+    // Auto-scroll to bottom when a new message arrives
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }
+  }, [messages, loading])
 
   const ask = async () => {
     const q = question.trim()
     if (!q || loading) return
+    setQuestion('')
+    setMessages((prev) => [...prev, { kind: 'user', text: q }])
+
+    // 1) Check local easter-eggs first — instant, no API call
+    const local = findEasterEgg(q)
+    if (local) {
+      setMessages((prev) => [...prev, { kind: 'bot-text', text: local }])
+      return
+    }
+
+    // 2) If AI is disabled, fall back to a polite stub
+    if (!AI_ENABLED) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          kind: 'bot-text',
+          text: 'البحث الذكي عن المقالات سيتوفّر قريباً 🤖. حالياً تستطيع تصفّح الأقسام من القائمة أعلاه.',
+        },
+      ])
+      return
+    }
+
+    // 3) AI search via /api/chat
     setLoading(true)
-    setError(null)
-    setResults(null)
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
@@ -47,13 +103,23 @@ export function Chatbot() {
         body: JSON.stringify({ question: q }),
       })
       if (!res.ok) {
-        setError('تعذّر الاتصال — حاول لاحقاً')
+        setMessages((prev) => [
+          ...prev,
+          { kind: 'bot-text', text: 'تعذّر الاتصال — حاول لاحقاً.' },
+        ])
         return
       }
-      const data = (await res.json()) as { results: ChatResult[] }
-      setResults(data.results)
+      const data = (await res.json()) as { results: ArticleHit[] }
+      if (!data.results || data.results.length === 0) {
+        setMessages((prev) => [...prev, { kind: 'bot-empty' }])
+      } else {
+        setMessages((prev) => [...prev, { kind: 'bot-articles', articles: data.results }])
+      }
     } catch {
-      setError('تعذّر الاتصال — حاول لاحقاً')
+      setMessages((prev) => [
+        ...prev,
+        { kind: 'bot-text', text: 'تعذّر الاتصال — حاول لاحقاً.' },
+      ])
     } finally {
       setLoading(false)
     }
@@ -65,7 +131,7 @@ export function Chatbot() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? 'إغلاق المساعد' : 'افتح المساعد'}
-        className="fixed bottom-5 start-5 z-50 w-14 h-14 rounded-full bg-navy text-white shadow-lg hover:bg-navy-light transition-transform hover:scale-105 flex items-center justify-center"
+        className="fixed bottom-5 start-5 z-[60] w-14 h-14 rounded-full bg-navy text-white shadow-lg hover:bg-navy-light transition-transform hover:scale-105 flex items-center justify-center"
       >
         <span aria-hidden className="text-2xl">{open ? '×' : '💬'}</span>
       </button>
@@ -73,14 +139,81 @@ export function Chatbot() {
       {open && (
         <div
           dir="rtl"
-          className="fixed bottom-24 start-5 z-50 w-[min(92vw,380px)] bg-white text-ink rounded-xl shadow-2xl border border-ink/10 overflow-hidden flex flex-col"
+          className="fixed bottom-24 start-5 z-[60] w-[min(92vw,380px)] bg-white text-ink rounded-xl shadow-2xl border border-ink/10 overflow-hidden flex flex-col max-h-[70vh]"
         >
-          <div className="bg-navy text-white px-4 py-3">
-            <h3 className="font-display font-bold text-base">ابحث عن مقال</h3>
-            <p className="text-xs opacity-70 mt-0.5">صف ما تتذكره من المقال — وسأجد أقرب نتيجة.</p>
+          <div className="bg-navy text-white px-4 py-3 flex-shrink-0">
+            <h3 className="font-display font-bold text-base">مساعد إرم 366</h3>
+            <p className="text-xs opacity-70 mt-0.5">
+              اسأل عن مقال، عن الموقع، أو جرّب أحد الأسئلة الجاهزة.
+            </p>
           </div>
 
-          <div className="p-3 border-b border-ink/10">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3">
+            {messages.map((m, i) => {
+              if (m.kind === 'user') {
+                return (
+                  <div key={i} className="flex justify-end">
+                    <div className="max-w-[80%] bg-navy text-white rounded-2xl rounded-br-md px-3.5 py-2 text-sm leading-relaxed">
+                      {m.text}
+                    </div>
+                  </div>
+                )
+              }
+              if (m.kind === 'bot-text') {
+                return (
+                  <div key={i} className="flex justify-start">
+                    <div className="max-w-[85%] bg-cream-dark text-ink rounded-2xl rounded-bl-md px-3.5 py-2 text-sm leading-relaxed">
+                      {m.text}
+                    </div>
+                  </div>
+                )
+              }
+              if (m.kind === 'bot-empty') {
+                return (
+                  <div key={i} className="flex justify-start">
+                    <div className="max-w-[85%] bg-cream-dark text-ink/70 rounded-2xl rounded-bl-md px-3.5 py-2 text-sm">
+                      لم نجد مقالاً مطابقاً. جرّب وصفاً آخر.
+                    </div>
+                  </div>
+                )
+              }
+              // bot-articles
+              return (
+                <div key={i} className="space-y-1.5">
+                  <div className="text-xs text-ink/60 px-1">
+                    وجدنا {m.articles.length} مقال{m.articles.length === 1 ? '' : ' مطابق'}:
+                  </div>
+                  {m.articles.map((r) => (
+                    <a
+                      key={r.url}
+                      href={r.url}
+                      onClick={() => setOpen(false)}
+                      className="block bg-cream-dark hover:bg-cream rounded-xl p-2.5 border border-ink/5 transition-colors"
+                    >
+                      <h4 className="font-display font-bold text-[13.5px] leading-snug line-clamp-2">
+                        {r.title}
+                      </h4>
+                      {r.excerpt && (
+                        <p className="text-xs text-ink/60 mt-1 line-clamp-2">{r.excerpt}</p>
+                      )}
+                    </a>
+                  ))}
+                </div>
+              )
+            })}
+
+            {loading && (
+              <div className="flex justify-start">
+                <div className="bg-cream-dark text-ink/60 rounded-2xl rounded-bl-md px-3.5 py-2 text-sm flex items-center gap-1.5">
+                  <span className="iram-chat-dot" />
+                  <span className="iram-chat-dot" style={{ animationDelay: '0.15s' }} />
+                  <span className="iram-chat-dot" style={{ animationDelay: '0.3s' }} />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="p-3 border-t border-ink/10 flex-shrink-0">
             <div className="flex gap-2">
               <input
                 ref={inputRef}
@@ -88,51 +221,19 @@ export function Chatbot() {
                 onChange={(e) => setQuestion(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && ask()}
                 disabled={loading}
-                placeholder="مثال: المقال عن مهرجان رهط الأخير"
-                className="flex-1 min-w-0 rounded border border-ink/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-gold disabled:opacity-50"
+                placeholder="مثال: من طوّر هذا الموقع؟"
+                className="flex-1 min-w-0 rounded-full border border-ink/20 px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-gold disabled:opacity-50"
               />
               <button
                 type="button"
                 onClick={ask}
                 disabled={loading || !question.trim()}
-                className="px-3 py-2 rounded bg-accent-gold text-navy font-bold text-sm disabled:opacity-50 hover:bg-accent-gold-dark transition-colors"
+                aria-label="إرسال"
+                className="w-10 h-10 flex-shrink-0 rounded-full bg-accent-gold text-navy font-bold disabled:opacity-50 hover:bg-accent-gold-dark transition-colors flex items-center justify-center"
               >
-                {loading ? '...' : 'بحث'}
+                ↑
               </button>
             </div>
-          </div>
-
-          <div className="max-h-[60vh] overflow-y-auto">
-            {error && <p className="p-4 text-sm text-red-600">{error}</p>}
-
-            {results && results.length === 0 && !loading && (
-              <p className="p-4 text-sm text-ink/60 text-center">لم نجد مقالاً مطابقاً.</p>
-            )}
-
-            {results && results.length > 0 && (
-              <ul className="divide-y divide-ink/10">
-                {results.map((r) => (
-                  <li key={r.url}>
-                    <a
-                      href={r.url}
-                      className="block p-3 hover:bg-ink/5 transition-colors"
-                      onClick={() => setOpen(false)}
-                    >
-                      <h4 className="font-display font-bold text-sm leading-snug line-clamp-2">{r.title}</h4>
-                      {r.excerpt && (
-                        <p className="text-xs text-ink/60 mt-1 line-clamp-2">{r.excerpt}</p>
-                      )}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            {!results && !error && !loading && (
-              <p className="p-4 text-xs text-ink/50 text-center">
-                مدعوم بالذكاء الاصطناعي — يفهم الوصف بلغة طبيعية.
-              </p>
-            )}
           </div>
         </div>
       )}
