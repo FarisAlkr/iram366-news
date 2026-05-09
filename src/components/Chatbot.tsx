@@ -16,8 +16,6 @@ type Message =
   | { kind: 'bot-articles'; articles: ArticleHit[] }
   | { kind: 'bot-empty' }
 
-const AI_ENABLED = process.env.NEXT_PUBLIC_CHATBOT_ENABLED === 'true'
-
 // Demo conversation shown on first open — gives the bot a personality and
 // shows visitors what they can ask. The "developer" question doubles as a
 // little easter-egg credit on the public site.
@@ -83,19 +81,9 @@ export function Chatbot() {
       return
     }
 
-    // 2) If AI is disabled, fall back to a polite stub
-    if (!AI_ENABLED) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          kind: 'bot-text',
-          text: 'البحث الذكي عن المقالات سيتوفّر قريباً 🤖. حالياً تستطيع تصفّح الأقسام من القائمة أعلاه.',
-        },
-      ])
-      return
-    }
-
-    // 3) AI search via /api/chat
+    // 2) Article search via /api/chat. The endpoint itself is the source
+    //    of truth — it 404s if the server-side feature flag is off, in
+    //    which case we show a polite "coming soon" stub.
     setLoading(true)
     try {
       const res = await fetch('/api/chat', {
@@ -103,6 +91,16 @@ export function Chatbot() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: q }),
       })
+      if (res.status === 404) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            kind: 'bot-text',
+            text: 'البحث الذكي عن المقالات سيتوفّر قريباً 🤖. حالياً تستطيع تصفّح الأقسام من القائمة أعلاه.',
+          },
+        ])
+        return
+      }
       if (!res.ok) {
         setMessages((prev) => [
           ...prev,
