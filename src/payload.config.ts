@@ -120,8 +120,20 @@ export default buildConfig({
     // pipeline from there.
     push: true,
     migrationDir: path.resolve(dirname, 'payload/migrations'),
+    // Production pool tuning: pg defaults to max=10, no timeouts. Under
+    // sustained load — or when one slow query holds a connection — that
+    // exhausts in seconds and the entire app blocks. Explicit values:
+    //   max: 30                    — headroom for concurrent requests
+    //   idleTimeoutMillis: 30s     — release idle conns so the pool self-heals
+    //   connectionTimeoutMillis    — fail fast when the pool is saturated
+    //   statement_timeout: 30s     — kill runaway queries instead of letting
+    //                                them tie up a connection forever
     pool: {
       connectionString: process.env.DATABASE_URL || '',
+      max: 30,
+      idleTimeoutMillis: 30_000,
+      connectionTimeoutMillis: 10_000,
+      statement_timeout: 30_000,
     },
   }),
   plugins: [

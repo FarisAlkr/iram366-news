@@ -69,11 +69,14 @@ services:
     expose:
       - "3000"
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/api/users"]
+      # /api/health is a DB-free liveness probe. Using /api/users (which
+      # hits Postgres) caused the healthcheck to hang along with the rest
+      # of the app when the pool was exhausted — see deploy/RUNBOOK.md.
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/api/health"]
       interval: 30s
-      timeout: 5s
+      timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 60s
     logging:
       driver: json-file
       options:
@@ -102,6 +105,25 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  autoheal:
+    # Watches every container with a Docker healthcheck and automatically
+    # restarts any that go "unhealthy". Without this, an unhealthy app
+    # stays broken until a human notices — the May 2026 outage is the
+    # case study. AUTOHEAL_CONTAINER_LABEL=all = watch every container.
+    image: willfarrell/autoheal:latest
+    restart: unless-stopped
+    environment:
+      AUTOHEAL_CONTAINER_LABEL: all
+      AUTOHEAL_INTERVAL: 30
+      AUTOHEAL_START_PERIOD: 60
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
 
 volumes:
   postgres_data:
