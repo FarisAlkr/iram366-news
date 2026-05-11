@@ -210,7 +210,6 @@ export default async function HomePage() {
         footerText={siteSettings.footerText}
         socialLinks={siteSettings.socialLinks}
         categories={categories.map((c) => ({ name: c.name, slug: c.slug }))}
-        enableFooterCamel={siteSettings.signatureUi?.enableFooterCamel !== false}
       />
     </>
   )

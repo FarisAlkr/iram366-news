@@ -1,18 +1,13 @@
 import Link from 'next/link'
 
 import type { Category, SiteSettings } from '@/types/payload'
-import FooterCamelMount from './FooterCamelMount'
 import { SocialIcon } from './SocialIcon'
-
-const camelEnvOn = process.env.NEXT_PUBLIC_FEATURE_FOOTER_CAMEL !== 'false'
 
 interface FooterProps {
   siteName: string
   footerText?: string | null
   socialLinks?: SiteSettings['socialLinks']
   categories: Pick<Category, 'name' | 'slug'>[]
-  /** Runtime kill from `/admin → site-settings → لمسات بصرية`. */
-  enableFooterCamel?: boolean
 }
 
 interface SocialLink {
@@ -33,20 +28,12 @@ function buildSocialLinks(links?: SiteSettings['socialLinks']): SocialLink[] {
   return out
 }
 
-export function Footer({
-  siteName,
-  footerText,
-  socialLinks,
-  categories,
-  enableFooterCamel = true,
-}: FooterProps) {
+export function Footer({ siteName, footerText, socialLinks, categories }: FooterProps) {
   const social = buildSocialLinks(socialLinks)
   const email = socialLinks?.email
-  const showCamel = camelEnvOn && enableFooterCamel
 
   return (
-    <footer className="relative mt-12 overflow-hidden bg-navy text-white/90">
-      {showCamel && <FooterCamelMount />}
+    <footer className="mt-12 bg-navy text-white/90">
       <div className="container-news py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           <div>
