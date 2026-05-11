@@ -5,8 +5,10 @@ import '../globals.css'
 
 import { BackToHomeFallback } from '@/components/BackToHomeFallback'
 import { Chatbot } from '@/components/Chatbot'
+import CursorInkMount from '@/components/CursorInkMount'
 import { ScrollProgress } from '@/components/ScrollProgress'
 import { SplashScreen } from '@/components/SplashScreen'
+import { getSiteSettings } from '@/lib/queries'
 
 const ibmPlex = IBM_Plex_Sans_Arabic({
   subsets: ['arabic'],
@@ -56,7 +58,16 @@ export const viewport: Viewport = {
 
 const CF_ANALYTICS_TOKEN = process.env.NEXT_PUBLIC_CF_ANALYTICS_TOKEN
 
-export default function FrontendLayout({ children }: { children: React.ReactNode }) {
+// Env flag is the hard kill-switch (build-time). Admin toggle is the runtime
+// control. Both must be enabled for the effect to render. Env defaults to
+// enabled — only `=== 'false'` disables.
+const cursorInkEnvOn = process.env.NEXT_PUBLIC_FEATURE_CURSOR_INK !== 'false'
+
+export default async function FrontendLayout({ children }: { children: React.ReactNode }) {
+  const siteSettings = await getSiteSettings()
+  const cursorInkAdminOn = siteSettings.signatureUi?.enableCursorInk !== false
+  const showCursorInk = cursorInkEnvOn && cursorInkAdminOn
+
   return (
     <html lang="ar" dir="rtl" className={`${ibmPlex.variable} ${notoKufi.variable}`}>
       <body className="bg-cream font-body text-ink antialiased">
@@ -75,6 +86,7 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
             data-cf-beacon={JSON.stringify({ token: CF_ANALYTICS_TOKEN })}
           />
         )}
+        {showCursorInk && <CursorInkMount />}
       </body>
     </html>
   )

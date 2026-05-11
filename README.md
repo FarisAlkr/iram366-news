@@ -195,6 +195,41 @@ Backups run nightly at 03:15 UTC via cron, dumping Postgres → Cloudflare R2 wi
 
 ---
 
+## Signature UI
+
+Two desktop-only decorative effects ship with the site:
+
+| Effect                 | What it is                                                                                                 | File                             |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| Calligraphy ink cursor | Canvas-based ink trail that follows the cursor; speed-modulated width; dims automatically over body text.  | `src/components/CursorInk.tsx`   |
+| Footer-walking camel   | Inline SVG camel that paces across the footer in a real camel "pace" gait; head tracks the cursor at rest. | `src/components/FooterCamel.tsx` |
+
+Both effects are **never rendered** when:
+
+- The device reports `prefers-reduced-motion: reduce`
+- The pointer is coarse (touch)
+- The build-time env flag is `false` (component never mounts)
+- The runtime admin toggle is off
+
+### Toggling
+
+Two layers of control:
+
+1. **Build-time** (hard kill — strips at compile, no JS shipped):
+   ```bash
+   NEXT_PUBLIC_FEATURE_CURSOR_INK=false
+   NEXT_PUBLIC_FEATURE_FOOTER_CAMEL=false
+   ```
+2. **Runtime** (admin UI — flip in 5 seconds with no redeploy): `/admin → إعدادات الموقع → لمسات بصرية`. Useful during major-event coverage or mourning periods. Changes propagate on the next page request via a `revalidatePath('/', 'layout')` hook on the global.
+
+### Asset attribution
+
+The camel is an inline SVG (no third-party asset). Hand-drawn bezier paths, animated via GSAP timelines. No Lottie file is bundled — LottieFiles blocks scripted download (Cloudflare 403) and a Lottie-Simple-License asset pre-handoff is harder to audit than an in-repo SVG.
+
+The ink-cursor effect uses [GSAP](https://gsap.com/) for its `gsap.ticker` render loop (synchronized with the camel's animation heartbeat).
+
+---
+
 ## What's intentionally not in this repo
 
 - A staging environment compose file — adapt `docker-compose.yml` with a different domain.

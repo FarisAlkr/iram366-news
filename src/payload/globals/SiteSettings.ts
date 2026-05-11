@@ -1,4 +1,5 @@
 import type { GlobalConfig } from 'payload'
+import { revalidatePath } from 'next/cache'
 
 import { ArticleStatus, HeroMode } from '../../domain/enums.ts'
 
@@ -12,6 +13,18 @@ export const SiteSettings: GlobalConfig = {
   access: {
     read: () => true,
     update: ({ req: { user } }) => user?.role === 'admin',
+  },
+  hooks: {
+    afterChange: [
+      // Any edit in /admin → site-settings should be reflected on the public
+      // site on the next request. The frontend root layout reads this global
+      // for the cursor-ink toggle and every page reads it for the camel
+      // toggle, so the cheapest correct thing is to drop the whole frontend
+      // tree's cache. The next request rebuilds it.
+      async () => {
+        revalidatePath('/', 'layout')
+      },
+    ],
   },
   fields: [
     {
@@ -241,6 +254,36 @@ export const SiteSettings: GlobalConfig = {
         description: 'نص حقوق النشر والمعلومات التي تظهر أسفل كل صفحة.',
         placeholder: 'جميع الحقوق محفوظة © إرم 366 الإخبارية',
       },
+    },
+    {
+      name: 'signatureUi',
+      type: 'group',
+      label: 'لمسات بصرية',
+      admin: {
+        description:
+          'تأثيرات بصرية إضافية على الموقع. يمكن إيقاف أيٍّ منها فوراً دون نشر جديد عند الحاجة (مثلاً في فترات الحداد أو الأحداث الجسيمة).',
+      },
+      fields: [
+        {
+          name: 'enableCursorInk',
+          type: 'checkbox',
+          defaultValue: true,
+          label: 'إظهار خطّ الحبر العربي للفأرة',
+          admin: {
+            description:
+              'يرسم خطّاً ذهبياً خفيفاً يتبع الفأرة على أجهزة سطح المكتب. يختفي تلقائياً فوق النصوص.',
+          },
+        },
+        {
+          name: 'enableFooterCamel',
+          type: 'checkbox',
+          defaultValue: true,
+          label: 'إظهار الجمل في الذيل',
+          admin: {
+            description: 'يمكن إيقافه مؤقتاً في فترات الأحداث الجسيمة أو الحداد.',
+          },
+        },
+      ],
     },
   ],
 }

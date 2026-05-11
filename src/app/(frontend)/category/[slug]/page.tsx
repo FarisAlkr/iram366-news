@@ -105,6 +105,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
         footerText={siteSettings.footerText}
         socialLinks={siteSettings.socialLinks}
         categories={categories.map((c) => ({ name: c.name, slug: c.slug }))}
+        enableFooterCamel={siteSettings.signatureUi?.enableFooterCamel !== false}
       />
     </>
   )
