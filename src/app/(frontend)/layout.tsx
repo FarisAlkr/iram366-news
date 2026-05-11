@@ -1,18 +1,14 @@
 import type { Metadata, Viewport } from 'next'
 import React from 'react'
-import dynamic from 'next/dynamic'
 import { IBM_Plex_Sans_Arabic, Noto_Kufi_Arabic } from 'next/font/google'
 import '../globals.css'
 
 import { BackToHomeFallback } from '@/components/BackToHomeFallback'
 import { Chatbot } from '@/components/Chatbot'
+import CursorInkMount from '@/components/CursorInkMount'
 import { ScrollProgress } from '@/components/ScrollProgress'
 import { SplashScreen } from '@/components/SplashScreen'
 import { getSiteSettings } from '@/lib/queries'
-
-// Signature UI — lazy, client-only. ssr:false keeps them out of the initial
-// HTML and the server bundle, so they don't block the critical path.
-const CursorInk = dynamic(() => import('@/components/CursorInk'), { ssr: false })
 
 const ibmPlex = IBM_Plex_Sans_Arabic({
   subsets: ['arabic'],
@@ -90,7 +86,7 @@ export default async function FrontendLayout({ children }: { children: React.Rea
             data-cf-beacon={JSON.stringify({ token: CF_ANALYTICS_TOKEN })}
           />
         )}
-        {showCursorInk && <CursorInk />}
+        {showCursorInk && <CursorInkMount />}
       </body>
     </html>
   )
