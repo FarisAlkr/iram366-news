@@ -41,8 +41,7 @@ export const SlugUrlPreview: React.FC = () => {
     if (!VALID_SLUG_RE.test(value)) {
       setConflict({
         state: 'invalid',
-        reason:
-          'الرابط يجب أن يتكون من أحرف لاتينية صغيرة وأرقام وشرطات فقط (لا مسافات)',
+        reason: 'الرابط يجب أن يتكون من أحرف لاتينية صغيرة وأرقام وشرطات فقط (لا مسافات)',
       })
       return
     }
@@ -100,11 +99,7 @@ const SlugStatus: React.FC<{ conflict: ConflictState }> = ({ conflict }) => {
     case 'checking':
       return <p className="iram-slug-status iram-slug-status--checking">يتحقق من توفر الرابط...</p>
     case 'available':
-      return (
-        <p className="iram-slug-status iram-slug-status--ok">
-          ✓ الرابط متاح وجاهز للاستخدام
-        </p>
-      )
+      return <p className="iram-slug-status iram-slug-status--ok">✓ الرابط متاح وجاهز للاستخدام</p>
     case 'taken':
       return (
         <p className="iram-slug-status iram-slug-status--bad">

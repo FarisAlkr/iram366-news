@@ -23,8 +23,7 @@ export const Users: CollectionConfig = {
   labels: { singular: 'مستخدم', plural: 'المستخدمون' },
   admin: {
     useAsTitle: 'name',
-    description:
-      'حسابات المحررين والكتّاب. المدير وحده يمكنه إنشاء حسابات جديدة وتعيين الأدوار.',
+    description: 'حسابات المحررين والكتّاب. المدير وحده يمكنه إنشاء حسابات جديدة وتعيين الأدوار.',
   },
   fields: [
     {

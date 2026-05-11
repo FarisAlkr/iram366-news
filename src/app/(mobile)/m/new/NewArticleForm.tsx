@@ -157,19 +157,18 @@ export function NewArticleForm({ categories }: Props) {
           </select>
         </Field>
 
-        <Field label="الصورة الرئيسية" htmlFor="image" error={fieldError('image')} help="اختياري · حتى ٣٠ ميغابايت · أي صيغة (JPEG / PNG / WebP / SVG …)">
+        <Field
+          label="الصورة الرئيسية"
+          htmlFor="image"
+          error={fieldError('image')}
+          help="اختياري · حتى ٣٠ ميغابايت · أي صيغة (JPEG / PNG / WebP / SVG …)"
+        >
           <label className="m-file" htmlFor="image">
             <span aria-hidden>🖼️</span>
             <span className="m-file__text">
               {imageInfo ? 'تغيير الصورة' : 'اختر صورة من معرض الصور أو الكاميرا'}
             </span>
-            <input
-              id="image"
-              name="image"
-              type="file"
-              accept="image/*"
-              onChange={onPick}
-            />
+            <input id="image" name="image" type="file" accept="image/*" onChange={onPick} />
           </label>
           {imagePreview && (
             <div className="m-file__preview">
@@ -239,7 +238,7 @@ export function NewArticleForm({ categories }: Props) {
               role="radio"
               aria-checked={status === 'draft'}
               onClick={() => setStatus('draft')}
-              className={`m-toggle__btn${status === 'draft' ? ' m-toggle__btn--active' : ''}`}
+              className={`m-toggle__btn${status === 'draft' ? 'm-toggle__btn--active' : ''}`}
             >
               💾 مسودة
             </button>
@@ -248,7 +247,7 @@ export function NewArticleForm({ categories }: Props) {
               role="radio"
               aria-checked={status === 'published'}
               onClick={() => setStatus('published')}
-              className={`m-toggle__btn${status === 'published' ? ' m-toggle__btn--active' : ''}`}
+              className={`m-toggle__btn${status === 'published' ? 'm-toggle__btn--active' : ''}`}
             >
               🚀 نشر فوراً
             </button>
@@ -276,9 +275,11 @@ export function NewArticleForm({ categories }: Props) {
                   aria-checked={checked}
                   disabled={disabled}
                   onClick={() => !disabled && setPlacement(p.value)}
-                  className={`m-placement__btn${checked ? ' m-placement__btn--active' : ''}`}
+                  className={`m-placement__btn${checked ? 'm-placement__btn--active' : ''}`}
                 >
-                  <span className="m-placement__emoji" aria-hidden>{p.emoji}</span>
+                  <span className="m-placement__emoji" aria-hidden>
+                    {p.emoji}
+                  </span>
                   <span className="m-placement__label">{p.label}</span>
                   <span className="m-placement__hint">{p.hint}</span>
                 </button>
@@ -328,7 +329,7 @@ function Field({
   children: React.ReactNode
 }) {
   return (
-    <div className={`m-field${error ? ' m-field--error' : ''}`}>
+    <div className={`m-field${error ? 'm-field--error' : ''}`}>
       <label className="m-label" htmlFor={htmlFor}>
         {label}
       </label>

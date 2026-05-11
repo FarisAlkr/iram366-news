@@ -29,8 +29,7 @@ export const Subscribers: CollectionConfig = {
       admin: {
         position: 'sidebar',
         date: { pickerAppearance: 'dayAndTime' },
-        description:
-          'يُضبط تلقائياً عندما ينقر المشترك على رابط التأكيد في البريد الترحيبي.',
+        description: 'يُضبط تلقائياً عندما ينقر المشترك على رابط التأكيد في البريد الترحيبي.',
       },
     },
     {

@@ -47,8 +47,7 @@ export const ScrollProgress: React.FC<ScrollProgressProps> = ({ contentSelector 
     const findContainer = (): HTMLElement | null => {
       if (contentSelector) return document.querySelector<HTMLElement>(contentSelector)
       return (
-        document.querySelector<HTMLElement>('.prose') ??
-        document.querySelector<HTMLElement>('main')
+        document.querySelector<HTMLElement>('.prose') ?? document.querySelector<HTMLElement>('main')
       )
     }
 
@@ -61,9 +60,9 @@ export const ScrollProgress: React.FC<ScrollProgressProps> = ({ contentSelector 
 
       // Collect H2/H3 inside the container, but skip those nested inside
       // article cards or links — those are previews, not navigable sections.
-      const all = Array.from(
-        container.querySelectorAll<HTMLHeadingElement>('h2, h3'),
-      ).filter((h) => !h.closest('article, a, .article-card'))
+      const all = Array.from(container.querySelectorAll<HTMLHeadingElement>('h2, h3')).filter(
+        (h) => !h.closest('article, a, .article-card'),
+      )
 
       if (all.length === 0) {
         setCheckpoints([])
@@ -147,10 +146,7 @@ export const ScrollProgress: React.FC<ScrollProgressProps> = ({ contentSelector 
   return (
     <div className="scroll-progress" aria-hidden>
       <div className="scroll-progress__rail">
-        <div
-          className="scroll-progress__fill"
-          style={{ height: `${progress * 100}%` }}
-        />
+        <div className="scroll-progress__fill" style={{ height: `${progress * 100}%` }} />
         {checkpoints.map((cp) => (
           <button
             key={cp.id}

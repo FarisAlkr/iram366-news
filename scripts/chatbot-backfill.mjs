@@ -21,13 +21,20 @@ import pg from 'pg'
 const { Pool } = pg
 
 const PROVIDER = (process.env.EMBEDDINGS_PROVIDER || 'openai').toLowerCase()
-const MODEL = process.env.EMBEDDINGS_MODEL || (PROVIDER === 'voyage' ? 'voyage-3' : 'text-embedding-3-small')
+const MODEL =
+  process.env.EMBEDDINGS_MODEL || (PROVIDER === 'voyage' ? 'voyage-3' : 'text-embedding-3-small')
 const API_KEY = PROVIDER === 'voyage' ? process.env.VOYAGE_API_KEY : process.env.OPENAI_API_KEY
 const MAX_INPUT_CHARS = 8000
 const SLEEP_MS = 500
 
-if (!process.env.DATABASE_URL) { console.error('DATABASE_URL not set'); process.exit(1) }
-if (!API_KEY) { console.error(`${PROVIDER.toUpperCase()}_API_KEY not set`); process.exit(1) }
+if (!process.env.DATABASE_URL) {
+  console.error('DATABASE_URL not set')
+  process.exit(1)
+}
+if (!API_KEY) {
+  console.error(`${PROVIDER.toUpperCase()}_API_KEY not set`)
+  process.exit(1)
+}
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL })
 
@@ -84,11 +91,17 @@ try {
   `)
   console.log(`→ ${articles.length} published articles to embed`)
 
-  let ok = 0, fail = 0
+  let ok = 0,
+    fail = 0
   for (let i = 0; i < articles.length; i++) {
     const a = articles[i]
-    const text = [a.title || '', a.excerpt || '', lexicalToText(a.body)].filter(Boolean).join('\n\n')
-    if (!text.trim()) { console.log(`  [${i + 1}/${articles.length}] #${a.id} empty — skip`); continue }
+    const text = [a.title || '', a.excerpt || '', lexicalToText(a.body)]
+      .filter(Boolean)
+      .join('\n\n')
+    if (!text.trim()) {
+      console.log(`  [${i + 1}/${articles.length}] #${a.id} empty — skip`)
+      continue
+    }
     try {
       const vec = await embed(text)
       await pool.query(

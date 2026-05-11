@@ -1,15 +1,15 @@
 export function SkeletonCard() {
   return (
-    <div className="bg-white rounded-lg overflow-hidden shadow-[var(--shadow-card)]">
-      <div className="aspect-[16/9] skeleton" />
-      <div className="p-4 space-y-3">
-        <div className="h-3 w-16 skeleton" />
-        <div className="h-5 w-full skeleton" />
-        <div className="h-5 w-3/4 skeleton" />
-        <div className="h-3 w-full skeleton" />
+    <div className="overflow-hidden rounded-lg bg-white shadow-[var(--shadow-card)]">
+      <div className="skeleton aspect-[16/9]" />
+      <div className="space-y-3 p-4">
+        <div className="skeleton h-3 w-16" />
+        <div className="skeleton h-5 w-full" />
+        <div className="skeleton h-5 w-3/4" />
+        <div className="skeleton h-3 w-full" />
         <div className="flex justify-between">
-          <div className="h-3 w-20 skeleton" />
-          <div className="h-3 w-16 skeleton" />
+          <div className="skeleton h-3 w-20" />
+          <div className="skeleton h-3 w-16" />
         </div>
       </div>
     </div>
@@ -19,11 +19,11 @@ export function SkeletonCard() {
 export function SkeletonHero() {
   return (
     <div className="container-news py-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 aspect-[2/1] skeleton rounded-lg" />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="skeleton aspect-[2/1] rounded-lg lg:col-span-2" />
         <div className="flex flex-col gap-4">
-          <div className="flex-1 min-h-[180px] skeleton rounded-lg" />
-          <div className="flex-1 min-h-[180px] skeleton rounded-lg" />
+          <div className="skeleton min-h-[180px] flex-1 rounded-lg" />
+          <div className="skeleton min-h-[180px] flex-1 rounded-lg" />
         </div>
       </div>
     </div>

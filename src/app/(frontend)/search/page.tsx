@@ -75,8 +75,8 @@ export default async function SearchPage({ searchParams }: PageProps) {
       />
 
       <main className="container-news py-8">
-        <div className="max-w-2xl mb-8">
-          <h1 className="font-display font-extrabold text-[var(--font-size-h1)] mb-4">بحث</h1>
+        <div className="mb-8 max-w-2xl">
+          <h1 className="mb-4 font-display font-extrabold text-[var(--font-size-h1)]">بحث</h1>
           <form action="/search" method="GET">
             <input
               type="text"
@@ -84,7 +84,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
               defaultValue={trimmedQuery}
               maxLength={MAX_QUERY_LEN}
               placeholder="ابحث في الأخبار..."
-              className="w-full text-lg bg-white border border-[var(--color-border)] px-5 py-3 rounded-lg outline-none focus:border-accent-red transition-colors duration-150 font-body"
+              className="w-full rounded-lg border border-[var(--color-border)] bg-white px-5 py-3 font-body text-lg outline-none transition-colors duration-150 focus:border-accent-red"
               dir="rtl"
               aria-label="بحث"
             />
@@ -93,7 +93,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
 
         {trimmedQuery ? (
           articles.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {articles.map((article) => (
                 <ArticleCard key={article.id} article={article} />
               ))}
@@ -102,7 +102,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
             <EmptyState query={trimmedQuery} categories={categories} />
           )
         ) : (
-          <p className="text-center py-16 text-xl text-[var(--color-ink-muted)]">
+          <p className="py-16 text-center text-xl text-[var(--color-ink-muted)]">
             أدخل كلمات البحث للعثور على المقالات
           </p>
         )}
@@ -126,19 +126,17 @@ function EmptyState({
   categories: Array<{ slug: string; name: string }>
 }) {
   return (
-    <div className="text-center py-16">
-      <p className="text-xl text-[var(--color-ink-muted)] mb-4">
+    <div className="py-16 text-center">
+      <p className="mb-4 text-xl text-[var(--color-ink-muted)]">
         لم يتم العثور على نتائج لـ &quot;{query}&quot;
       </p>
-      <p className="text-[var(--color-ink-muted)] mb-6">
-        حاول البحث بكلمات مختلفة أو تصفح الأقسام
-      </p>
+      <p className="mb-6 text-[var(--color-ink-muted)]">حاول البحث بكلمات مختلفة أو تصفح الأقسام</p>
       <div className="flex flex-wrap justify-center gap-2">
         {categories.map((cat) => (
           <Link
             key={cat.slug}
             href={`/category/${cat.slug}`}
-            className="px-4 py-2 bg-white rounded-full text-sm font-medium shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] transition-all duration-150"
+            className="rounded-full bg-white px-4 py-2 text-sm font-medium shadow-[var(--shadow-card)] transition-all duration-150 hover:shadow-[var(--shadow-card-hover)]"
           >
             {cat.name}
           </Link>

@@ -66,31 +66,20 @@ export default async function StatsView({ initPageResult }: AdminViewServerProps
     )
   }
 
-  const [
-    counts,
-    top,
-    authors,
-    cats,
-    daily,
-    status,
-    views,
-    ttp,
-    dow,
-    tags,
-    quality,
-  ] = await Promise.all([
-    getArticleCounts(),
-    getTopArticles(10),
-    getAuthorLeaderboard(10),
-    getCategoryDistribution(),
-    getDailyPublishCounts(30),
-    getStatusBreakdown(),
-    getViewStats(),
-    getTimeToPublish(),
-    getDowActivity(12),
-    getTagFrequencies(30),
-    getDataQuality(),
-  ])
+  const [counts, top, authors, cats, daily, status, views, ttp, dow, tags, quality] =
+    await Promise.all([
+      getArticleCounts(),
+      getTopArticles(10),
+      getAuthorLeaderboard(10),
+      getCategoryDistribution(),
+      getDailyPublishCounts(30),
+      getStatusBreakdown(),
+      getViewStats(),
+      getTimeToPublish(),
+      getDowActivity(12),
+      getTagFrequencies(30),
+      getDataQuality(),
+    ])
 
   const cf = readCloudflareEnv()
   const renderedAt = new Date()
@@ -111,11 +100,7 @@ export default async function StatsView({ initPageResult }: AdminViewServerProps
       {/* === SECTION 1: SNAPSHOT — KPIs with trends === */}
       <Section title="📊 لمحة سريعة" subtitle="الأرقام الأهم مع اتجاه التغيّر مقابل الفترة السابقة">
         <div className="iram-stats__kpis">
-          <Kpi
-            emoji="📅"
-            label="منشور اليوم"
-            value={counts.publishedToday}
-          />
+          <Kpi emoji="📅" label="منشور اليوم" value={counts.publishedToday} />
           <Kpi
             emoji="🗓️"
             label="هذا الأسبوع"
@@ -129,18 +114,8 @@ export default async function StatsView({ initPageResult }: AdminViewServerProps
             value={counts.publishedThisMonth}
             spark={daily.slice(-30).map((d) => d.count)}
           />
-          <Kpi
-            emoji="📰"
-            label="إجمالي المنشور"
-            value={counts.publishedTotal}
-            tone="accent"
-          />
-          <Kpi
-            emoji="👁️"
-            label="إجمالي المشاهدات"
-            value={counts.totalViews}
-            tone="accent"
-          />
+          <Kpi emoji="📰" label="إجمالي المنشور" value={counts.publishedTotal} tone="accent" />
+          <Kpi emoji="👁️" label="إجمالي المشاهدات" value={counts.totalViews} tone="accent" />
           <Kpi
             emoji="⏳"
             label="قيد المراجعة"
@@ -153,7 +128,10 @@ export default async function StatsView({ initPageResult }: AdminViewServerProps
       </Section>
 
       {/* === SECTION 2: AUDIENCE (Cloudflare placeholder) === */}
-      <Section title="🌍 الجمهور والزيارات (Cloudflare)" subtitle="عدد الزوار الفعليين عبر Cloudflare Analytics">
+      <Section
+        title="🌍 الجمهور والزيارات (Cloudflare)"
+        subtitle="عدد الزوار الفعليين عبر Cloudflare Analytics"
+      >
         {cf.hasToken && cf.hasAccount && cf.hasSiteTag ? (
           <CloudflareReadyPanel />
         ) : (
@@ -170,12 +148,7 @@ export default async function StatsView({ initPageResult }: AdminViewServerProps
             value={fmt(views.mean)}
             sub={`الوسيط: ${fmt(views.median)}`}
           />
-          <MiniMetric
-            emoji="🔥"
-            label="أعلى مقال مشاهدةً"
-            value={fmt(views.max)}
-            sub="مشاهدات"
-          />
+          <MiniMetric emoji="🔥" label="أعلى مقال مشاهدةً" value={fmt(views.max)} sub="مشاهدات" />
           <MiniMetric
             emoji="⏱️"
             label="متوسط وقت النشر"
@@ -298,7 +271,9 @@ function Kpi({ emoji, label, value, tone, trend, trendLabel, spark }: KpiProps) 
   return (
     <div className={`iram-kpi${tone ? ` iram-kpi--${tone}` : ''}`}>
       <div className="iram-kpi__top">
-        <span className="iram-kpi__icon" aria-hidden>{emoji}</span>
+        <span className="iram-kpi__icon" aria-hidden>
+          {emoji}
+        </span>
         {trend != null && <TrendBadge value={trend} label={trendLabel} />}
       </div>
       <span className="iram-kpi__label">{label}</span>
@@ -327,11 +302,7 @@ function KpiSpark({ data }: { data: number[] }) {
   return (
     <div className="iram-kpi__spark" aria-hidden>
       {data.map((d, i) => (
-        <span
-          key={i}
-          className="iram-kpi__spark-bar"
-          style={{ height: `${(d / max) * 100}%` }}
-        />
+        <span key={i} className="iram-kpi__spark-bar" style={{ height: `${(d / max) * 100}%` }} />
       ))}
     </div>
   )
@@ -350,7 +321,9 @@ function MiniMetric({
 }) {
   return (
     <div className="iram-mini">
-      <span className="iram-mini__emoji" aria-hidden>{emoji}</span>
+      <span className="iram-mini__emoji" aria-hidden>
+        {emoji}
+      </span>
       <div className="iram-mini__body">
         <span className="iram-mini__label">{label}</span>
         <span className="iram-mini__value">{value}</span>
@@ -451,14 +424,7 @@ function StatusDonut({ status }: { status: StatusBreakdown }) {
   return (
     <div className="iram-donut">
       <svg viewBox="0 0 160 160" className="iram-donut__svg" aria-hidden>
-        <circle
-          cx="80"
-          cy="80"
-          r={RADIUS}
-          fill="none"
-          stroke="#f0eee6"
-          strokeWidth={STROKE}
-        />
+        <circle cx="80" cy="80" r={RADIUS} fill="none" stroke="#f0eee6" strokeWidth={STROKE} />
         {parts.map((p) => (
           <circle
             key={p.key}
@@ -484,13 +450,7 @@ function StatusDonut({ status }: { status: StatusBreakdown }) {
         >
           {fmt(total)}
         </text>
-        <text
-          x="80"
-          y="96"
-          textAnchor="middle"
-          fontSize="11"
-          fill="#6b7280"
-        >
+        <text x="80" y="96" textAnchor="middle" fontSize="11" fill="#6b7280">
           المجموع
         </text>
       </svg>
@@ -515,11 +475,7 @@ function DailySpark({ items }: { items: DailyPublishCount[] }) {
     <div className="iram-stats__spark">
       <div className="iram-stats__spark-track">
         {items.map((d) => (
-          <div
-            key={d.day}
-            className="iram-stats__spark-col"
-            title={`${d.day}: ${d.count} مقال`}
-          >
+          <div key={d.day} className="iram-stats__spark-col" title={`${d.day}: ${d.count} مقال`}>
             <div
               className="iram-stats__spark-bar"
               style={{ height: `${(d.count / max) * 100}%` }}
@@ -562,10 +518,7 @@ function DowHeatmap({ items }: { items: DowActivity[] }) {
                   key={wk}
                   className="iram-heatmap__cell"
                   style={{
-                    background:
-                      v === 0
-                        ? '#f0eee6'
-                        : `rgba(200, 168, 78, ${intensity.toFixed(2)})`,
+                    background: v === 0 ? '#f0eee6' : `rgba(200, 168, 78, ${intensity.toFixed(2)})`,
                   }}
                   title={`${wk} — ${dowLabels[dow]}: ${v} مقال`}
                 />
@@ -608,15 +561,28 @@ function QualityList({ items }: { items: DataQuality }) {
     return <p className="iram-stats__empty">لا توجد مقالات منشورة لتقييم جودتها.</p>
   }
   const rows = [
-    { label: 'بدون صورة رئيسية', value: items.noImage, fix: 'أضف صورة لكل مقال — مهم للـ SEO وللمشاركات.' },
-    { label: 'بدون تصنيف', value: items.noCategory, fix: 'صنّف كل مقال — يساعد في العرض والتصفّح.' },
-    { label: 'بدون وسوم', value: items.noTags, fix: 'أضف وسوماً تصف المحتوى — تحسّن البحث والاكتشاف.' },
+    {
+      label: 'بدون صورة رئيسية',
+      value: items.noImage,
+      fix: 'أضف صورة لكل مقال — مهم للـ SEO وللمشاركات.',
+    },
+    {
+      label: 'بدون تصنيف',
+      value: items.noCategory,
+      fix: 'صنّف كل مقال — يساعد في العرض والتصفّح.',
+    },
+    {
+      label: 'بدون وسوم',
+      value: items.noTags,
+      fix: 'أضف وسوماً تصف المحتوى — تحسّن البحث والاكتشاف.',
+    },
     { label: 'بدون مقتطف', value: items.noExcerpt, fix: 'اكتب مقتطفاً (٢-٣ أسطر) لكل مقال.' },
   ]
   return (
     <ul className="iram-quality">
       {rows.map((r) => {
-        const pct = items.totalPublished > 0 ? Math.round((r.value / items.totalPublished) * 100) : 0
+        const pct =
+          items.totalPublished > 0 ? Math.round((r.value / items.totalPublished) * 100) : 0
         const tone = r.value === 0 ? 'good' : pct < 10 ? 'warn' : 'bad'
         return (
           <li key={r.label} className={`iram-quality__row iram-quality__row--${tone}`}>
@@ -660,13 +626,12 @@ function CloudflareReadyPanel() {
   return (
     <div className="iram-stats__cf iram-stats__cf--connected">
       <p>
-        🟢 ربط Cloudflare Analytics مفعّل. سيُعرض هنا قريباً: عدد الزوار اليوم،
-        هذا الأسبوع، هذا الشهر، أكثر المقالات زيارة من Cloudflare، وتوزيع الدول
-        والأجهزة.
+        🟢 ربط Cloudflare Analytics مفعّل. سيُعرض هنا قريباً: عدد الزوار اليوم، هذا الأسبوع، هذا
+        الشهر، أكثر المقالات زيارة من Cloudflare، وتوزيع الدول والأجهزة.
       </p>
       <p className="iram-stats__cf-note">
-        تطبيق الاستعلامات الفعلية يحتاج خطوة برمجية أخيرة — أبلغ المطوّر بأنّ
-        المتغيّرات البيئية أصبحت متوفّرة.
+        تطبيق الاستعلامات الفعلية يحتاج خطوة برمجية أخيرة — أبلغ المطوّر بأنّ المتغيّرات البيئية
+        أصبحت متوفّرة.
       </p>
     </div>
   )
@@ -676,16 +641,22 @@ function CloudflarePending({ env }: { env: CloudflareEnv }) {
   return (
     <div className="iram-stats__cf">
       <p>
-        🔌 ربط Cloudflare Analytics غير مفعّل بعد. عند تفعيله ستظهر هنا أرقام
-        الزوار الفعليين (اليوم / هذا الأسبوع / هذا الشهر / الإجمالي) وأكثر
-        المقالات زيارة عبر Cloudflare.
+        🔌 ربط Cloudflare Analytics غير مفعّل بعد. عند تفعيله ستظهر هنا أرقام الزوار الفعليين (اليوم
+        / هذا الأسبوع / هذا الشهر / الإجمالي) وأكثر المقالات زيارة عبر Cloudflare.
       </p>
       <details className="iram-stats__cf-howto">
         <summary>خطوات التفعيل</summary>
         <ol>
           <li>
-            من <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank" rel="noopener noreferrer">Cloudflare → Profile → API Tokens</a>،
-            أنشئ Token جديد بصلاحية <code>Account Analytics: Read</code>.
+            من{' '}
+            <a
+              href="https://dash.cloudflare.com/profile/api-tokens"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Cloudflare → Profile → API Tokens
+            </a>
+            ، أنشئ Token جديد بصلاحية <code>Account Analytics: Read</code>.
           </li>
           <li>
             على VPS، أضِف هذه المتغيّرات إلى <code>/opt/iram366/.env</code>:

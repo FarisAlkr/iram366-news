@@ -20,8 +20,7 @@ export const SiteSettings: GlobalConfig = {
       defaultValue: 'إرم 366 الإخبارية',
       label: 'اسم الموقع',
       admin: {
-        description:
-          'الاسم الرسمي للموقع. يظهر في شريط المتصفح، في نتائج جوجل، وأسفل كل صفحة.',
+        description: 'الاسم الرسمي للموقع. يظهر في شريط المتصفح، في نتائج جوجل، وأسفل كل صفحة.',
       },
     },
     {
@@ -209,8 +208,7 @@ export const SiteSettings: GlobalConfig = {
           relationTo: 'articles',
           label: 'المقال الرئيسي (الكبير)',
           admin: {
-            description:
-              'المقال الذي يظهر في البطاقة الكبرى على اليمين في شريط الهيرو.',
+            description: 'المقال الذي يظهر في البطاقة الكبرى على اليمين في شريط الهيرو.',
             condition: (_, siblingData) => siblingData?.mode === HeroMode.Manual,
           },
           filterOptions: {

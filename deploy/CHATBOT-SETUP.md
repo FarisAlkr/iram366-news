@@ -12,9 +12,9 @@ similarity. **No LLM-generated answer text** — just article links.
 
 ## What this feature costs
 
-* **One-time embed of all existing articles**: ~$0.05 (negligible)
-* **Per query**: ~$0.000001 (one embedding call, no LLM call)
-* **Realistic monthly bill**: under $1/month even with thousands of queries
+- **One-time embed of all existing articles**: ~$0.05 (negligible)
+- **Per query**: ~$0.000001 (one embedding call, no LLM call)
+- **Realistic monthly bill**: under $1/month even with thousands of queries
 
 The cost is so low because we don't call a language model — only the embedding
 endpoint, which is ~3 orders of magnitude cheaper.
@@ -23,10 +23,10 @@ endpoint, which is ~3 orders of magnitude cheaper.
 
 ## Pick a provider
 
-| Provider | Model | Dimensions | Notes |
-|---|---|---|---|
-| **OpenAI** (default) | `text-embedding-3-small` | 1536 | Widely supported, good Arabic. Sign up at platform.openai.com. |
-| **Voyage AI** | `voyage-3` | 1024 | Anthropic-recommended. Sign up at voyageai.com. |
+| Provider             | Model                    | Dimensions | Notes                                                          |
+| -------------------- | ------------------------ | ---------- | -------------------------------------------------------------- |
+| **OpenAI** (default) | `text-embedding-3-small` | 1536       | Widely supported, good Arabic. Sign up at platform.openai.com. |
+| **Voyage AI**        | `voyage-3`               | 1024       | Anthropic-recommended. Sign up at voyageai.com.                |
 
 Switching providers later means dropping and re-creating the
 `article_embeddings` table (different vector dimensions). Pick one and stick
@@ -118,16 +118,16 @@ ssh iram "cd /opt/iram366 && docker compose exec -T app node scripts/chatbot-bac
 
 ## File map
 
-| File | Purpose |
-|---|---|
-| `src/lib/chatbot/config.ts` | Feature-flag + provider config |
-| `src/lib/chatbot/embeddings.ts` | OpenAI/Voyage embedding wrapper |
-| `src/lib/chatbot/db.ts` | Postgres pool for vector queries |
-| `src/lib/chatbot/search.ts` | Cosine-similarity vector search |
+| File                                 | Purpose                                   |
+| ------------------------------------ | ----------------------------------------- |
+| `src/lib/chatbot/config.ts`          | Feature-flag + provider config            |
+| `src/lib/chatbot/embeddings.ts`      | OpenAI/Voyage embedding wrapper           |
+| `src/lib/chatbot/db.ts`              | Postgres pool for vector queries          |
+| `src/lib/chatbot/search.ts`          | Cosine-similarity vector search           |
 | `src/payload/hooks/embed-article.ts` | After-change hook — auto-embed on publish |
-| `src/app/api/chat/route.ts` | `POST /api/chat` — public search endpoint |
-| `src/components/Chatbot.tsx` | Floating widget UI |
-| `scripts/chatbot-setup.mjs` | One-time pgvector + table setup |
-| `scripts/chatbot-backfill.mjs` | Bulk-embed existing articles |
+| `src/app/api/chat/route.ts`          | `POST /api/chat` — public search endpoint |
+| `src/components/Chatbot.tsx`         | Floating widget UI                        |
+| `scripts/chatbot-setup.mjs`          | One-time pgvector + table setup           |
+| `scripts/chatbot-backfill.mjs`       | Bulk-embed existing articles              |
 
 When the feature flag is off, all of these become no-ops — zero runtime impact.

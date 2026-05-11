@@ -17,8 +17,7 @@ export const WeatherTowns: GlobalConfig = {
       type: 'array',
       label: 'المدن',
       admin: {
-        description:
-          'كل صف يمثّل مدينة. الإحداثيات تُستخدم لاستعلام خدمة الطقس (Open-Meteo).',
+        description: 'كل صف يمثّل مدينة. الإحداثيات تُستخدم لاستعلام خدمة الطقس (Open-Meteo).',
         initCollapsed: true,
       },
       fields: [

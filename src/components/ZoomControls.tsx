@@ -52,12 +52,7 @@ export const ZoomControls: React.FC = () => {
   const isDefault = Math.abs(scale - DEFAULT_SCALE) < 0.001
 
   return (
-    <div
-      className="zoom-controls"
-      role="group"
-      aria-label="حجم النص"
-      dir="rtl"
-    >
+    <div className="zoom-controls" role="group" aria-label="حجم النص" dir="rtl">
       <span className="zoom-controls__label">حجم النص</span>
 
       <button

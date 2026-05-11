@@ -53,12 +53,7 @@ interface AdLite {
 function pickAdImageUrl(media: MediaLike | undefined | null): string | undefined {
   if (!media) return undefined
   if (media.mimeType === 'image/svg+xml') return media.url
-  return (
-    media.sizes?.full?.url ||
-    media.sizes?.hero?.url ||
-    media.sizes?.card?.url ||
-    media.url
-  )
+  return media.sizes?.full?.url || media.sizes?.hero?.url || media.sizes?.card?.url || media.url
 }
 
 /**

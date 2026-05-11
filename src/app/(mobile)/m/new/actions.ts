@@ -14,7 +14,10 @@ export interface CreateState {
 }
 
 function plainTextToLexical(text: string) {
-  const paragraphs = text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean)
+  const paragraphs = text
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean)
   return {
     root: {
       type: 'root',
@@ -30,7 +33,15 @@ function plainTextToLexical(text: string) {
             version: 1,
             direction: 'rtl' as const,
             children: [
-              { type: 'text', text: p, format: 0, style: '', mode: 'normal', detail: 0, version: 1 },
+              {
+                type: 'text',
+                text: p,
+                format: 0,
+                style: '',
+                mode: 'normal',
+                detail: 0,
+                version: 1,
+              },
             ],
           }))
         : [
@@ -69,13 +80,16 @@ function friendlyError(err: unknown): string {
   return `تعذّر النشر: ${msg.slice(0, 140)}`
 }
 
-export async function createArticleAction(_prev: CreateState, formData: FormData): Promise<CreateState> {
+export async function createArticleAction(
+  _prev: CreateState,
+  formData: FormData,
+): Promise<CreateState> {
   const title = String(formData.get('title') ?? '').trim()
   const excerpt = String(formData.get('excerpt') ?? '').trim()
   const bodyText = String(formData.get('body') ?? '').trim()
   const categoryId = String(formData.get('category') ?? '')
   const status = String(formData.get('status') ?? 'draft')
-  const placement = (String(formData.get('placement') ?? 'none')) as Placement
+  const placement = String(formData.get('placement') ?? 'none') as Placement
   const image = formData.get('image')
 
   const fieldErrors: CreateState['fieldErrors'] = {}
@@ -87,7 +101,11 @@ export async function createArticleAction(_prev: CreateState, formData: FormData
     return { error: 'يوجد حقول فارغة. راجع النموذج.', fieldErrors }
   }
 
-  const validStatuses = [ArticleStatus.Draft, ArticleStatus.Published, ArticleStatus.InReview] as string[]
+  const validStatuses = [
+    ArticleStatus.Draft,
+    ArticleStatus.Published,
+    ArticleStatus.InReview,
+  ] as string[]
   if (!validStatuses.includes(status)) {
     return { error: 'حالة المقال غير صالحة.' }
   }

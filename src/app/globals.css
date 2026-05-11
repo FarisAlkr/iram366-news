@@ -129,8 +129,12 @@
    visually the text flows left-to-right. This matches the RTL reading
    experience where new content arrives on the left edge. */
 @keyframes ticker-rtl {
-  0%   { transform: translateX(-50%); }
-  100% { transform: translateX(0%); }
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
 }
 
 .animate-ticker {
@@ -188,14 +192,16 @@
 }
 
 @media (min-width: 1024px) {
-  .scroll-progress { display: block; }
+  .scroll-progress {
+    display: block;
+  }
 }
 
 .scroll-progress__rail {
   position: relative;
   width: 2px;
   height: 100%;
-  background: rgba(10, 42, 47, 0.10);
+  background: rgba(10, 42, 47, 0.1);
   border-radius: 999px;
   margin-inline: auto;
 }
@@ -261,7 +267,9 @@
   text-overflow: ellipsis;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
   box-shadow: var(--shadow-card);
 }
 
@@ -280,7 +288,9 @@
   background: var(--color-cream-dark);
   overflow: hidden;
   position: relative;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
 
   &:hover {
     box-shadow: var(--shadow-card);
@@ -295,7 +305,9 @@
   color: inherit;
   position: relative;
 
-  &:hover { text-decoration: none; }
+  &:hover {
+    text-decoration: none;
+  }
 }
 
 .ad-slot__label {
@@ -358,7 +370,10 @@
 /* Placement-specific tweaks */
 .ad-slot--header-banner {
   margin-bottom: 16px;
-  .ad-slot__media img { aspect-ratio: 12 / 2; object-fit: cover; }
+  .ad-slot__media img {
+    aspect-ratio: 12 / 2;
+    object-fit: cover;
+  }
 }
 
 .ad-slot--between-articles {
@@ -383,7 +398,9 @@
 
 @media (max-width: 640px) {
   .ad-slot--header-banner {
-    .ad-slot__media img { aspect-ratio: 4 / 2; }
+    .ad-slot__media img {
+      aspect-ratio: 4 / 2;
+    }
   }
 }
 
@@ -395,7 +412,7 @@
   }
 
   /* Tap-friendly category bar pills (Header) */
-  nav[aria-label="الأقسام"] a {
+  nav[aria-label='الأقسام'] a {
     padding-block: 8px !important;
     font-size: 13px !important;
   }
@@ -540,14 +557,20 @@
   border-radius: 999px;
   font-size: 0.875rem;
   user-select: none;
-  box-shadow: 0 4px 16px rgba(10, 42, 47, 0.12), 0 2px 4px rgba(10, 42, 47, 0.06);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  box-shadow:
+    0 4px 16px rgba(10, 42, 47, 0.12),
+    0 2px 4px rgba(10, 42, 47, 0.06);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
   opacity: 0.9;
 
   &:hover {
     opacity: 1;
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(10, 42, 47, 0.18), 0 2px 4px rgba(10, 42, 47, 0.08);
+    box-shadow:
+      0 6px 20px rgba(10, 42, 47, 0.18),
+      0 2px 4px rgba(10, 42, 47, 0.08);
   }
 
   &__label {
@@ -571,7 +594,9 @@
     justify-content: center;
     gap: 2px;
     font-weight: 700;
-    transition: background 0.12s ease, color 0.12s ease;
+    transition:
+      background 0.12s ease,
+      color 0.12s ease;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 
     &:hover:not(:disabled) {
@@ -600,7 +625,9 @@
     font-size: 0.95rem;
     line-height: 1;
 
-    &--big { font-size: 1.15rem; }
+    &--big {
+      font-size: 1.15rem;
+    }
   }
 
   &__value {
@@ -682,7 +709,9 @@
     border-radius: 8px;
     overflow: hidden;
     box-shadow: var(--shadow-card);
-    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    transition:
+      transform var(--transition-fast),
+      box-shadow var(--transition-fast);
 
     &:hover,
     &:focus-visible {
@@ -761,8 +790,12 @@
     font-size: 28px;
     font-weight: 700;
 
-    &--prev { inset-inline-end: 16px; }
-    &--next { inset-inline-start: 16px; }
+    &--prev {
+      inset-inline-end: 16px;
+    }
+    &--next {
+      inset-inline-start: 16px;
+    }
   }
 
   &__figure {
@@ -812,8 +845,12 @@
 }
 
 @keyframes galleryFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @media (min-width: 768px) {
@@ -846,9 +883,7 @@
   z-index: 100;
   display: grid;
   place-items: center;
-  background:
-    radial-gradient(ellipse at center, #0d3640 0%, #061a1e 65%, #020c0d 100%),
-    #020c0d;
+  background: radial-gradient(ellipse at center, #0d3640 0%, #061a1e 65%, #020c0d 100%), #020c0d;
   animation: splash-bg-in 600ms ease-out both;
   transition: opacity 1100ms cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
@@ -940,45 +975,101 @@
 .iram-splash__bar-fill {
   height: 100%;
   width: 100%;
-  background: linear-gradient(90deg, transparent, #c8a84e 35%, #efe2b8 55%, #c8a84e 75%, transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #c8a84e 35%,
+    #efe2b8 55%,
+    #c8a84e 75%,
+    transparent
+  );
   transform: translateX(-100%);
   animation: splash-bar-sweep 2400ms cubic-bezier(0.4, 0, 0.2, 1) 1.2s forwards;
 }
 
 @keyframes splash-bg-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 @keyframes splash-beam {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 @keyframes splash-halo {
-  0%   { opacity: 0; transform: scale(0.6); }
-  50%  { opacity: 1; transform: scale(1.06); }
-  100% { opacity: 0.7; transform: scale(1); }
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
 }
 @keyframes splash-logo-fall {
-  0%   { opacity: 0; transform: translate3d(0, -100px, 0) scale(0.78) rotate(-3deg); }
-  35%  { opacity: 0.7; transform: translate3d(0, 12px, 0) scale(1.06) rotate(0.8deg); }
-  60%  { opacity: 1; transform: translate3d(0, -6px, 0) scale(0.985) rotate(-0.3deg); }
-  82%  { transform: translate3d(0, 3px, 0) scale(1.005) rotate(0.1deg); }
-  100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1) rotate(0); }
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -100px, 0) scale(0.78) rotate(-3deg);
+  }
+  35% {
+    opacity: 0.7;
+    transform: translate3d(0, 12px, 0) scale(1.06) rotate(0.8deg);
+  }
+  60% {
+    opacity: 1;
+    transform: translate3d(0, -6px, 0) scale(0.985) rotate(-0.3deg);
+  }
+  82% {
+    transform: translate3d(0, 3px, 0) scale(1.005) rotate(0.1deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1) rotate(0);
+  }
 }
 @keyframes splash-name-rise {
-  0%   { opacity: 0; transform: translate3d(0, 20px, 0) scale(0.96); }
-  100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
 }
 @keyframes splash-tagline-rise {
-  0%   { opacity: 0; transform: translate3d(0, 10px, 0); }
-  100% { opacity: 0.72; transform: translate3d(0, 0, 0); }
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  100% {
+    opacity: 0.72;
+    transform: translate3d(0, 0, 0);
+  }
 }
 @keyframes splash-bar-show {
-  to { opacity: 1; }
+  to {
+    opacity: 1;
+  }
 }
 @keyframes splash-bar-sweep {
-  0%   { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 /* ===== Brand banner entrance (one-shot on every page load) ===== */
@@ -995,17 +1086,38 @@
   will-change: transform, opacity;
 }
 @keyframes brand-logo-fall {
-  0%   { opacity: 0; transform: translate3d(0, -32px, 0) scale(0.94) rotate(-1.5deg); }
-  60%  { opacity: 1; transform: translate3d(0, 4px, 0) scale(1.01) rotate(0.3deg); }
-  100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1) rotate(0); }
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -32px, 0) scale(0.94) rotate(-1.5deg);
+  }
+  60% {
+    opacity: 1;
+    transform: translate3d(0, 4px, 0) scale(1.01) rotate(0.3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1) rotate(0);
+  }
 }
 @keyframes brand-name-rise {
-  0%   { opacity: 0; transform: translate3d(0, 12px, 0); }
-  100% { opacity: 1; transform: translate3d(0, 0, 0); }
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
 }
 @keyframes brand-tagline-rise {
-  0%   { opacity: 0; transform: translate3d(0, 8px, 0); }
-  100% { opacity: 0.7; transform: translate3d(0, 0, 0); }
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  100% {
+    opacity: 0.7;
+    transform: translate3d(0, 0, 0);
+  }
 }
 
 /* ===== Card fade-in on initial render — staggered by position ===== */
@@ -1013,18 +1125,42 @@
   animation: card-in 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
   will-change: transform, opacity;
 }
-.iram-card-in:nth-child(1) { animation-delay: 60ms; }
-.iram-card-in:nth-child(2) { animation-delay: 140ms; }
-.iram-card-in:nth-child(3) { animation-delay: 220ms; }
-.iram-card-in:nth-child(4) { animation-delay: 300ms; }
-.iram-card-in:nth-child(5) { animation-delay: 380ms; }
-.iram-card-in:nth-child(6) { animation-delay: 460ms; }
-.iram-card-in:nth-child(7) { animation-delay: 540ms; }
-.iram-card-in:nth-child(8) { animation-delay: 620ms; }
-.iram-card-in:nth-child(n+9) { animation-delay: 700ms; }
+.iram-card-in:nth-child(1) {
+  animation-delay: 60ms;
+}
+.iram-card-in:nth-child(2) {
+  animation-delay: 140ms;
+}
+.iram-card-in:nth-child(3) {
+  animation-delay: 220ms;
+}
+.iram-card-in:nth-child(4) {
+  animation-delay: 300ms;
+}
+.iram-card-in:nth-child(5) {
+  animation-delay: 380ms;
+}
+.iram-card-in:nth-child(6) {
+  animation-delay: 460ms;
+}
+.iram-card-in:nth-child(7) {
+  animation-delay: 540ms;
+}
+.iram-card-in:nth-child(8) {
+  animation-delay: 620ms;
+}
+.iram-card-in:nth-child(n + 9) {
+  animation-delay: 700ms;
+}
 @keyframes card-in {
-  0%   { opacity: 0; transform: translate3d(0, 20px, 0) scale(0.985); }
-  100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
 }
 
 /* Respect users who prefer no motion */
@@ -1064,21 +1200,27 @@
   );
   background-size: 200% auto;
   -webkit-background-clip: text;
-          background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
-          color: transparent;
+  color: transparent;
   animation: credit-shimmer 6s linear infinite;
   text-shadow: 0 0 14px rgba(200, 168, 78, 0.18);
   will-change: background-position;
 }
 
 @keyframes credit-shimmer {
-  0%   { background-position: 200% center; }
-  100% { background-position: -200% center; }
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .iram-credit-shine { animation: none; }
+  .iram-credit-shine {
+    animation: none;
+  }
 }
 
 /* Chatbot typing-indicator dots */
@@ -1091,8 +1233,16 @@
   animation: iram-chat-dot 1s ease-in-out infinite;
 }
 @keyframes iram-chat-dot {
-  0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
-  40%           { opacity: 1;   transform: translateY(-3px); }
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
 }
 
 /* Chatbot toggle button — calm gold-glow halo + masked platform logo */
@@ -1127,12 +1277,24 @@
   animation: chatbot-logo-pulse 4.5s ease-in-out infinite;
 }
 @keyframes chatbot-glow {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50%      { opacity: 0.85; transform: scale(1.15); }
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.15);
+  }
 }
 @keyframes chatbot-logo-pulse {
-  0%, 100% { filter: drop-shadow(0 0 6px rgba(200, 168, 78, 0.45)); }
-  50%      { filter: drop-shadow(0 0 14px rgba(200, 168, 78, 0.7)); }
+  0%,
+  100% {
+    filter: drop-shadow(0 0 6px rgba(200, 168, 78, 0.45));
+  }
+  50% {
+    filter: drop-shadow(0 0 14px rgba(200, 168, 78, 0.7));
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .iram-chatbot-toggle::before,

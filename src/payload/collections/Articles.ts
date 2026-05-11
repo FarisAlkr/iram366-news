@@ -24,7 +24,15 @@ export const Articles: CollectionConfig = {
   labels: { singular: 'مقال', plural: 'المقالات' },
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['featuredImage', 'title', 'category', 'status', 'isBreaking', 'views', 'publishedAt'],
+    defaultColumns: [
+      'featuredImage',
+      'title',
+      'category',
+      'status',
+      'isBreaking',
+      'views',
+      'publishedAt',
+    ],
     listSearchableFields: ['title', 'excerpt', 'slug'],
     description: 'إدارة المقالات الإخبارية — أنشئ، عدّل، وانشر قصصك من هنا.',
     preview: (doc) => {
@@ -238,7 +246,8 @@ export const Articles: CollectionConfig = {
               admin: {
                 description:
                   '🎬 الصق رابط فيديو من يوتيوب، تيك توك، انستغرام، فيسبوك، أو X — سيُعرض الفيديو أعلى المقال. اتركه فارغاً للمقالات النصية العادية.',
-                placeholder: 'https://youtu.be/... | https://www.tiktok.com/@user/video/... | https://www.instagram.com/reel/...',
+                placeholder:
+                  'https://youtu.be/... | https://www.tiktok.com/@user/video/... | https://www.instagram.com/reel/...',
               },
             },
             {

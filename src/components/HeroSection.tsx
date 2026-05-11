@@ -17,12 +17,9 @@ export function HeroSection({ main, secondary }: HeroProps) {
 
   return (
     <section className="container-news py-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Link
-          href={`/articles/${main.slug}`}
-          className="lg:col-span-2 group block relative"
-        >
-          <article className="relative aspect-[16/9] lg:aspect-[2/1] rounded-lg overflow-hidden">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Link href={`/articles/${main.slug}`} className="group relative block lg:col-span-2">
+          <article className="relative aspect-[16/9] overflow-hidden rounded-lg lg:aspect-[2/1]">
             {mainImage && (
               <Image
                 src={pickMediaUrl(mainImage, 'hero')}
@@ -34,7 +31,7 @@ export function HeroSection({ main, secondary }: HeroProps) {
               />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-            <div className="absolute bottom-0 start-0 end-0 p-5 md:p-8">
+            <div className="absolute bottom-0 end-0 start-0 p-5 md:p-8">
               {mainCategory && (
                 <CategoryBadge
                   name={mainCategory.name}
@@ -43,14 +40,14 @@ export function HeroSection({ main, secondary }: HeroProps) {
                   size="md"
                 />
               )}
-              <h2 className="font-display font-extrabold text-[var(--font-size-hero)] text-white leading-tight mt-3 mb-2 text-balance">
+              <h2 className="mb-2 mt-3 text-balance font-display font-extrabold leading-tight text-[var(--font-size-hero)] text-white">
                 {main.title}
               </h2>
-              <p className="text-white/80 text-base md:text-lg leading-relaxed line-clamp-2 max-w-2xl">
+              <p className="line-clamp-2 max-w-2xl text-base leading-relaxed text-white/80 md:text-lg">
                 {main.excerpt}
               </p>
               {main.publishedAt && (
-                <time className="text-white/50 text-sm mt-2 block">
+                <time className="mt-2 block text-sm text-white/50">
                   {relativeTime(main.publishedAt)}
                 </time>
               )}
@@ -73,8 +70,8 @@ function SecondaryHeroCard({ article }: { article: Article }) {
   const cat = resolveRef<Category>(article.category ?? null)
 
   return (
-    <Link href={`/articles/${article.slug}`} className="group block relative flex-1">
-      <article className="relative h-full min-h-[180px] rounded-lg overflow-hidden">
+    <Link href={`/articles/${article.slug}`} className="group relative block flex-1">
+      <article className="relative h-full min-h-[180px] overflow-hidden rounded-lg">
         {image && (
           <Image
             src={pickMediaUrl(image, 'card')}
@@ -85,9 +82,9 @@ function SecondaryHeroCard({ article }: { article: Article }) {
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
-        <div className="absolute bottom-0 start-0 end-0 p-4">
+        <div className="absolute bottom-0 end-0 start-0 p-4">
           {cat && <CategoryBadge name={cat.name} slug={cat.slug} color={cat.color} />}
-          <h3 className="font-display font-bold text-base md:text-lg text-white leading-snug mt-2 line-clamp-2">
+          <h3 className="mt-2 line-clamp-2 font-display text-base font-bold leading-snug text-white md:text-lg">
             {article.title}
           </h3>
         </div>

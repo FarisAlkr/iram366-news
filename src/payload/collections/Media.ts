@@ -7,10 +7,7 @@ interface ArticleTitleRow {
   title?: string
 }
 
-async function findMediaReferences(
-  payload: Payload,
-  mediaId: number | string,
-): Promise<string[]> {
+async function findMediaReferences(payload: Payload, mediaId: number | string): Promise<string[]> {
   const result = await payload.find({
     collection: 'articles',
     where: {
@@ -149,8 +146,7 @@ export const Media: CollectionConfig = {
       admin: {
         position: 'sidebar',
         date: { pickerAppearance: 'dayAndTime' },
-        description:
-          'إذا ضُبطت قيمة هنا تختفي الصورة من المكتبة الظاهرة لكن تبقى محفوظة.',
+        description: 'إذا ضُبطت قيمة هنا تختفي الصورة من المكتبة الظاهرة لكن تبقى محفوظة.',
       },
     },
   ],

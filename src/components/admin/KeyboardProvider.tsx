@@ -20,9 +20,7 @@ export const KeyboardProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const target = e.target as HTMLElement | null
       const inEditable =
         target &&
-        (target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.isContentEditable)
+        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
 
       // ⌘/Ctrl + K — palette
       if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
@@ -254,9 +252,7 @@ const CommandPalette: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               </span>
               <span className="iram-cmdk__row-body">
                 <span className="iram-cmdk__row-title">{r.title}</span>
-                {r.subtitle && (
-                  <span className="iram-cmdk__row-subtitle">{r.subtitle}</span>
-                )}
+                {r.subtitle && <span className="iram-cmdk__row-subtitle">{r.subtitle}</span>}
               </span>
               <span className="iram-cmdk__row-tag">{r.collection}</span>
             </a>
@@ -330,8 +326,7 @@ const ShortcutsOverlay: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         ))}
 
         <p className="iram-shortcuts__foot">
-          استخدم <kbd className="iram-shortcuts__kbd">⌘ K</kbd> لفتح البحث السريع
-          من أي مكان.
+          استخدم <kbd className="iram-shortcuts__kbd">⌘ K</kbd> لفتح البحث السريع من أي مكان.
         </p>
       </div>
     </div>

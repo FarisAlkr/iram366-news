@@ -6,11 +6,7 @@ export const dynamic = 'force-dynamic'
 
 import { ArticleStatus, HeroMode } from '@/domain/enums'
 import { getPayloadClient } from '@/lib/payload'
-import {
-  getCategories,
-  getSiteSettings,
-  listPublishedArticles,
-} from '@/lib/queries'
+import { getCategories, getSiteSettings, listPublishedArticles } from '@/lib/queries'
 import type { Article, Category } from '@/types/payload'
 
 import { AdSlot } from '@/components/AdSlot'
@@ -38,7 +34,9 @@ async function resolveHero(
   const config = settings.homepageHero
   const fallbackMain = featured[0] ?? latest[0] ?? null
   const fallbackSecondary =
-    featured.length > 1 ? featured.slice(1, 1 + HERO_SECONDARY_LIMIT) : latest.slice(1, 1 + HERO_SECONDARY_LIMIT)
+    featured.length > 1
+      ? featured.slice(1, 1 + HERO_SECONDARY_LIMIT)
+      : latest.slice(1, 1 + HERO_SECONDARY_LIMIT)
 
   if (config?.mode !== HeroMode.Manual || !config.mainArticle) {
     return { main: fallbackMain, secondary: fallbackSecondary }
@@ -82,21 +80,15 @@ async function resolveHero(
 export default async function HomePage() {
   const payload = await getPayloadClient()
 
-  const [
-    siteSettings,
-    categories,
-    breakingResult,
-    featuredResult,
-    latestResult,
-    mostReadResult,
-  ] = await Promise.all([
-    getSiteSettings(),
-    getCategories(),
-    listPublishedArticles({ isBreaking: true, limit: 5, depth: 0 }),
-    listPublishedArticles({ isFeatured: true, limit: 4 }),
-    listPublishedArticles({ limit: 12 }),
-    listPublishedArticles({ limit: 5, sort: '-views', depth: 1 }),
-  ])
+  const [siteSettings, categories, breakingResult, featuredResult, latestResult, mostReadResult] =
+    await Promise.all([
+      getSiteSettings(),
+      getCategories(),
+      listPublishedArticles({ isBreaking: true, limit: 5, depth: 0 }),
+      listPublishedArticles({ isFeatured: true, limit: 4 }),
+      listPublishedArticles({ limit: 12 }),
+      listPublishedArticles({ limit: 5, sort: '-views', depth: 1 }),
+    ])
 
   const hero = await resolveHero(siteSettings, featuredResult.docs, latestResult.docs)
 
@@ -139,17 +131,17 @@ export default async function HomePage() {
         </div>
 
         <div className="container-news py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
             <div>
               <SectionHeading title="آخر الأخبار" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {latestResult.docs.map((article) => (
                   <ArticleCard key={article.id} article={article} />
                 ))}
               </div>
             </div>
 
-            <div className="hidden lg:block space-y-4">
+            <div className="hidden space-y-4 lg:block">
               <AdSlot placement="sidebar-top" />
               <Sidebar
                 mostRead={mostReadResult.docs.map((a) => ({
@@ -169,7 +161,7 @@ export default async function HomePage() {
               hidden below the lg breakpoint, so its ads never reached
               phone readers; this puts one ad in the natural mobile
               flow without dragging in the social/most-read sidebar. */}
-          <div className="lg:hidden mt-6">
+          <div className="mt-6 lg:hidden">
             <AdSlot placement="sidebar-top" />
           </div>
         </div>
@@ -180,11 +172,8 @@ export default async function HomePage() {
           return visibleCats.flatMap((ca, idx) => {
             const items = [
               <section key={ca.category.slug} className="container-news py-6">
-                <SectionHeading
-                  title={ca.category.name}
-                  href={`/category/${ca.category.slug}`}
-                />
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                <SectionHeading title={ca.category.name} href={`/category/${ca.category.slug}`} />
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                   {ca.articles.map((article) => (
                     <ArticleCard
                       key={article.id}
@@ -202,10 +191,7 @@ export default async function HomePage() {
             // adjacent to the footer ad.
             if (idx === midIndex && visibleCats.length > 1) {
               items.push(
-                <div
-                  key={`ad-mid-${idx}`}
-                  className="container-news py-4 lg:hidden"
-                >
+                <div key={`ad-mid-${idx}`} className="container-news py-4 lg:hidden">
                   <AdSlot placement="sidebar-bottom" />
                 </div>,
               )
@@ -228,4 +214,3 @@ export default async function HomePage() {
     </>
   )
 }
-

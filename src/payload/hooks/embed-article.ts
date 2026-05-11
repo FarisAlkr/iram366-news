@@ -58,9 +58,7 @@ export const embedArticleAfterChange: CollectionAfterChangeHook = async ({ doc }
 }
 
 async function runEmbedArticle(a: ArticleLite): Promise<void> {
-  const text = [a.title ?? '', a.excerpt ?? '', extractText(a.body)]
-    .filter(Boolean)
-    .join('\n\n')
+  const text = [a.title ?? '', a.excerpt ?? '', extractText(a.body)].filter(Boolean).join('\n\n')
   if (!text.trim()) return
 
   const embedding = await embedText(text, 'document')

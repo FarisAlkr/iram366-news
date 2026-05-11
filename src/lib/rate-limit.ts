@@ -91,10 +91,7 @@ export function clientIp(req: { headers: Headers }): string {
  * Convenience wrapper for Next.js Route Handlers. Returns a 429 Response if
  * the request should be denied, otherwise null.
  */
-export function enforce(
-  req: { headers: Headers },
-  cfg: RateLimitConfig,
-): Response | null {
+export function enforce(req: { headers: Headers }, cfg: RateLimitConfig): Response | null {
   const ip = clientIp(req)
   const result = consume(ip, cfg)
   if (result.allowed) return null

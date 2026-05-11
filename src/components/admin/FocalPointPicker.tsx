@@ -98,11 +98,7 @@ export const FocalPointPicker: React.FC = () => {
         style={{ touchAction: dragging ? 'none' : 'manipulation' }}
       >
         <img src={String(url)} alt="" className="iram-focal__img" draggable={false} />
-        <div
-          className="iram-focal__dot"
-          style={{ left: `${fx}%`, top: `${fy}%` }}
-          aria-hidden
-        />
+        <div className="iram-focal__dot" style={{ left: `${fx}%`, top: `${fy}%` }} aria-hidden />
         <div className="iram-focal__guide-h" style={{ top: `${fy}%` }} aria-hidden />
         <div className="iram-focal__guide-v" style={{ left: `${fx}%` }} aria-hidden />
       </div>
@@ -131,10 +127,7 @@ export const FocalPointPicker: React.FC = () => {
         ].map((r) => (
           <div key={r.ratio} className="iram-focal__preview">
             <div className="iram-focal__preview-label">{r.label}</div>
-            <div
-              className="iram-focal__preview-frame"
-              style={{ aspectRatio: r.ratio }}
-            >
+            <div className="iram-focal__preview-frame" style={{ aspectRatio: r.ratio }}>
               <img
                 src={String(url)}
                 alt=""

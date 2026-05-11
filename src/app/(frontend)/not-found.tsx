@@ -2,17 +2,17 @@ import Link from 'next/link'
 
 export default function NotFound() {
   return (
-    <main className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
-      <div className="text-8xl font-display font-extrabold text-[var(--color-border-dark)] mb-4">
+    <main className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+      <div className="mb-4 font-display text-8xl font-extrabold text-[var(--color-border-dark)]">
         ٤٠٤
       </div>
-      <h1 className="font-display font-bold text-2xl mb-3">الصفحة غير موجودة</h1>
-      <p className="text-[var(--color-ink-muted)] text-lg mb-8 max-w-md">
+      <h1 className="mb-3 font-display text-2xl font-bold">الصفحة غير موجودة</h1>
+      <p className="mb-8 max-w-md text-lg text-[var(--color-ink-muted)]">
         عذراً، لم نتمكن من العثور على الصفحة المطلوبة. قد تكون قد نُقلت أو حُذفت.
       </p>
       <Link
         href="/"
-        className="px-6 py-3 bg-accent-gold text-navy font-display font-bold rounded-lg hover:bg-accent-gold-dark transition-colors duration-150"
+        className="rounded-lg bg-accent-gold px-6 py-3 font-display font-bold text-navy transition-colors duration-150 hover:bg-accent-gold-dark"
       >
         العودة للرئيسية
       </Link>

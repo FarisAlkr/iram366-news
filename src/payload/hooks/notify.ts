@@ -137,11 +137,7 @@ export const notifyOnArticleStatusChange: CollectionAfterChangeHook = async ({
  * ArticleReviews afterChange — notify the article's author whenever a new
  * review is created.
  */
-export const notifyOnReviewCreated: CollectionAfterChangeHook = async ({
-  doc,
-  req,
-  operation,
-}) => {
+export const notifyOnReviewCreated: CollectionAfterChangeHook = async ({ doc, req, operation }) => {
   if (operation !== 'create') return doc
 
   const review = (doc || {}) as ReviewLite

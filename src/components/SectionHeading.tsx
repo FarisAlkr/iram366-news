@@ -5,20 +5,18 @@ interface SectionHeadingProps {
 
 export function SectionHeading({ title, href }: SectionHeadingProps) {
   return (
-    <div className="flex items-center gap-4 mb-6">
-      <div className="w-1 h-8 bg-accent-red rounded-full" />
-      <h2 className="font-display font-bold text-[var(--font-size-h2)] text-ink">
-        {title}
-      </h2>
+    <div className="mb-6 flex items-center gap-4">
+      <div className="h-8 w-1 rounded-full bg-accent-red" />
+      <h2 className="font-display font-bold text-[var(--font-size-h2)] text-ink">{title}</h2>
       {href && (
         <a
           href={href}
-          className="me-auto text-sm text-[var(--color-ink-muted)] hover:text-accent-red transition-colors duration-150 font-medium"
+          className="me-auto text-sm font-medium text-[var(--color-ink-muted)] transition-colors duration-150 hover:text-accent-red"
         >
           عرض الكل ←
         </a>
       )}
-      <div className="flex-1 h-px bg-[var(--color-border)]" />
+      <div className="h-px flex-1 bg-[var(--color-border)]" />
     </div>
   )
 }

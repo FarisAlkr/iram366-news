@@ -76,9 +76,7 @@ export const ArticleGallery: React.FC<ArticleGalleryProps> = ({ items }) => {
             {(p.caption || p.credit) && (
               <span className="article-gallery__caption">
                 {p.caption}
-                {p.credit && (
-                  <span className="article-gallery__credit"> — {p.credit}</span>
-                )}
+                {p.credit && <span className="article-gallery__credit"> — {p.credit}</span>}
               </span>
             )}
           </button>
@@ -128,10 +126,7 @@ export const ArticleGallery: React.FC<ArticleGalleryProps> = ({ items }) => {
             </>
           )}
 
-          <figure
-            className="article-gallery__figure"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <figure className="article-gallery__figure" onClick={(e) => e.stopPropagation()}>
             <Image
               src={active.full}
               alt={active.alt}
@@ -144,9 +139,7 @@ export const ArticleGallery: React.FC<ArticleGalleryProps> = ({ items }) => {
               <figcaption className="article-gallery__lightbox-caption">
                 {active.caption}
                 {active.credit && (
-                  <span className="article-gallery__lightbox-credit">
-                    {' '}— {active.credit}
-                  </span>
+                  <span className="article-gallery__lightbox-credit"> — {active.credit}</span>
                 )}
               </figcaption>
             )}
