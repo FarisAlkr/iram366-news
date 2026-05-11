@@ -60,11 +60,27 @@ const TRANSLIT_MAP: Array<[RegExp, string]> = [
   [/ى/g, 'a'],
   [/ء|ؤ|ئ/g, ''],
   // Eastern Arabic numerals (٠–٩)
-  [/٠/g, '0'], [/١/g, '1'], [/٢/g, '2'], [/٣/g, '3'], [/٤/g, '4'],
-  [/٥/g, '5'], [/٦/g, '6'], [/٧/g, '7'], [/٨/g, '8'], [/٩/g, '9'],
+  [/٠/g, '0'],
+  [/١/g, '1'],
+  [/٢/g, '2'],
+  [/٣/g, '3'],
+  [/٤/g, '4'],
+  [/٥/g, '5'],
+  [/٦/g, '6'],
+  [/٧/g, '7'],
+  [/٨/g, '8'],
+  [/٩/g, '9'],
   // Persian numerals just in case (۰–۹)
-  [/۰/g, '0'], [/۱/g, '1'], [/۲/g, '2'], [/۳/g, '3'], [/۴/g, '4'],
-  [/۵/g, '5'], [/۶/g, '6'], [/۷/g, '7'], [/۸/g, '8'], [/۹/g, '9'],
+  [/۰/g, '0'],
+  [/۱/g, '1'],
+  [/۲/g, '2'],
+  [/۳/g, '3'],
+  [/۴/g, '4'],
+  [/۵/g, '5'],
+  [/۶/g, '6'],
+  [/۷/g, '7'],
+  [/۸/g, '8'],
+  [/۹/g, '9'],
 ]
 
 /**
@@ -92,10 +108,10 @@ export function slugify(input: string): string {
   const transliterated = transliterate(input)
   const cleaned = transliterated
     .trim()
-    .replace(/[^a-z0-9\s-]/g, ' ')   // strip anything not Latin / digit / space / dash
-    .replace(/\s+/g, '-')            // collapse whitespace to hyphens
-    .replace(/-+/g, '-')             // collapse multiple hyphens
-    .replace(/^-|-$/g, '')           // trim leading/trailing hyphens
+    .replace(/[^a-z0-9\s-]/g, ' ') // strip anything not Latin / digit / space / dash
+    .replace(/\s+/g, '-') // collapse whitespace to hyphens
+    .replace(/-+/g, '-') // collapse multiple hyphens
+    .replace(/^-|-$/g, '') // trim leading/trailing hyphens
   // Truncate AFTER trimming hyphens, then re-trim the cut edge so we never
   // emit "foo-bar-" with a dangling separator that breaks routing.
   return cleaned.substring(0, MAX_SLUG_LEN).replace(/-+$/, '')

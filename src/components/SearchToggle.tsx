@@ -48,17 +48,28 @@ export function SearchToggle() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="p-2 rounded hover:bg-white/10 transition-colors duration-150"
+        className="rounded p-2 transition-colors duration-150 hover:bg-white/10"
         aria-label="بحث"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+          />
         </svg>
       </button>
 
       {isOpen && (
         <div
-          className="fixed inset-0 bg-navy/80 backdrop-blur-sm z-[60] flex items-start justify-center pt-[15vh]"
+          className="fixed inset-0 z-[60] flex items-start justify-center bg-navy/80 pt-[15vh] backdrop-blur-sm"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setIsOpen(false)
@@ -67,7 +78,7 @@ export function SearchToggle() {
             }
           }}
         >
-          <div className="w-full max-w-2xl mx-4">
+          <div className="mx-4 w-full max-w-2xl">
             <form onSubmit={handleSubmit}>
               <input
                 ref={inputRef}
@@ -75,17 +86,17 @@ export function SearchToggle() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="ابحث في الأخبار..."
-                className="w-full text-xl md:text-2xl bg-white text-ink px-6 py-4 rounded-lg shadow-2xl outline-none font-body placeholder:text-[var(--color-ink-muted)]"
+                className="w-full rounded-lg bg-white px-6 py-4 font-body text-xl text-ink shadow-2xl outline-none placeholder:text-[var(--color-ink-muted)] md:text-2xl"
                 dir="rtl"
               />
             </form>
             {suggestions.length > 0 && (
-              <div className="bg-white mt-2 rounded-lg shadow-2xl overflow-hidden">
+              <div className="mt-2 overflow-hidden rounded-lg bg-white shadow-2xl">
                 {suggestions.map((s) => (
                   <a
                     key={s.slug}
                     href={`/articles/${s.slug}`}
-                    className="block px-6 py-3 hover:bg-cream-dark text-ink text-base font-medium border-b border-[var(--color-border)] last:border-0 transition-colors duration-150"
+                    className="block border-b border-[var(--color-border)] px-6 py-3 text-base font-medium text-ink transition-colors duration-150 last:border-0 hover:bg-cream-dark"
                     onClick={() => {
                       setIsOpen(false)
                       setQuery('')

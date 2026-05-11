@@ -32,7 +32,11 @@ export default async function MobileNewArticlePage() {
           <img src="/splash-logo.jpeg" alt="" aria-hidden className="m-topbar__logo" />
           <span className="m-topbar__name">مقال جديد</span>
         </div>
-        <Link href="/m" className="m-topbar__user" style={{ color: 'white', textDecoration: 'none' }}>
+        <Link
+          href="/m"
+          className="m-topbar__user"
+          style={{ color: 'white', textDecoration: 'none' }}
+        >
           إلغاء
         </Link>
       </header>

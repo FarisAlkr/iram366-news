@@ -47,7 +47,7 @@ export async function Header({ siteName, categories, breakingArticles = [] }: He
         <Link
           href="/"
           aria-label={`${siteName} — الصفحة الرئيسية`}
-          className="sm:hidden flex items-center justify-center gap-2 py-1.5 border-b border-white/5 hover:opacity-80 transition-opacity"
+          className="flex items-center justify-center gap-2 border-b border-white/5 py-1.5 transition-opacity hover:opacity-80 sm:hidden"
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- needs CSS mask, Next/Image strips style */}
           <img
@@ -56,7 +56,7 @@ export async function Header({ siteName, categories, breakingArticles = [] }: He
             aria-hidden
             className="iram-bar-brand__icon h-8 w-auto flex-shrink-0"
           />
-          <span className="font-display font-extrabold tracking-tight text-sm text-white whitespace-nowrap">
+          <span className="whitespace-nowrap font-display text-sm font-extrabold tracking-tight text-white">
             {siteName}
           </span>
         </Link>
@@ -64,21 +64,17 @@ export async function Header({ siteName, categories, breakingArticles = [] }: He
       </div>
 
       {/* STICKY band — categories + breaking ticker. Stays visible on scroll. */}
-      <header className="bg-navy text-white shadow-[var(--shadow-nav)] sticky top-0 z-50">
+      <header className="sticky top-0 z-50 bg-navy text-white shadow-[var(--shadow-nav)]">
         {/* Categories on the right (RTL start), search on the left */}
         <div className="container-news">
           <div className="flex items-center gap-2 py-1.5 md:py-2">
             <nav
-              className="flex-1 flex md:justify-center items-center gap-1 md:gap-2 overflow-x-auto scrollbar-hide -mx-2 px-2"
+              className="scrollbar-hide -mx-2 flex flex-1 items-center gap-1 overflow-x-auto px-2 md:justify-center md:gap-2"
               aria-label="التنقل الرئيسي"
             >
               <CategoryLink href="/" label="الرئيسية" />
               {categories.map((cat) => (
-                <CategoryLink
-                  key={cat.slug}
-                  href={`/category/${cat.slug}`}
-                  label={cat.name}
-                />
+                <CategoryLink key={cat.slug} href={`/category/${cat.slug}`} label={cat.name} />
               ))}
             </nav>
             <div className="flex-shrink-0">
@@ -98,7 +94,7 @@ function CategoryLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="px-3 md:px-4 py-1.5 text-sm md:text-base font-display font-medium rounded-full whitespace-nowrap flex-shrink-0 hover:bg-white/10 transition-colors duration-150"
+      className="flex-shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 font-display text-sm font-medium transition-colors duration-150 hover:bg-white/10 md:px-4 md:text-base"
     >
       {label}
     </Link>

@@ -102,10 +102,7 @@ export function Chatbot() {
         return
       }
       if (!res.ok) {
-        setMessages((prev) => [
-          ...prev,
-          { kind: 'bot-text', text: 'تعذّر الاتصال — حاول لاحقاً.' },
-        ])
+        setMessages((prev) => [...prev, { kind: 'bot-text', text: 'تعذّر الاتصال — حاول لاحقاً.' }])
         return
       }
       const data = (await res.json()) as { results: ArticleHit[] }
@@ -115,10 +112,7 @@ export function Chatbot() {
         setMessages((prev) => [...prev, { kind: 'bot-articles', articles: data.results }])
       }
     } catch {
-      setMessages((prev) => [
-        ...prev,
-        { kind: 'bot-text', text: 'تعذّر الاتصال — حاول لاحقاً.' },
-      ])
+      setMessages((prev) => [...prev, { kind: 'bot-text', text: 'تعذّر الاتصال — حاول لاحقاً.' }])
     } finally {
       setLoading(false)
     }
@@ -130,39 +124,36 @@ export function Chatbot() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? 'إغلاق المساعد' : 'افتح المساعد'}
-        className="iram-chatbot-toggle fixed bottom-5 start-5 z-[60] w-14 h-14 rounded-full bg-navy shadow-lg hover:scale-105 transition-transform flex items-center justify-center"
+        className="iram-chatbot-toggle fixed bottom-5 start-5 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-navy shadow-lg transition-transform hover:scale-105"
       >
         {open ? (
-          <span aria-hidden className="text-2xl text-white">×</span>
+          <span aria-hidden className="text-2xl text-white">
+            ×
+          </span>
         ) : (
           // eslint-disable-next-line @next/next/no-img-element -- needs CSS mask
-          <img
-            src="/splash-logo.jpeg"
-            alt=""
-            aria-hidden
-            className="iram-chatbot-toggle__logo"
-          />
+          <img src="/splash-logo.jpeg" alt="" aria-hidden className="iram-chatbot-toggle__logo" />
         )}
       </button>
 
       {open && (
         <div
           dir="rtl"
-          className="fixed bottom-24 start-5 z-[60] w-[min(92vw,380px)] bg-white text-ink rounded-xl shadow-2xl border border-ink/10 overflow-hidden flex flex-col max-h-[70vh]"
+          className="fixed bottom-24 start-5 z-[60] flex max-h-[70vh] w-[min(92vw,380px)] flex-col overflow-hidden rounded-xl border border-ink/10 bg-white text-ink shadow-2xl"
         >
-          <div className="bg-navy text-white px-4 py-3 flex-shrink-0">
-            <h3 className="font-display font-bold text-base">مساعد إرم 366</h3>
-            <p className="text-xs opacity-70 mt-0.5">
+          <div className="flex-shrink-0 bg-navy px-4 py-3 text-white">
+            <h3 className="font-display text-base font-bold">مساعد إرم 366</h3>
+            <p className="mt-0.5 text-xs opacity-70">
               اسأل عن مقال، عن الموقع، أو جرّب أحد الأسئلة الجاهزة.
             </p>
           </div>
 
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3">
+          <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-3">
             {messages.map((m, i) => {
               if (m.kind === 'user') {
                 return (
                   <div key={i} className="flex justify-end">
-                    <div className="max-w-[80%] bg-navy text-white rounded-2xl rounded-br-md px-3.5 py-2 text-sm leading-relaxed">
+                    <div className="max-w-[80%] rounded-2xl rounded-br-md bg-navy px-3.5 py-2 text-sm leading-relaxed text-white">
                       {m.text}
                     </div>
                   </div>
@@ -171,7 +162,7 @@ export function Chatbot() {
               if (m.kind === 'bot-text') {
                 return (
                   <div key={i} className="flex justify-start">
-                    <div className="max-w-[85%] bg-cream-dark text-ink rounded-2xl rounded-bl-md px-3.5 py-2 text-sm leading-relaxed">
+                    <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-cream-dark px-3.5 py-2 text-sm leading-relaxed text-ink">
                       {m.text}
                     </div>
                   </div>
@@ -180,7 +171,7 @@ export function Chatbot() {
               if (m.kind === 'bot-empty') {
                 return (
                   <div key={i} className="flex justify-start">
-                    <div className="max-w-[85%] bg-cream-dark text-ink/70 rounded-2xl rounded-bl-md px-3.5 py-2 text-sm">
+                    <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-cream-dark px-3.5 py-2 text-sm text-ink/70">
                       لم نجد مقالاً مطابقاً. جرّب وصفاً آخر.
                     </div>
                   </div>
@@ -189,7 +180,7 @@ export function Chatbot() {
               // bot-articles
               return (
                 <div key={i} className="space-y-1.5">
-                  <div className="text-xs text-ink/60 px-1">
+                  <div className="px-1 text-xs text-ink/60">
                     وجدنا {m.articles.length} مقال{m.articles.length === 1 ? '' : ' مطابق'}:
                   </div>
                   {m.articles.map((r) => (
@@ -197,13 +188,13 @@ export function Chatbot() {
                       key={r.url}
                       href={r.url}
                       onClick={() => setOpen(false)}
-                      className="block bg-cream-dark hover:bg-cream rounded-xl p-2.5 border border-ink/5 transition-colors"
+                      className="block rounded-xl border border-ink/5 bg-cream-dark p-2.5 transition-colors hover:bg-cream"
                     >
-                      <h4 className="font-display font-bold text-[13.5px] leading-snug line-clamp-2">
+                      <h4 className="line-clamp-2 font-display text-[13.5px] font-bold leading-snug">
                         {r.title}
                       </h4>
                       {r.excerpt && (
-                        <p className="text-xs text-ink/60 mt-1 line-clamp-2">{r.excerpt}</p>
+                        <p className="mt-1 line-clamp-2 text-xs text-ink/60">{r.excerpt}</p>
                       )}
                     </a>
                   ))}
@@ -213,7 +204,7 @@ export function Chatbot() {
 
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-cream-dark text-ink/60 rounded-2xl rounded-bl-md px-3.5 py-2 text-sm flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-md bg-cream-dark px-3.5 py-2 text-sm text-ink/60">
                   <span className="iram-chat-dot" />
                   <span className="iram-chat-dot" style={{ animationDelay: '0.15s' }} />
                   <span className="iram-chat-dot" style={{ animationDelay: '0.3s' }} />
@@ -222,7 +213,7 @@ export function Chatbot() {
             )}
           </div>
 
-          <div className="p-3 border-t border-ink/10 flex-shrink-0">
+          <div className="flex-shrink-0 border-t border-ink/10 p-3">
             <div className="flex gap-2">
               <input
                 ref={inputRef}
@@ -231,14 +222,14 @@ export function Chatbot() {
                 onKeyDown={(e) => e.key === 'Enter' && ask()}
                 disabled={loading}
                 placeholder="مثال: من طوّر هذا الموقع؟"
-                className="flex-1 min-w-0 rounded-full border border-ink/20 px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-gold disabled:opacity-50"
+                className="min-w-0 flex-1 rounded-full border border-ink/20 px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-gold disabled:opacity-50"
               />
               <button
                 type="button"
                 onClick={ask}
                 disabled={loading || !question.trim()}
                 aria-label="إرسال"
-                className="w-10 h-10 flex-shrink-0 rounded-full bg-accent-gold text-navy font-bold disabled:opacity-50 hover:bg-accent-gold-dark transition-colors flex items-center justify-center"
+                className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-accent-gold font-bold text-navy transition-colors hover:bg-accent-gold-dark disabled:opacity-50"
               >
                 ↑
               </button>

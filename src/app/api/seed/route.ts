@@ -151,7 +151,10 @@ const SAMPLE_BODY = {
   },
 }
 
-async function upsertCategories(payload: Payload, log: string[]): Promise<Map<string, string | number>> {
+async function upsertCategories(
+  payload: Payload,
+  log: string[],
+): Promise<Map<string, string | number>> {
   const map = new Map<string, string | number>()
   for (const cat of CATEGORIES) {
     try {

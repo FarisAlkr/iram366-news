@@ -33,24 +33,24 @@ export function Footer({ siteName, footerText, socialLinks, categories }: Footer
   const email = socialLinks?.email
 
   return (
-    <footer className="bg-navy text-white/90 mt-12">
+    <footer className="mt-12 bg-navy text-white/90">
       <div className="container-news py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           <div>
-            <h3 className="font-display font-extrabold text-xl mb-3 text-white">{siteName}</h3>
+            <h3 className="mb-3 font-display text-xl font-extrabold text-white">{siteName}</h3>
             <p className="text-sm leading-relaxed text-white/60">
               منصة إخبارية مستقلة برؤية مختلفة — نواكب الأحداث لحظة بلحظة من رهط والنقب
             </p>
           </div>
 
           <div>
-            <h4 className="font-display font-bold text-sm mb-4 text-accent-gold">الأقسام</h4>
+            <h4 className="mb-4 font-display text-sm font-bold text-accent-gold">الأقسام</h4>
             <nav className="flex flex-col gap-2">
               {categories.map((cat) => (
                 <Link
                   key={cat.slug}
                   href={`/category/${cat.slug}`}
-                  className="text-sm text-white/60 hover:text-white transition-colors duration-150"
+                  className="text-sm text-white/60 transition-colors duration-150 hover:text-white"
                 >
                   {cat.name}
                 </Link>
@@ -59,10 +59,10 @@ export function Footer({ siteName, footerText, socialLinks, categories }: Footer
           </div>
 
           <div>
-            <h4 className="font-display font-bold text-sm mb-4 text-accent-gold">تواصل معنا</h4>
+            <h4 className="mb-4 font-display text-sm font-bold text-accent-gold">تواصل معنا</h4>
 
             {social.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 mb-4">
+              <div className="mb-4 flex flex-wrap items-center gap-2">
                 {social.map((s) => (
                   <a
                     key={s.brand}
@@ -71,7 +71,7 @@ export function Footer({ siteName, footerText, socialLinks, categories }: Footer
                     rel="noopener noreferrer"
                     aria-label={s.label}
                     title={s.label}
-                    className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/5 hover:bg-accent-gold hover:text-navy text-white/80 transition-colors duration-150"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-white/80 transition-colors duration-150 hover:bg-accent-gold hover:text-navy"
                   >
                     <SocialIcon brand={s.brand} size={20} />
                   </a>
@@ -82,7 +82,7 @@ export function Footer({ siteName, footerText, socialLinks, categories }: Footer
             {email && (
               <a
                 href={`mailto:${email}`}
-                className="inline-flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors duration-150"
+                className="inline-flex items-center gap-2 text-sm text-white/60 transition-colors duration-150 hover:text-white"
               >
                 <SocialIcon brand="email" size={16} />
                 <span>{email}</span>
@@ -91,11 +91,12 @@ export function Footer({ siteName, footerText, socialLinks, categories }: Footer
           </div>
         </div>
 
-        <div className="border-t border-white/10 mt-8 pt-6 text-center text-xs text-white/40 space-y-1">
+        <div className="mt-8 space-y-1 border-t border-white/10 pt-6 text-center text-xs text-white/40">
           <div>
-            {footerText || `جميع الحقوق محفوظة © ${new Date().getFullYear()} لشركة إرم 366 الإخبارية م.ض`}
+            {footerText ||
+              `جميع الحقوق محفوظة © ${new Date().getFullYear()} لشركة إرم 366 الإخبارية م.ض`}
           </div>
-          <div className="text-sm md:text-base mt-2">
+          <div className="mt-2 text-sm md:text-base">
             تطوير: <span className="iram-credit-shine">فارس القريناوي · Faris Alkrenawe</span>
           </div>
         </div>

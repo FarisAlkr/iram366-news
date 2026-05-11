@@ -99,10 +99,10 @@ function renderNode(node: LexicalNode, index: number): React.ReactNode {
               alt={node.value.alt || ''}
               width={node.value.width}
               height={node.value.height}
-              className="rounded-lg w-full"
+              className="w-full rounded-lg"
             />
             {node.value.caption && (
-              <figcaption className="text-center text-sm text-gray-500 mt-2">
+              <figcaption className="mt-2 text-center text-sm text-gray-500">
                 {node.value.caption}
               </figcaption>
             )}

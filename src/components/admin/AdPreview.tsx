@@ -57,8 +57,7 @@ export const AdPreview: React.FC = () => {
       <div className="iram-adp__head">
         <h4 className="iram-adp__heading">📍 معاينة مكان الظهور</h4>
         <p className="iram-adp__subheading">
-          اختر مكان الظهور من الشريط الجانبي. سترى أين سيظهر الإعلان وكيف سيبدو
-          للقارئ — قبل الحفظ.
+          اختر مكان الظهور من الشريط الجانبي. سترى أين سيظهر الإعلان وكيف سيبدو للقارئ — قبل الحفظ.
         </p>
       </div>
 
@@ -79,19 +78,13 @@ export const AdPreview: React.FC = () => {
                   جانبي — أعلى
                 </Slot>
                 <div className="iram-adp__sidebar-content">روابط</div>
-                <Slot
-                  active={fields.placement === 'sidebar-bottom'}
-                  name="sidebar-bottom"
-                >
+                <Slot active={fields.placement === 'sidebar-bottom'} name="sidebar-bottom">
                   جانبي — أسفل
                 </Slot>
               </div>
             </div>
 
-            <Slot
-              active={fields.placement === 'between-articles'}
-              name="between-articles"
-            >
+            <Slot active={fields.placement === 'between-articles'} name="between-articles">
               بين المقالات
             </Slot>
 
@@ -124,9 +117,7 @@ export const AdPreview: React.FC = () => {
             {image ? (
               <div className="iram-adp__ad-img">
                 <img src={image.url} alt={image.alt || ''} />
-                {fields.sponsoredLabel && (
-                  <span className="iram-adp__ad-label">إعلان</span>
-                )}
+                {fields.sponsoredLabel && <span className="iram-adp__ad-label">إعلان</span>}
               </div>
             ) : (
               <div className="iram-adp__ad-placeholder">
@@ -137,15 +128,9 @@ export const AdPreview: React.FC = () => {
 
             {(fields.headline || fields.bodyText) && (
               <div className="iram-adp__ad-body">
-                {fields.headline && (
-                  <h5 className="iram-adp__ad-headline">{fields.headline}</h5>
-                )}
-                {fields.bodyText && (
-                  <p className="iram-adp__ad-text">{fields.bodyText}</p>
-                )}
-                {fields.ctaText && (
-                  <span className="iram-adp__ad-cta">{fields.ctaText} ←</span>
-                )}
+                {fields.headline && <h5 className="iram-adp__ad-headline">{fields.headline}</h5>}
+                {fields.bodyText && <p className="iram-adp__ad-text">{fields.bodyText}</p>}
+                {fields.ctaText && <span className="iram-adp__ad-cta">{fields.ctaText} ←</span>}
               </div>
             )}
           </div>
@@ -166,10 +151,7 @@ const Slot: React.FC<{
   name: string
   children: React.ReactNode
 }> = ({ active, children }) => (
-  <div
-    className={`iram-adp__slot ${active ? 'iram-adp__slot--active' : ''}`}
-    aria-hidden
-  >
+  <div className={`iram-adp__slot ${active ? 'iram-adp__slot--active' : ''}`} aria-hidden>
     {active && <span className="iram-adp__slot-pulse" />}
     <span>{children}</span>
   </div>

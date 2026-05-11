@@ -32,7 +32,7 @@ export function VideoEmbed({ url, title, className }: VideoEmbedProps) {
 
   return (
     <div className={`mx-auto ${maxWidth} ${className ?? ''}`}>
-      <div className={`${aspect} relative w-full rounded-lg overflow-hidden bg-black`}>
+      <div className={`${aspect} relative w-full overflow-hidden rounded-lg bg-black`}>
         <iframe
           src={parsed.embedSrc}
           title={title || `${parsed.platform} video`}
@@ -40,7 +40,7 @@ export function VideoEmbed({ url, title, className }: VideoEmbedProps) {
           allowFullScreen
           loading="lazy"
           referrerPolicy="strict-origin-when-cross-origin"
-          className="absolute inset-0 w-full h-full border-0"
+          className="absolute inset-0 h-full w-full border-0"
         />
       </div>
     </div>

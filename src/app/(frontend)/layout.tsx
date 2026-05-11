@@ -59,7 +59,7 @@ const CF_ANALYTICS_TOKEN = process.env.NEXT_PUBLIC_CF_ANALYTICS_TOKEN
 export default function FrontendLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ar" dir="rtl" className={`${ibmPlex.variable} ${notoKufi.variable}`}>
-      <body className="bg-cream text-ink font-body antialiased">
+      <body className="bg-cream font-body text-ink antialiased">
         <SplashScreen siteName="إرم 366 الإخبارية" />
         <BackToHomeFallback />
         <ScrollProgress />

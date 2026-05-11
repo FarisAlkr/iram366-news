@@ -21,14 +21,14 @@ CI will reject anything that fails these. Run `npm run format` to apply Prettier
 
 ## Naming
 
-| Kind              | Style                  | Example                       |
-| ----------------- | ---------------------- | ----------------------------- |
-| Files             | kebab-case (lib) or PascalCase (components) | `rate-limit.ts`, `Header.tsx` |
-| React components  | PascalCase             | `ArticleCard`                 |
-| Hooks             | `use*`                 | `useViewCounter`              |
-| Types/Interfaces  | PascalCase             | `Article`, `MediaSize`        |
-| Enums             | `as const` objects     | `ArticleStatus.Published`     |
-| Constants         | UPPER_SNAKE_CASE       | `MAX_QUERY_LEN`               |
+| Kind             | Style                                       | Example                       |
+| ---------------- | ------------------------------------------- | ----------------------------- |
+| Files            | kebab-case (lib) or PascalCase (components) | `rate-limit.ts`, `Header.tsx` |
+| React components | PascalCase                                  | `ArticleCard`                 |
+| Hooks            | `use*`                                      | `useViewCounter`              |
+| Types/Interfaces | PascalCase                                  | `Article`, `MediaSize`        |
+| Enums            | `as const` objects                          | `ArticleStatus.Published`     |
+| Constants        | UPPER_SNAKE_CASE                            | `MAX_QUERY_LEN`               |
 
 ## Comments
 

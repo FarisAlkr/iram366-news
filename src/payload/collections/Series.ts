@@ -39,8 +39,7 @@ export const Series: CollectionConfig = {
       label: 'الرابط',
       admin: {
         position: 'sidebar',
-        description:
-          'الرابط النهائي للسلسلة (يُنشأ تلقائياً من الاسم). تجنب تغييره بعد النشر.',
+        description: 'الرابط النهائي للسلسلة (يُنشأ تلقائياً من الاسم). تجنب تغييره بعد النشر.',
       },
     },
     {

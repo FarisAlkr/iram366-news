@@ -23,7 +23,10 @@ async function fetchWithTimeout(url: string, init: RequestInit, ms: number): Pro
  * connection, and over time exhausts the pool — which is exactly how
  * the May 2026 outage built up.
  */
-export async function embedText(text: string, kind: 'document' | 'query' = 'document'): Promise<number[]> {
+export async function embedText(
+  text: string,
+  kind: 'document' | 'query' = 'document',
+): Promise<number[]> {
   const cfg = getChatbotConfig()
   if (!cfg.apiKey) {
     throw new Error(`Chatbot embedding key missing (${cfg.provider.toUpperCase()}_API_KEY)`)

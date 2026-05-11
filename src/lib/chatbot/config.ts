@@ -25,9 +25,9 @@ export function isChatbotEnabled(): boolean {
 }
 
 export function getChatbotConfig(): ChatbotConfig {
-  const provider = (process.env.EMBEDDINGS_PROVIDER === 'voyage'
-    ? 'voyage'
-    : 'openai') as EmbeddingProvider
+  const provider = (
+    process.env.EMBEDDINGS_PROVIDER === 'voyage' ? 'voyage' : 'openai'
+  ) as EmbeddingProvider
 
   if (provider === 'voyage') {
     return {

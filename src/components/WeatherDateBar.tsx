@@ -10,13 +10,7 @@ export interface Town {
   region: string
 }
 
-const DEFAULT_REGION_ORDER = [
-  'الجليل',
-  'المثلث',
-  'النقب',
-  'المدن المختلطة',
-  'مرتفعات الكرمل',
-]
+const DEFAULT_REGION_ORDER = ['الجليل', 'المثلث', 'النقب', 'المدن المختلطة', 'مرتفعات الكرمل']
 
 const DEFAULT_TOWNS: Town[] = [
   // الجليل
@@ -130,13 +124,10 @@ function orderedRegions(towns: Town[]): string[] {
 }
 
 export function WeatherDateBar({ towns: customTowns, siteName }: WeatherDateBarProps = {}) {
-  const towns =
-    customTowns && customTowns.length > 0 ? customTowns : DEFAULT_TOWNS
+  const towns = customTowns && customTowns.length > 0 ? customTowns : DEFAULT_TOWNS
   const regions = useMemo(() => orderedRegions(towns), [towns])
   const fallbackTown: Town =
-    towns.find((t) => t.name === DEFAULT_TOWN_NAME) ??
-    towns[0] ??
-    HARDCODED_FALLBACK
+    towns.find((t) => t.name === DEFAULT_TOWN_NAME) ?? towns[0] ?? HARDCODED_FALLBACK
 
   const [now, setNow] = useState<Date | null>(null)
   const [weather, setWeather] = useState<WeatherData | null>(null)
@@ -220,21 +211,21 @@ export function WeatherDateBar({ towns: customTowns, siteName }: WeatherDateBarP
   const formatted = now ? formatNow(now) : null
 
   return (
-    <div className="bg-navy-dark/70 text-white/85 text-base md:text-lg border-b border-white/10 relative z-50">
+    <div className="relative z-50 border-b border-white/10 bg-navy-dark/70 text-base text-white/85 md:text-lg">
       <div className="container-news">
-        <div className="flex items-center justify-between h-16 relative">
+        <div className="relative flex h-16 items-center justify-between">
           {siteName && (
             <Link
               href="/"
               aria-label={`${siteName} — الصفحة الرئيسية`}
-              className="iram-bar-brand absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden sm:flex items-center gap-2 font-display font-extrabold tracking-tight text-white text-base md:text-lg lg:text-xl whitespace-nowrap hover:opacity-80 transition-opacity"
+              className="iram-bar-brand absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-2 whitespace-nowrap font-display text-base font-extrabold tracking-tight text-white transition-opacity hover:opacity-80 sm:flex md:text-lg lg:text-xl"
             >
               {/* eslint-disable-next-line @next/next/no-img-element -- needs CSS mask, Next/Image strips style */}
               <img
                 src="/splash-logo.jpeg"
                 alt=""
                 aria-hidden
-                className="iram-bar-brand__icon h-10 md:h-12 lg:h-14 w-auto flex-shrink-0"
+                className="iram-bar-brand__icon h-10 w-auto flex-shrink-0 md:h-12 lg:h-14"
               />
               <span>{siteName}</span>
             </Link>
@@ -254,12 +245,12 @@ export function WeatherDateBar({ towns: customTowns, siteName }: WeatherDateBarP
               <button
                 type="button"
                 onClick={() => setPickerOpen((v) => !v)}
-                className="opacity-90 hover:opacity-100 hover:underline underline-offset-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-white/60 rounded px-1"
+                className="rounded px-1 underline-offset-2 opacity-90 hover:underline hover:opacity-100 focus:outline-none focus-visible:ring-1 focus-visible:ring-white/60"
                 aria-haspopup="listbox"
                 aria-expanded={pickerOpen}
               >
                 {town.name}{' '}
-                <span aria-hidden className="opacity-60 text-sm">
+                <span aria-hidden className="text-sm opacity-60">
                   ▾
                 </span>
               </button>
@@ -277,11 +268,7 @@ export function WeatherDateBar({ towns: customTowns, siteName }: WeatherDateBarP
             </div>
           </div>
           {formatted && (
-            <time
-              className="tabular-nums tracking-wide"
-              suppressHydrationWarning
-              dir="ltr"
-            >
+            <time className="tabular-nums tracking-wide" suppressHydrationWarning dir="ltr">
               {formatted.time} · {formatted.date}
             </time>
           )}
@@ -315,9 +302,9 @@ function TownPicker({
   return (
     <div
       role="listbox"
-      className="absolute top-full mt-1 start-0 w-64 max-h-[60vh] overflow-y-auto bg-navy text-white shadow-2xl border border-white/10 rounded-md text-sm"
+      className="absolute start-0 top-full mt-1 max-h-[60vh] w-64 overflow-y-auto rounded-md border border-white/10 bg-navy text-sm text-white shadow-2xl"
     >
-      <div className="sticky top-0 bg-navy border-b border-white/10 p-2">
+      <div className="sticky top-0 border-b border-white/10 bg-navy p-2">
         <input
           ref={inputRef}
           type="text"
@@ -325,21 +312,19 @@ function TownPicker({
           onChange={(e) => setQuery(e.target.value)}
           placeholder="ابحث عن مدينة..."
           aria-label="ابحث عن مدينة"
-          className="w-full bg-white/5 text-white placeholder:text-white/40 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-white/40 focus:bg-white/10"
+          className="w-full rounded bg-white/5 px-2 py-1 text-sm text-white placeholder:text-white/40 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-white/40"
         />
       </div>
       <div className="py-1">
         {filtered.length === 0 ? (
-          <div className="px-3 py-3 text-center text-white/50 text-xs">
-            لا توجد نتائج
-          </div>
+          <div className="px-3 py-3 text-center text-xs text-white/50">لا توجد نتائج</div>
         ) : (
           regions.map((region) => {
             const inRegion = filtered.filter((t) => t.region === region)
             if (inRegion.length === 0) return null
             return (
               <div key={region}>
-                <div className="px-3 pt-2 pb-1 text-[10px] tracking-wider text-white/50 font-semibold border-b border-white/5 mb-0.5">
+                <div className="mb-0.5 border-b border-white/5 px-3 pb-1 pt-2 text-[10px] font-semibold tracking-wider text-white/50">
                   {region}
                 </div>
                 {inRegion.map((t) => (
@@ -348,7 +333,7 @@ function TownPicker({
                     role="option"
                     aria-selected={t.name === selectedName}
                     onClick={() => onSelect(t.name)}
-                    className={`block w-full text-start px-3 py-1.5 hover:bg-white/10 transition-colors ${
+                    className={`block w-full px-3 py-1.5 text-start transition-colors hover:bg-white/10 ${
                       t.name === selectedName ? 'bg-white/10 font-semibold' : ''
                     }`}
                   >

@@ -402,46 +402,40 @@ export const getTopArticles = unstable_cache(fetchTopArticles, ['stats:top'], {
   tags: [TAG],
   revalidate: REVALIDATE,
 })
-export const getAuthorLeaderboard = unstable_cache(
-  fetchAuthorLeaderboard,
-  ['stats:authors'],
-  { tags: [TAG], revalidate: REVALIDATE },
-)
+export const getAuthorLeaderboard = unstable_cache(fetchAuthorLeaderboard, ['stats:authors'], {
+  tags: [TAG],
+  revalidate: REVALIDATE,
+})
 export const getCategoryDistribution = unstable_cache(
   fetchCategoryDistribution,
   ['stats:categories'],
   { tags: [TAG], revalidate: REVALIDATE },
 )
-export const getDailyPublishCounts = unstable_cache(
-  fetchDailyPublishCounts,
-  ['stats:daily'],
-  { tags: [TAG], revalidate: REVALIDATE },
-)
-export const getStatusBreakdown = unstable_cache(
-  fetchStatusBreakdown,
-  ['stats:status'],
-  { tags: [TAG], revalidate: REVALIDATE },
-)
+export const getDailyPublishCounts = unstable_cache(fetchDailyPublishCounts, ['stats:daily'], {
+  tags: [TAG],
+  revalidate: REVALIDATE,
+})
+export const getStatusBreakdown = unstable_cache(fetchStatusBreakdown, ['stats:status'], {
+  tags: [TAG],
+  revalidate: REVALIDATE,
+})
 export const getViewStats = unstable_cache(fetchViewStats, ['stats:views'], {
   tags: [TAG],
   revalidate: REVALIDATE,
 })
-export const getTimeToPublish = unstable_cache(
-  fetchTimeToPublish,
-  ['stats:ttp'],
-  { tags: [TAG], revalidate: REVALIDATE },
-)
+export const getTimeToPublish = unstable_cache(fetchTimeToPublish, ['stats:ttp'], {
+  tags: [TAG],
+  revalidate: REVALIDATE,
+})
 export const getDowActivity = unstable_cache(fetchDowActivity, ['stats:dow'], {
   tags: [TAG],
   revalidate: REVALIDATE,
 })
-export const getTagFrequencies = unstable_cache(
-  fetchTagFrequencies,
-  ['stats:tags'],
-  { tags: [TAG], revalidate: REVALIDATE },
-)
-export const getDataQuality = unstable_cache(
-  fetchDataQuality,
-  ['stats:quality'],
-  { tags: [TAG], revalidate: REVALIDATE },
-)
+export const getTagFrequencies = unstable_cache(fetchTagFrequencies, ['stats:tags'], {
+  tags: [TAG],
+  revalidate: REVALIDATE,
+})
+export const getDataQuality = unstable_cache(fetchDataQuality, ['stats:quality'], {
+  tags: [TAG],
+  revalidate: REVALIDATE,
+})

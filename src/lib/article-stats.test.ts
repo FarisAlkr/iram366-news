@@ -29,7 +29,10 @@ describe('extractText', () => {
   it('accepts a bare subtree without a root wrapper', () => {
     expect(
       extractText({
-        children: [{ type: 'text', text: 'foo' }, { type: 'text', text: 'bar' }],
+        children: [
+          { type: 'text', text: 'foo' },
+          { type: 'text', text: 'bar' },
+        ],
       }),
     ).toBe('foo bar')
   })

@@ -2,10 +2,7 @@ import type { Config } from 'tailwindcss'
 import typography from '@tailwindcss/typography'
 
 const config: Config = {
-  content: [
-    './src/app/**/*.{ts,tsx}',
-    './src/components/**/*.{ts,tsx}',
-  ],
+  content: ['./src/app/**/*.{ts,tsx}', './src/components/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
@@ -37,7 +34,7 @@ const config: Config = {
             maxWidth: '720px',
             lineHeight: '1.9',
             fontSize: '1.125rem',
-            'blockquote': {
+            blockquote: {
               borderLeftWidth: '0',
               borderRightWidth: '4px',
               borderRightColor: 'var(--tw-prose-quote-borders)',

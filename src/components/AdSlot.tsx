@@ -76,10 +76,7 @@ export const AdSlot: React.FC<AdSlotProps> = ({ placement, categoryId, className
   const trackedHref = `/api/ads/${ad.id}/click`
 
   return (
-    <aside
-      className={`ad-slot ad-slot--${placement} ${className ?? ''}`}
-      aria-label="إعلان"
-    >
+    <aside className={`ad-slot ad-slot--${placement} ${className ?? ''}`} aria-label="إعلان">
       <a
         href={trackedHref}
         target="_blank"

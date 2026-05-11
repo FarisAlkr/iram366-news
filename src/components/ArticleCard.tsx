@@ -31,8 +31,8 @@ export function ArticleCard({ article, category, variant = 'default' }: ArticleC
   if (variant === 'horizontal') {
     return (
       <Link href={href} className="iram-card-in group block">
-        <article className="flex gap-4 items-start">
-          <div className="relative w-28 h-20 flex-shrink-0 overflow-hidden rounded">
+        <article className="flex items-start gap-4">
+          <div className="relative h-20 w-28 flex-shrink-0 overflow-hidden rounded">
             {image && (
               <Image
                 src={pickMediaUrl(image, 'thumbnail')}
@@ -44,12 +44,12 @@ export function ArticleCard({ article, category, variant = 'default' }: ArticleC
             )}
             {hasVideo && <PlayBadge size="sm" />}
           </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-display font-bold text-sm leading-relaxed line-clamp-2 group-hover:text-accent-red transition-colors duration-150">
+          <div className="min-w-0 flex-1">
+            <h3 className="line-clamp-2 font-display text-sm font-bold leading-relaxed transition-colors duration-150 group-hover:text-accent-red">
               {article.title}
             </h3>
             {article.publishedAt && (
-              <time className="text-[var(--color-ink-muted)] text-xs mt-1 block">
+              <time className="mt-1 block text-xs text-[var(--color-ink-muted)]">
                 {relativeTime(article.publishedAt)}
               </time>
             )}
@@ -62,7 +62,7 @@ export function ArticleCard({ article, category, variant = 'default' }: ArticleC
   if (variant === 'compact') {
     return (
       <Link href={href} className="iram-card-in group block">
-        <article className="bg-white rounded overflow-hidden shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] transition-all duration-250 hover:-translate-y-0.5">
+        <article className="duration-250 overflow-hidden rounded bg-white shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]">
           <div className="relative aspect-[3/2] overflow-hidden">
             {image && (
               <Image
@@ -74,14 +74,14 @@ export function ArticleCard({ article, category, variant = 'default' }: ArticleC
               />
             )}
             {cat && (
-              <div className="absolute top-3 start-3">
+              <div className="absolute start-3 top-3">
                 <CategoryBadge name={cat.name} slug={cat.slug} color={cat.color} />
               </div>
             )}
             {hasVideo && <PlayBadge />}
           </div>
           <div className="p-3">
-            <h3 className="font-display font-bold text-[15px] leading-relaxed line-clamp-2 group-hover:text-accent-red transition-colors duration-150">
+            <h3 className="line-clamp-2 font-display text-[15px] font-bold leading-relaxed transition-colors duration-150 group-hover:text-accent-red">
               {article.title}
             </h3>
           </div>
@@ -92,7 +92,7 @@ export function ArticleCard({ article, category, variant = 'default' }: ArticleC
 
   return (
     <Link href={href} className="group block">
-      <article className="bg-white rounded-lg overflow-hidden shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] transition-all duration-250 hover:-translate-y-1">
+      <article className="duration-250 overflow-hidden rounded-lg bg-white shadow-[var(--shadow-card)] transition-all hover:-translate-y-1 hover:shadow-[var(--shadow-card-hover)]">
         <div className="relative aspect-[16/9] overflow-hidden">
           {image && (
             <Image
@@ -104,20 +104,20 @@ export function ArticleCard({ article, category, variant = 'default' }: ArticleC
             />
           )}
           {cat && (
-            <div className="absolute top-3 start-3">
+            <div className="absolute start-3 top-3">
               <CategoryBadge name={cat.name} slug={cat.slug} color={cat.color} />
             </div>
           )}
           {hasVideo && <PlayBadge />}
         </div>
         <div className="p-4">
-          <h3 className="font-display font-bold text-[var(--font-size-card-title)] leading-snug line-clamp-2 mb-2 group-hover:text-accent-red transition-colors duration-150">
+          <h3 className="mb-2 line-clamp-2 font-display font-bold leading-snug text-[var(--font-size-card-title)] transition-colors duration-150 group-hover:text-accent-red">
             {article.title}
           </h3>
-          <p className="text-[var(--color-ink-light)] text-sm leading-relaxed line-clamp-2 mb-3">
+          <p className="mb-3 line-clamp-2 text-sm leading-relaxed text-[var(--color-ink-light)]">
             {article.excerpt}
           </p>
-          <div className="flex items-center justify-between text-[var(--color-ink-muted)] text-xs">
+          <div className="flex items-center justify-between text-xs text-[var(--color-ink-muted)]">
             {author?.name && <span>{author.name}</span>}
             {article.publishedAt && <time>{relativeTime(article.publishedAt)}</time>}
           </div>
@@ -129,12 +129,15 @@ export function ArticleCard({ article, category, variant = 'default' }: ArticleC
 
 function PlayBadge({ size = 'md' }: { size?: 'sm' | 'md' }) {
   const dim = size === 'sm' ? 'w-7 h-7' : 'w-12 h-12'
-  const triangle = size === 'sm' ? 'border-y-[5px] border-s-[8px]' : 'border-y-[8px] border-s-[14px]'
+  const triangle =
+    size === 'sm' ? 'border-y-[5px] border-s-[8px]' : 'border-y-[8px] border-s-[14px]'
   return (
-    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-      <div className={`${dim} rounded-full bg-black/55 backdrop-blur-sm flex items-center justify-center shadow-md`}>
+    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+      <div
+        className={`${dim} flex items-center justify-center rounded-full bg-black/55 shadow-md backdrop-blur-sm`}
+      >
         <span
-          className={`${triangle} border-y-transparent border-s-white border-e-0 ms-1`}
+          className={`${triangle} ms-1 border-e-0 border-y-transparent border-s-white`}
           aria-hidden
         />
       </div>

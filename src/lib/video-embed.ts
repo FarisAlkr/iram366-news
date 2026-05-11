@@ -10,12 +10,7 @@
  * aren't tracked unless they actually press play.
  */
 
-export type VideoPlatform =
-  | 'youtube'
-  | 'tiktok'
-  | 'instagram'
-  | 'twitter'
-  | 'facebook'
+export type VideoPlatform = 'youtube' | 'tiktok' | 'instagram' | 'twitter' | 'facebook'
 
 export type VideoAspect = 'wide' | 'tall' | 'square'
 
@@ -26,8 +21,7 @@ export interface ParsedVideo {
 }
 
 const RX = {
-  youtube:
-    /(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|v\/)|youtu\.be\/)([\w-]{11})/i,
+  youtube: /(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|v\/)|youtu\.be\/)([\w-]{11})/i,
   youtubeShorts: /youtube\.com\/shorts\//i,
   tiktok: /tiktok\.com\/(?:@[^/]+\/video\/|v\/)(\d+)/i,
   instagram: /instagram\.com\/(p|reel|tv)\/([\w-]+)/i,

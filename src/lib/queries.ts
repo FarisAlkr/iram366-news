@@ -86,18 +86,16 @@ const fetchCategories = unstable_cache(
 
 export const getCategories = cache(async (): Promise<Category[]> => fetchCategories())
 
-export const getCategoryBySlug = cache(
-  async (slug: string): Promise<Category | undefined> => {
-    const payload = await getPayloadClient()
-    const result = await payload.find({
-      collection: 'categories',
-      where: { slug: { equals: slug } },
-      limit: 1,
-      depth: 0,
-    })
-    return result.docs[0] as unknown as Category | undefined
-  },
-)
+export const getCategoryBySlug = cache(async (slug: string): Promise<Category | undefined> => {
+  const payload = await getPayloadClient()
+  const result = await payload.find({
+    collection: 'categories',
+    where: { slug: { equals: slug } },
+    limit: 1,
+    depth: 0,
+  })
+  return result.docs[0] as unknown as Category | undefined
+})
 
 // --------------------------------------------------------------------------
 // Articles
