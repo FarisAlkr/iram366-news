@@ -199,10 +199,10 @@ Backups run nightly at 03:15 UTC via cron, dumping Postgres → Cloudflare R2 wi
 
 Two desktop-only decorative effects ship with the site:
 
-| Effect                    | What it is                                                                                                          | File                            |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
-| Calligraphy ink cursor    | Canvas-based ink trail that follows the cursor; speed-modulated width; dims automatically over body text.           | `src/components/CursorInk.tsx`  |
-| Footer-walking camel      | Inline SVG camel that paces across the footer in a real camel "pace" gait; head tracks the cursor at rest.          | `src/components/FooterCamel.tsx`|
+| Effect                 | What it is                                                                                                 | File                             |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| Calligraphy ink cursor | Canvas-based ink trail that follows the cursor; speed-modulated width; dims automatically over body text.  | `src/components/CursorInk.tsx`   |
+| Footer-walking camel   | Inline SVG camel that paces across the footer in a real camel "pace" gait; head tracks the cursor at rest. | `src/components/FooterCamel.tsx` |
 
 Both effects are **never rendered** when:
 

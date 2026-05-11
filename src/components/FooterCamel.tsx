@@ -101,16 +101,8 @@ export default function FooterCamel() {
       // Phase 0:    left-side forward,  right-side back
       // Phase 0.5:  left-side back,     right-side forward
       const tl = gsap.timeline({ repeat: -1, paused: reducedMotion })
-      tl.to(
-        [legFL, legBL],
-        { rotate: 18, duration: LEG_CYCLE_SEC / 2, ease: 'sine.inOut' },
-        0,
-      )
-        .to(
-          [legFR, legBR],
-          { rotate: -18, duration: LEG_CYCLE_SEC / 2, ease: 'sine.inOut' },
-          0,
-        )
+      tl.to([legFL, legBL], { rotate: 18, duration: LEG_CYCLE_SEC / 2, ease: 'sine.inOut' }, 0)
+        .to([legFR, legBR], { rotate: -18, duration: LEG_CYCLE_SEC / 2, ease: 'sine.inOut' }, 0)
         .to(
           [legFL, legBL],
           { rotate: -18, duration: LEG_CYCLE_SEC / 2, ease: 'sine.inOut' },
@@ -125,7 +117,11 @@ export default function FooterCamel() {
         .to(body, { y: -2, duration: LEG_CYCLE_SEC / 4, ease: 'sine.inOut' }, 0)
         .to(body, { y: 0, duration: LEG_CYCLE_SEC / 4, ease: 'sine.inOut' }, LEG_CYCLE_SEC / 4)
         .to(body, { y: -2, duration: LEG_CYCLE_SEC / 4, ease: 'sine.inOut' }, LEG_CYCLE_SEC / 2)
-        .to(body, { y: 0, duration: LEG_CYCLE_SEC / 4, ease: 'sine.inOut' }, (LEG_CYCLE_SEC * 3) / 4)
+        .to(
+          body,
+          { y: 0, duration: LEG_CYCLE_SEC / 4, ease: 'sine.inOut' },
+          (LEG_CYCLE_SEC * 3) / 4,
+        )
       return tl
     }
 
@@ -470,11 +466,7 @@ export default function FooterCamel() {
                   d="M 0 6 C -2 -2, 6 -4, 8 2 C 8 6, 6 8, 4 8 C 2 8, 0 7, 0 6 Z"
                   fill="url(#camel-coat-dark)"
                 />
-                <path
-                  d="M 2 5 C 3 1, 6 0, 7 3 C 6 5, 4 6, 2 5 Z"
-                  fill="#f0d5a8"
-                  opacity="0.7"
-                />
+                <path d="M 2 5 C 3 1, 6 0, 7 3 C 6 5, 4 6, 2 5 Z" fill="#f0d5a8" opacity="0.7" />
               </g>
             </g>
 
