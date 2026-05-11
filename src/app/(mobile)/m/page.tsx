@@ -49,35 +49,86 @@ const STATUS_CLASS: Record<string, string> = {
 
 const fmt = (n: number) => n.toLocaleString('en-US')
 
+const JERUSALEM_TZ = 'Asia/Jerusalem'
+
+/**
+ * UTC instant corresponding to midnight Asia/Jerusalem for either today's date
+ * or this week's starting Sunday. Used to bound visit-count queries to the
+ * editor's local day/week regardless of the server's TZ (containers default
+ * to UTC, so a naive new Date() comparison would roll "today" over at 02:00
+ * or 03:00 Israel time depending on DST).
+ */
+function jerusalemBoundary(now: Date, mode: 'today' | 'week'): Date {
+  const offsetStr =
+    new Intl.DateTimeFormat('en', {
+      timeZone: JERUSALEM_TZ,
+      timeZoneName: 'longOffset',
+    })
+      .formatToParts(now)
+      .find((p) => p.type === 'timeZoneName')?.value ?? 'GMT+00:00'
+  const m = /GMT([+-])(\d{2}):(\d{2})/.exec(offsetStr)
+  const sign = m?.[1] === '-' ? -1 : 1
+  const offsetMinutes = sign * (Number(m?.[2] ?? 0) * 60 + Number(m?.[3] ?? 0))
+
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: JERUSALEM_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    weekday: 'short',
+  }).formatToParts(now)
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? ''
+  const y = Number(get('year'))
+  const mo = Number(get('month'))
+  const d = Number(get('day'))
+  const dowIdx = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(get('weekday'))
+  const daysBack = mode === 'week' && dowIdx >= 0 ? dowIdx : 0
+
+  return new Date(Date.UTC(y, mo - 1, d - daysBack) - offsetMinutes * 60_000)
+}
+
 export default async function MobileDashboardPage() {
   const user = await getMobileUser()
   if (!user) redirect('/m/login')
 
   const payload = await getPayloadClient()
 
-  const [published, inReview, breaking, recent, totalViews] = await Promise.all([
-    payload.count({
-      collection: 'articles',
-      where: { status: { equals: ArticleStatus.Published } },
-    }),
-    payload.count({
-      collection: 'articles',
-      where: { status: { equals: ArticleStatus.InReview } },
-    }),
-    payload.count({
-      collection: 'articles',
-      where: {
-        and: [{ status: { equals: ArticleStatus.Published } }, { isBreaking: { equals: true } }],
-      },
-    }),
-    payload.find({
-      collection: 'articles',
-      limit: 8,
-      sort: '-updatedAt',
-      depth: 1,
-    }),
-    fetchTotalPublishedViews(),
-  ])
+  const now = new Date()
+  const todayStartIso = jerusalemBoundary(now, 'today').toISOString()
+  const weekStartIso = jerusalemBoundary(now, 'week').toISOString()
+
+  const [published, inReview, breaking, recent, totalViews, visitsToday, visitsThisWeek] =
+    await Promise.all([
+      payload.count({
+        collection: 'articles',
+        where: { status: { equals: ArticleStatus.Published } },
+      }),
+      payload.count({
+        collection: 'articles',
+        where: { status: { equals: ArticleStatus.InReview } },
+      }),
+      payload.count({
+        collection: 'articles',
+        where: {
+          and: [{ status: { equals: ArticleStatus.Published } }, { isBreaking: { equals: true } }],
+        },
+      }),
+      payload.find({
+        collection: 'articles',
+        limit: 8,
+        sort: '-updatedAt',
+        depth: 1,
+      }),
+      fetchTotalPublishedViews(),
+      payload.count({
+        collection: 'page-views',
+        where: { date: { greater_than_equal: todayStartIso } },
+      }),
+      payload.count({
+        collection: 'page-views',
+        where: { date: { greater_than_equal: weekStartIso } },
+      }),
+    ])
 
   return (
     <>
@@ -107,6 +158,20 @@ export default async function MobileDashboardPage() {
             </span>
             <span className="m-stat__label">إجمالي المشاهدات</span>
             <span className="m-stat__value">{fmt(totalViews)}</span>
+          </div>
+          <div className="m-stat">
+            <span className="m-stat__icon" aria-hidden>
+              📅
+            </span>
+            <span className="m-stat__label">زيارات اليوم</span>
+            <span className="m-stat__value">{fmt(visitsToday.totalDocs)}</span>
+          </div>
+          <div className="m-stat">
+            <span className="m-stat__icon" aria-hidden>
+              📊
+            </span>
+            <span className="m-stat__label">زيارات الأسبوع</span>
+            <span className="m-stat__value">{fmt(visitsThisWeek.totalDocs)}</span>
           </div>
           <div className="m-stat">
             <span className="m-stat__icon" aria-hidden>
