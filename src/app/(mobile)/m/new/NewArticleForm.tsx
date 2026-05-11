@@ -28,7 +28,7 @@ interface GalleryItem {
 
 export function NewArticleForm({ categories }: Props) {
   const [state, action, pending] = useActionState(createArticleAction, {})
-  const [status, setStatus] = useState<'draft' | 'published'>('published')
+  const [status, setStatus] = useState<'draft' | 'published'>('draft')
   const [placement, setPlacement] = useState<Placement>('none')
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [imageInfo, setImageInfo] = useState<{ name: string; size: number } | null>(null)
