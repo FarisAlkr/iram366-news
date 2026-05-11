@@ -28,7 +28,7 @@ interface GalleryItem {
 
 export function NewArticleForm({ categories }: Props) {
   const [state, action, pending] = useActionState(createArticleAction, {})
-  const [status, setStatus] = useState<'draft' | 'published'>('published')
+  const [status, setStatus] = useState<'draft' | 'published'>('draft')
   const [placement, setPlacement] = useState<Placement>('none')
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [imageInfo, setImageInfo] = useState<{ name: string; size: number } | null>(null)
@@ -238,7 +238,7 @@ export function NewArticleForm({ categories }: Props) {
               role="radio"
               aria-checked={status === 'draft'}
               onClick={() => setStatus('draft')}
-              className={`m-toggle__btn${status === 'draft' ? 'm-toggle__btn--active' : ''}`}
+              className={`m-toggle__btn ${status === 'draft' ? 'm-toggle__btn--active' : ''}`}
             >
               💾 مسودة
             </button>
@@ -247,7 +247,7 @@ export function NewArticleForm({ categories }: Props) {
               role="radio"
               aria-checked={status === 'published'}
               onClick={() => setStatus('published')}
-              className={`m-toggle__btn${status === 'published' ? 'm-toggle__btn--active' : ''}`}
+              className={`m-toggle__btn ${status === 'published' ? 'm-toggle__btn--active' : ''}`}
             >
               🚀 نشر فوراً
             </button>
@@ -275,7 +275,7 @@ export function NewArticleForm({ categories }: Props) {
                   aria-checked={checked}
                   disabled={disabled}
                   onClick={() => !disabled && setPlacement(p.value)}
-                  className={`m-placement__btn${checked ? 'm-placement__btn--active' : ''}`}
+                  className={`m-placement__btn ${checked ? 'm-placement__btn--active' : ''}`}
                 >
                   <span className="m-placement__emoji" aria-hidden>
                     {p.emoji}
@@ -329,7 +329,7 @@ function Field({
   children: React.ReactNode
 }) {
   return (
-    <div className={`m-field${error ? 'm-field--error' : ''}`}>
+    <div className={`m-field ${error ? 'm-field--error' : ''}`}>
       <label className="m-label" htmlFor={htmlFor}>
         {label}
       </label>
