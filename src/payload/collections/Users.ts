@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { UserRole } from '../../domain/enums.ts'
-import { isAdmin, isAdminOrEditor, isPublic } from '../access/index.ts'
+import { isAdmin, isAdminOrEditor } from '../access/index.ts'
 import { auditAfterChange, auditAfterDelete } from '../hooks/audit.ts'
 
 const ROLE_OPTIONS: Array<{ label: string; value: UserRole }> = [
@@ -148,7 +148,7 @@ export const Users: CollectionConfig = {
     afterDelete: [auditAfterDelete],
   },
   access: {
-    read: isPublic,
+    read: isAdminOrEditor,
     create: isAdmin,
     update: isAdminOrEditor,
     delete: isAdmin,
