@@ -85,14 +85,13 @@ export default function FooterCamel() {
     let directionFacing: 1 | -1 = 1 // 1 = facing right, -1 = facing left
     let isPaused = false
 
-    const isFacingLeftBecauseRtl = () => {
-      // The footer is RTL; we want the camel to start at the visual left
-      // and walk to the visual right regardless of writing direction. Visual
-      // coordinates are unaffected by `dir`, so we anchor on `left: 0` and
-      // the camel just walks across in pixel space.
-      return false
-    }
-    void isFacingLeftBecauseRtl // reserved for future locale-aware tweaks
+    // Fire-and-forget GSAP animations (sniff, ear-flick, bow, onLeave reset)
+    // accumulate here so cleanup can kill any still in flight at unmount.
+    const ephemerals: gsap.core.Animation[] = []
+    // Head-tracking creates a new tween per rAF tick while paused; we keep
+    // only the latest reference (the prior one is killed before the new one
+    // is created) so we don't grow an unbounded array.
+    let headTrackTween: gsap.core.Tween | null = null
 
     // --- Leg cycle (continuous; independent of horizontal motion) ---------
 
@@ -169,21 +168,23 @@ export default function FooterCamel() {
 
     const playSniff = () => {
       if (reducedMotion) return
-      gsap
+      const tl = gsap
         .timeline()
         .to(head, { rotate: 14, y: 4, duration: 0.5, ease: 'power2.out' })
         .to(head, { rotate: 14, y: 4, duration: 0.6 }) // hold (sniff)
         .to(head, { rotate: 0, y: 0, duration: 0.5, ease: 'power2.inOut' })
+      ephemerals.push(tl)
     }
 
     const playEarFlick = () => {
       if (reducedMotion) return
-      gsap
+      const tl = gsap
         .timeline()
         .to(ear, { rotate: -22, duration: 0.12, ease: 'power2.out' })
         .to(ear, { rotate: 0, duration: 0.18, ease: 'power2.in' })
         .to(ear, { rotate: -14, duration: 0.1, ease: 'power2.out' })
         .to(ear, { rotate: 0, duration: 0.18, ease: 'power2.in' })
+      ephemerals.push(tl)
     }
 
     const scheduleIdle = () => {
@@ -197,7 +198,10 @@ export default function FooterCamel() {
         scheduleIdle()
       }, delay)
     }
-    scheduleIdle()
+    // Under prefers-reduced-motion the idle behaviors are no-ops (playSniff /
+    // playEarFlick early-return). Skip the setTimeout chain entirely so we
+    // don't keep waking the event loop every 30-90s for nothing.
+    if (!reducedMotion) scheduleIdle()
 
     // --- Cursor head-tracking (only when paused / at edge) ----------------
 
@@ -205,7 +209,9 @@ export default function FooterCamel() {
     const onMouseMove = (e: MouseEvent) => {
       lastCursorX = e.clientX
     }
-    window.addEventListener('mousemove', onMouseMove, { passive: true })
+    // Head-tracking is disabled under reduced motion, so the cursor position
+    // is never consumed — don't bother subscribing in that mode.
+    if (!reducedMotion) window.addEventListener('mousemove', onMouseMove, { passive: true })
 
     const tickHeadTrack = () => {
       // Only track when the horizontal timeline is paused (edge or hover).
@@ -222,7 +228,12 @@ export default function FooterCamel() {
         // visual coordinates because the scale is applied to the wrapper,
         // not the head. Negate to match visual direction.
         const visual = directionFacing === -1 ? -target : target
-        gsap.to(head, { rotate: visual, duration: HEAD_TRACK_DURATION, ease: 'power2.out' })
+        headTrackTween?.kill()
+        headTrackTween = gsap.to(head, {
+          rotate: visual,
+          duration: HEAD_TRACK_DURATION,
+          ease: 'power2.out',
+        })
       }
       trackRafId = window.requestAnimationFrame(tickHeadTrack)
     }
@@ -242,15 +253,16 @@ export default function FooterCamel() {
         walkTl?.resume()
         legTl?.resume()
       }
-      gsap.to(head, { rotate: 0, duration: 0.4, ease: 'power2.out' })
+      ephemerals.push(gsap.to(head, { rotate: 0, duration: 0.4, ease: 'power2.out' }))
     }
     const onClick = () => {
       // Bow head ~10deg, hold 400ms, release. Independent of pause state.
-      gsap
+      const tl = gsap
         .timeline()
         .to(head, { rotate: 14, duration: 0.18, ease: 'power2.out' })
         .to(head, { rotate: 14, duration: 0.4 })
         .to(head, { rotate: 0, duration: 0.25, ease: 'power2.inOut' })
+      ephemerals.push(tl)
 
       if (typeof window !== 'undefined' && localStorage.getItem('iram_sound_enabled') === 'true') {
         // Sound asset is optional — keep silent if it isn't shipped.
@@ -272,6 +284,8 @@ export default function FooterCamel() {
       ro.disconnect()
       if (idleTimeoutId !== undefined) window.clearTimeout(idleTimeoutId)
       if (trackRafId !== undefined) window.cancelAnimationFrame(trackRafId)
+      ephemerals.forEach((a) => a.kill())
+      headTrackTween?.kill()
       window.removeEventListener('mousemove', onMouseMove)
       camel.removeEventListener('pointerenter', onEnter)
       camel.removeEventListener('pointerleave', onLeave)
