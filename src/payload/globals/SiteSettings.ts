@@ -1,4 +1,5 @@
 import type { GlobalConfig } from 'payload'
+import { revalidatePath } from 'next/cache'
 
 import { ArticleStatus, HeroMode } from '../../domain/enums.ts'
 
@@ -12,6 +13,18 @@ export const SiteSettings: GlobalConfig = {
   access: {
     read: () => true,
     update: ({ req: { user } }) => user?.role === 'admin',
+  },
+  hooks: {
+    afterChange: [
+      // Any edit in /admin → site-settings should be reflected on the public
+      // site on the next request. The frontend root layout reads this global
+      // for the cursor-ink toggle and every page reads it for the camel
+      // toggle, so the cheapest correct thing is to drop the whole frontend
+      // tree's cache. The next request rebuilds it.
+      async () => {
+        revalidatePath('/', 'layout')
+      },
+    ],
   },
   fields: [
     {
