@@ -182,7 +182,7 @@ function BottomNav({ active }: { active: 'home' | 'new' }) {
     <nav className="m-bottomnav" aria-label="تنقل سفلي">
       <Link
         href="/m"
-        className={`m-bottomnav__item${active === 'home' ? 'm-bottomnav__item--active' : ''}`}
+        className={`m-bottomnav__item ${active === 'home' ? 'm-bottomnav__item--active' : ''}`}
       >
         <span className="m-bottomnav__icon" aria-hidden>
           🏠
