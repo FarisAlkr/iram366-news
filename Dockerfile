@@ -56,7 +56,11 @@ RUN npm run build
 # This stage skips `next build` entirely and just ships node_modules + source.
 FROM base AS migrator
 COPY --from=deps /app/node_modules ./node_modules
-COPY package.json package-lock.json tsconfig.json next.config.mjs next-env.d.ts ./
+# `next-env.d.ts` is intentionally NOT copied here: it's in .gitignore (Next
+# regenerates it on every dev/build) and absent from CI's fresh checkout, so
+# listing it makes the migrator image build fail in GitHub Actions even
+# though it works locally. Payload's CLI doesn't need it.
+COPY package.json package-lock.json tsconfig.json next.config.mjs ./
 COPY src ./src
 ENV NODE_ENV=production
 CMD ["npm", "run", "migrate"]
