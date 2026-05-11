@@ -1,13 +1,18 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { cookies } from 'next/headers'
 
-import { ArticleStatus } from '@/domain/enums'
 import { getPayloadClient } from '@/lib/payload'
+import { getChatbotPool } from '@/lib/chatbot/db'
 import { logger } from '@/lib/logger'
 import { RateLimits, enforce } from '@/lib/rate-limit'
 import { isValidSlug } from '@/lib/slug'
 
 const VIEW_COOKIE_TTL_SEC = 60 * 60 // 1 hour
+
+interface ViewUpdateRow {
+  id: number | string
+  category_id: number | string | null
+}
 
 export async function POST(
   request: NextRequest,
@@ -27,37 +32,46 @@ export async function POST(
     return NextResponse.json({ success: true, deduplicated: true })
   }
 
-  const payload = await getPayloadClient()
-  const result = await payload.find({
-    collection: 'articles',
-    where: {
-      slug: { equals: slug },
-      status: { equals: ArticleStatus.Published },
-    },
-    limit: 1,
-    depth: 0,
-  })
+  // Atomic increment via raw SQL, deliberately bypassing payload.update().
+  // Routing the counter through Payload's collection hooks meant every page
+  // view fired afterChange — auditAfterChange (one audit-log row per view),
+  // notifyOnArticleStatusChange, and embedArticleAfterChange (re-runs the
+  // paid OpenAI/Voyage embedding API call for the same unchanged content).
+  // Doing the UPDATE here keeps the counter atomic (no lost-update race) and
+  // skips the hook chain entirely.
+  const pool = getChatbotPool()
+  let row: ViewUpdateRow | undefined
+  try {
+    const result = await pool.query<ViewUpdateRow>(
+      `UPDATE articles
+         SET views = COALESCE(views, 0) + 1
+       WHERE slug = $1
+         AND status = 'published'
+         AND deleted_at IS NULL
+       RETURNING id, category_id`,
+      [slug],
+    )
+    row = result.rows[0]
+  } catch (err) {
+    logger.error('article.view.update_failed', { err, slug })
+    return NextResponse.json({ error: 'internal' }, { status: 500 })
+  }
 
-  const article = result.docs[0] as { id: string | number; views?: number; category?: unknown } | undefined
-  if (!article) {
+  if (!row) {
     return NextResponse.json({ error: 'Article not found' }, { status: 404 })
   }
 
-  await payload.update({
-    collection: 'articles',
-    id: article.id,
-    data: { views: (article.views ?? 0) + 1 },
-  })
-
-  // Fire-and-forget timeseries log — non-fatal but audited.
+  // Page-views timeseries insert stays best-effort. PageViews is in the
+  // audit-log SKIP_COLLECTIONS list, so this write doesn't fan out.
   try {
+    const payload = await getPayloadClient()
     await payload.create({
       collection: 'page-views',
       data: {
-        article: article.id,
+        article: row.id,
         date: new Date().toISOString(),
-        category: article.category as never,
-      },
+        category: row.category_id ?? undefined,
+      } as never,
     })
   } catch (err) {
     logger.warn('page_views.log_failed', { err, slug })
