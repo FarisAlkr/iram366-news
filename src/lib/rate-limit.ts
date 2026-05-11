@@ -118,4 +118,7 @@ export const RateLimits = {
   view: { prefix: 'view', capacity: 60, refillPerSec: 1 } satisfies RateLimitConfig,
   rss: { prefix: 'rss', capacity: 30, refillPerSec: 0.1 } satisfies RateLimitConfig,
   seed: { prefix: 'seed', capacity: 1, refillPerSec: 1 / 3600 } satisfies RateLimitConfig,
+  // 5 attempts per 15-minute window — refill = 5/900s ≈ 0.00556 tokens/sec.
+  // Bucket starts full, so a fresh attacker gets 5 quick tries, then 1 every 3 min.
+  login: { prefix: 'login', capacity: 5, refillPerSec: 5 / 900 } satisfies RateLimitConfig,
 }
