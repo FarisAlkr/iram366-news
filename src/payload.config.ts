@@ -112,13 +112,14 @@ export default buildConfig({
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
   db: postgresAdapter({
-    // `push` mirrors collections to the schema without a migration history.
-    // Currently true while the site is in development with no real readers
-    // and no migration history exists. When going to real-user scale, flip
-    // to `process.env.NODE_ENV !== 'production'`, generate an initial
-    // migration with `payload migrate:create`, and rely on the migration
-    // pipeline from there.
-    push: true,
+    // push only in dev; prod uses the migration pipeline (see
+    // src/payload/migrations/). Leaving push on in production was the root
+    // cause of the 2026-05-11 outage — a `signatureUi` group field was added
+    // to SiteSettings and shipped, but push didn't run in the production
+    // runtime image, so the schema diverged from the code and every page
+    // querying the global returned 500. The deploy workflow now runs
+    // `payload migrate` from a dedicated migrator container instead.
+    push: process.env.NODE_ENV !== 'production',
     migrationDir: path.resolve(dirname, 'payload/migrations'),
     // Production pool tuning: pg defaults to max=10, no timeouts. Under
     // sustained load — or when one slow query holds a connection — that
