@@ -22,6 +22,22 @@ interface RichTextProps {
   content: unknown
 }
 
+// Stored Lexical link nodes carry an editor-supplied URL. Without an allow-list,
+// `<a href="javascript:...">` planted by any user with write access executes in
+// the reader's origin on click — stored XSS that bypasses CSP because the
+// `javascript:` scheme runs inline.
+const ALLOWED_LINK_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:'])
+
+function safeHref(raw: string | undefined | null): string {
+  if (!raw) return '#'
+  try {
+    const url = new URL(raw, 'https://placeholder.invalid')
+    return ALLOWED_LINK_PROTOCOLS.has(url.protocol) ? raw : '#'
+  } catch {
+    return '#'
+  }
+}
+
 function renderNode(node: LexicalNode, index: number): React.ReactNode {
   if (!node) return null
 
@@ -64,13 +80,14 @@ function renderNode(node: LexicalNode, index: number): React.ReactNode {
       return <blockquote key={index}>{children}</blockquote>
 
     case 'link':
-    case 'autolink':
-      const href = node.fields?.url || node.url || '#'
+    case 'autolink': {
+      const href = safeHref(node.fields?.url || node.url)
       return (
         <a key={index} href={href} target="_blank" rel="noopener noreferrer">
           {children}
         </a>
       )
+    }
 
     case 'upload':
       if (node.value) {
