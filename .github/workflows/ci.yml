@@ -35,3 +35,69 @@ jobs:
 
       - name: Test
         run: npm test
+
+      - name: Check for missing migration on schema changes
+        # Catches the class of bug that caused the 2026-05-11 outage: a PR
+        # that modifies a Payload collection or global, ships, and finds out
+        # in production that the DB schema doesn't match the new code.
+        #
+        # Heuristic: if any file under src/payload/collections/ or
+        # src/payload/globals/ changed in this PR and no new file appears
+        # under src/payload/migrations/, fail. False positives are possible
+        # (e.g. editing an admin.description label) and are intentional —
+        # the override path is a `[skip-migration-check]` token in the PR
+        # title, body, or any commit message on the branch.
+        #
+        # Reason for being permissive on the override: stopping a typo fix
+        # in a collection's Arabic label shouldn't require a no-op migration.
+        # The cost of a false positive is one extra sentence in the PR
+        # description; the cost of a false negative is today's outage.
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          set -e
+          # Make sure we have the base ref locally for the diff.
+          git fetch --depth=1 origin "$BASE_REF":"refs/remotes/origin/$BASE_REF"
+
+          SCHEMA_CHANGES=$(git diff --name-only "origin/$BASE_REF"...HEAD \
+            | grep -E '^src/payload/(collections|globals)/' || true)
+
+          if [ -z "$SCHEMA_CHANGES" ]; then
+            echo "No schema files touched — skipping migration check."
+            exit 0
+          fi
+
+          NEW_MIGRATIONS=$(git diff --name-only --diff-filter=A \
+            "origin/$BASE_REF"...HEAD \
+            | grep -E '^src/payload/migrations/.*\.ts$' \
+            | grep -v -E '^src/payload/migrations/index\.ts$' \
+            || true)
+
+          if [ -n "$NEW_MIGRATIONS" ]; then
+            echo "Schema files changed AND new migration files exist — OK."
+            echo "$NEW_MIGRATIONS"
+            exit 0
+          fi
+
+          # No new migration — check for the override token in the PR
+          # title / body or any commit message on the branch.
+          COMMIT_MESSAGES=$(git log --format=%B "origin/$BASE_REF"..HEAD)
+          if echo "$PR_TITLE $PR_BODY $COMMIT_MESSAGES" \
+              | grep -qF '[skip-migration-check]'; then
+            echo "Schema files changed without a migration, but"
+            echo "[skip-migration-check] override is present — allowing."
+            exit 0
+          fi
+
+          echo "::error::This PR modifies Payload collections or globals but adds no migration file under src/payload/migrations/."
+          echo "Either:"
+          echo "  (a) generate a migration with 'npm run migrate:create -- <name>' and commit it, or"
+          echo "  (b) if this change genuinely doesn't need a migration (e.g. admin label only),"
+          echo "      add [skip-migration-check] to the PR title, body, or a commit message."
+          echo ""
+          echo "Changed schema files:"
+          echo "$SCHEMA_CHANGES"
+          exit 1
