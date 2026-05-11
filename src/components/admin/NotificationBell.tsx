@@ -21,9 +21,7 @@ const PAGE_SIZE = 12
  * /api/notifications endpoint for the current user. Click → dropdown
  * with recent items. Click an item → marks it read and navigates.
  */
-export const NotificationBell: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const NotificationBell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <>
       {children}
@@ -130,20 +128,14 @@ const Bell: React.FC = () => {
             <div className="iram-bell__head">
               <h4 className="iram-bell__title">الإشعارات</h4>
               {unread > 0 && (
-                <button
-                  type="button"
-                  className="iram-bell__mark-all"
-                  onClick={markAllRead}
-                >
+                <button type="button" className="iram-bell__mark-all" onClick={markAllRead}>
                   تعيين الكل كمقروء
                 </button>
               )}
             </div>
 
             <div className="iram-bell__list">
-              {loading && items.length === 0 && (
-                <div className="iram-bell__empty">يحمّل...</div>
-              )}
+              {loading && items.length === 0 && <div className="iram-bell__empty">يحمّل...</div>}
               {!loading && items.length === 0 && (
                 <div className="iram-bell__empty">
                   لا توجد إشعارات بعد. ستظهر هنا عند نشر مقال، تعليق محرر، أو إعلان من النظام.
@@ -153,9 +145,7 @@ const Bell: React.FC = () => {
                 <button
                   key={n.id}
                   type="button"
-                  className={`iram-bell__row ${
-                    n.readAt ? '' : 'iram-bell__row--unread'
-                  }`}
+                  className={`iram-bell__row ${n.readAt ? '' : 'iram-bell__row--unread'}`}
                   onClick={async () => {
                     if (!n.readAt) await markRead(n.id)
                     if (n.link) window.location.href = n.link
@@ -167,9 +157,7 @@ const Bell: React.FC = () => {
                   </span>
                   <span className="iram-bell__body">
                     <span className="iram-bell__row-title">{n.title}</span>
-                    {n.message && (
-                      <span className="iram-bell__row-message">{n.message}</span>
-                    )}
+                    {n.message && <span className="iram-bell__row-message">{n.message}</span>}
                     <span className="iram-bell__row-time" dir="ltr">
                       {timeAgo(n.createdAt)}
                     </span>

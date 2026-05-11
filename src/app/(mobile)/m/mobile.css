@@ -150,10 +150,22 @@
   border-radius: 999px;
   font-weight: 600;
 }
-.m-status--draft     { background: #f3f4f6; color: #4b5563; }
-.m-status--inReview  { background: #fef3c7; color: #92400e; }
-.m-status--published { background: #dcfce7; color: #166534; }
-.m-status--archived  { background: #e5e7eb; color: #374151; }
+.m-status--draft {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+.m-status--inReview {
+  background: #fef3c7;
+  color: #92400e;
+}
+.m-status--published {
+  background: #dcfce7;
+  color: #166534;
+}
+.m-status--archived {
+  background: #e5e7eb;
+  color: #374151;
+}
 .m-list-item__time {
   font-size: 11px;
   color: #6b7280;
@@ -194,7 +206,9 @@
   font-size: 16px; /* 16px prevents iOS zoom on focus */
   background: #fafaf9;
   color: #1a1a1a;
-  transition: border-color 0.12s, background 0.12s;
+  transition:
+    border-color 0.12s,
+    background 0.12s;
 }
 .m-input:focus,
 .m-textarea:focus,
@@ -221,7 +235,9 @@
   font-weight: 500;
   color: #4b5563;
 }
-.m-file input { display: none; }
+.m-file input {
+  display: none;
+}
 
 .m-toggle {
   display: flex;
@@ -253,10 +269,17 @@
   font-weight: 700;
   font-size: 15px;
   cursor: pointer;
-  transition: transform 0.08s, opacity 0.12s;
+  transition:
+    transform 0.08s,
+    opacity 0.12s;
 }
-.m-btn:active { transform: scale(0.98); }
-.m-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.m-btn:active {
+  transform: scale(0.98);
+}
+.m-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 .m-btn--primary {
   background: #0a2a2f;
   color: white;
@@ -383,8 +406,16 @@
 
 /* Tablet+ — keep mobile look but limit width and center */
 @media (min-width: 768px) {
-  .m-main { max-width: 640px; margin-inline: auto; }
-  .m-bottomnav { max-width: 640px; left: 50%; transform: translateX(-50%); border-radius: 16px 16px 0 0; }
+  .m-main {
+    max-width: 640px;
+    margin-inline: auto;
+  }
+  .m-bottomnav {
+    max-width: 640px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 16px 16px 0 0;
+  }
 }
 
 /* ===== Polished UI additions ===== */
@@ -441,7 +472,7 @@
   font-weight: 700;
   line-height: 1;
 }
-[dir="rtl"] .m-list-item__chevron {
+[dir='rtl'] .m-list-item__chevron {
   /* points toward "next" in RTL = leftward arrow rotated naturally */
   transform: scaleX(-1);
 }
@@ -461,8 +492,12 @@
   background: linear-gradient(135deg, #0a2a2f, #133a40);
   color: #fafaf9;
 }
-.m-stat--accent .m-stat__label { color: rgba(250, 250, 249, 0.65); }
-.m-stat--accent .m-stat__value { color: #efe2b8; }
+.m-stat--accent .m-stat__label {
+  color: rgba(250, 250, 249, 0.65);
+}
+.m-stat--accent .m-stat__value {
+  color: #efe2b8;
+}
 
 /* Quick-action card */
 .m-quick-action {
@@ -480,7 +515,9 @@
   box-shadow: 0 2px 8px rgba(200, 168, 78, 0.25);
   transition: transform 0.08s;
 }
-.m-quick-action:active { transform: scale(0.98); }
+.m-quick-action:active {
+  transform: scale(0.98);
+}
 
 /* Form sections — group fields visually */
 .m-section {
@@ -522,7 +559,9 @@
 }
 
 /* File input — preview */
-.m-file__text { flex: 1; }
+.m-file__text {
+  flex: 1;
+}
 .m-file__preview {
   margin-top: 8px;
   display: flex;
@@ -606,7 +645,9 @@
   animation: m-spin 0.7s linear infinite;
 }
 @keyframes m-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Multi-image gallery picker (new article form) */

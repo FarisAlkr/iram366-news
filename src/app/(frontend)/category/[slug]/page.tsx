@@ -69,25 +69,25 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
 
       <main className="container-news py-8">
         <header className="mb-8">
-          <h1 className="font-display font-extrabold text-[var(--font-size-h1)] mb-2">
+          <h1 className="mb-2 font-display font-extrabold text-[var(--font-size-h1)]">
             {category.name}
           </h1>
           {category.description && (
-            <p className="text-[var(--color-ink-light)] text-lg">{category.description}</p>
+            <p className="text-lg text-[var(--color-ink-light)]">{category.description}</p>
           )}
           <div
-            className="h-1 w-16 bg-accent-red rounded-full mt-4"
+            className="mt-4 h-1 w-16 rounded-full bg-accent-red"
             style={category.color ? { backgroundColor: category.color } : undefined}
           />
         </header>
 
         {articles.length === 0 ? (
-          <p className="text-[var(--color-ink-muted)] text-lg py-12 text-center">
+          <p className="py-12 text-center text-lg text-[var(--color-ink-muted)]">
             لا توجد مقالات في هذا التصنيف حالياً
           </p>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {articles.map((article) => (
                 <ArticleCard key={article.id} article={article} category={category} />
               ))}
@@ -120,10 +120,7 @@ function Pagination({
   currentPage: number
 }) {
   return (
-    <nav
-      className="flex items-center justify-center gap-2 mt-10"
-      aria-label="التنقل بين الصفحات"
-    >
+    <nav className="mt-10 flex items-center justify-center gap-2" aria-label="التنقل بين الصفحات">
       {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
         const isCurrent = page === currentPage
         return (
@@ -131,10 +128,10 @@ function Pagination({
             key={page}
             href={`/category/${slug}?page=${page}`}
             aria-current={isCurrent ? 'page' : undefined}
-            className={`w-10 h-10 flex items-center justify-center rounded text-sm font-medium transition-colors duration-150 ${
+            className={`flex h-10 w-10 items-center justify-center rounded text-sm font-medium transition-colors duration-150 ${
               isCurrent
                 ? 'bg-accent-red text-white'
-                : 'bg-white text-ink hover:bg-cream-dark shadow-[var(--shadow-card)]'
+                : 'bg-white text-ink shadow-[var(--shadow-card)] hover:bg-cream-dark'
             }`}
           >
             {page.toLocaleString('ar-EG')}

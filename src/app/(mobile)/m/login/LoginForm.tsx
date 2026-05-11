@@ -9,7 +9,9 @@ export function LoginForm() {
     <form action={action} className="m-form" style={{ boxShadow: 'none', padding: 0 }}>
       {state?.error && <div className="m-error">{state.error}</div>}
       <div className="m-field">
-        <label className="m-label" htmlFor="email">البريد الإلكتروني</label>
+        <label className="m-label" htmlFor="email">
+          البريد الإلكتروني
+        </label>
         <input
           id="email"
           name="email"
@@ -23,7 +25,9 @@ export function LoginForm() {
         />
       </div>
       <div className="m-field">
-        <label className="m-label" htmlFor="password">كلمة المرور</label>
+        <label className="m-label" htmlFor="password">
+          كلمة المرور
+        </label>
         <input
           id="password"
           name="password"

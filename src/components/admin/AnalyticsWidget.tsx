@@ -24,7 +24,11 @@ interface ArticleRow {
   updatedAt: string
   createdAt?: string
   category?: { id: number | string; name?: string; color?: string } | number | string | null
-  featuredImage?: { url?: string; sizes?: { thumbnail?: { url?: string } } } | number | string | null
+  featuredImage?:
+    | { url?: string; sizes?: { thumbnail?: { url?: string } } }
+    | number
+    | string
+    | null
   isFeatured?: boolean
   isBreaking?: boolean
 }
@@ -257,9 +261,9 @@ async function getStats(currentUser: UserRow | null) {
       tone: 'warning',
     })
   }
-  const emptyCategoriesCount = (
-    categoriesResult.docs as unknown as Array<{ name: string }>
-  ).filter((c) => !categoryBars.find((b) => b.name === c.name)).length
+  const emptyCategoriesCount = (categoriesResult.docs as unknown as Array<{ name: string }>).filter(
+    (c) => !categoryBars.find((b) => b.name === c.name),
+  ).length
   if (emptyCategoriesCount > 0 && categoryBars.length > 0) {
     actions.push({
       icon: 'tag',
@@ -390,19 +394,19 @@ const AreaChart: React.FC<{
         />
       ))}
       <path d={pathArea} fill="url(#areaGrad)" />
-      <path d={pathLine} fill="none" stroke="#c8a84e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d={pathLine}
+        fill="none"
+        stroke="#c8a84e"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
       {(() => {
         const last = points[points.length - 1]
         if (!last) return null
         return (
-          <circle
-            cx={last[0]}
-            cy={last[1]}
-            r="5"
-            fill="#fff"
-            stroke="#c8a84e"
-            strokeWidth="2.5"
-          />
+          <circle cx={last[0]} cy={last[1]} r="5" fill="#fff" stroke="#c8a84e" strokeWidth="2.5" />
         )
       })()}
     </svg>
@@ -419,11 +423,17 @@ const Sparkline: React.FC<{ data: number[]; tone?: 'up' | 'down' | 'flat' }> = (
   const max = Math.max(1, ...data)
   const stepX = width / Math.max(1, data.length - 1)
   const pts = data.map((v, i) => `${i * stepX},${height - (v / max) * (height - 4) - 2}`).join(' ')
-  const color =
-    tone === 'up' ? '#059669' : tone === 'down' ? '#dc2626' : '#7d8b8f'
+  const color = tone === 'up' ? '#059669' : tone === 'down' ? '#dc2626' : '#7d8b8f'
   return (
     <svg width={width} height={height} className="iram-sparkline">
-      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <polyline
+        points={pts}
+        fill="none"
+        stroke={color}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   )
 }
@@ -454,25 +464,239 @@ const VelocityBars: React.FC<{ data: { date: string; count: number }[] }> = ({ d
 // ==========================================================================
 const I = {
   Plus: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-      <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+    >
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
   ),
-  Eye: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>),
-  Doc: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>),
-  Avg: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="4 17 9 12 13 15 20 7" /></svg>),
-  Clock: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>),
-  Up: () => (<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round"><polyline points="6 15 12 9 18 15" /></svg>),
-  Down: () => (<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round"><polyline points="6 9 12 15 18 9" /></svg>),
-  Flame: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" /></svg>),
-  Alert: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>),
-  Image: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>),
-  Edit: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>),
-  Tag: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" /></svg>),
-  Arrow: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>),
-  Media: () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>),
-  Cat: () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" /></svg>),
-  World: () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>),
+  Eye: () => (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  ),
+  Doc: () => (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+    </svg>
+  ),
+  Avg: () => (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+    >
+      <polyline points="4 17 9 12 13 15 20 7" />
+    </svg>
+  ),
+  Clock: () => (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  ),
+  Up: () => (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.8"
+      strokeLinecap="round"
+    >
+      <polyline points="6 15 12 9 18 15" />
+    </svg>
+  ),
+  Down: () => (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.8"
+      strokeLinecap="round"
+    >
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  ),
+  Flame: () => (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+    </svg>
+  ),
+  Alert: () => (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  ),
+  Image: () => (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <polyline points="21 15 16 10 5 21" />
+    </svg>
+  ),
+  Edit: () => (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  ),
+  Tag: () => (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+    </svg>
+  ),
+  Arrow: () => (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="5" y1="12" x2="19" y2="12" />
+      <polyline points="12 5 19 12 12 19" />
+    </svg>
+  ),
+  Media: () => (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <polyline points="21 15 16 10 5 21" />
+    </svg>
+  ),
+  Cat: () => (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+    </svg>
+  ),
+  World: () => (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <line x1="2" y1="12" x2="22" y2="12" />
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </svg>
+  ),
 }
 
 // ==========================================================================
@@ -484,18 +708,26 @@ const TrendBadge: React.FC<{ delta: number }> = ({ delta }) => {
   return (
     <span className={`iram-trend iram-trend--${tone}`}>
       {delta > 0 ? <I.Up /> : delta < 0 ? <I.Down /> : null}
-      <span>{sign}{delta}%</span>
+      <span>
+        {sign}
+        {delta}%
+      </span>
     </span>
   )
 }
 
 const ActionIcon: React.FC<{ icon: string }> = ({ icon }) => {
   switch (icon) {
-    case 'image': return <I.Image />
-    case 'edit': return <I.Edit />
-    case 'alert': return <I.Alert />
-    case 'tag': return <I.Tag />
-    default: return <I.Edit />
+    case 'image':
+      return <I.Image />
+    case 'edit':
+      return <I.Edit />
+    case 'alert':
+      return <I.Alert />
+    case 'tag':
+      return <I.Tag />
+    default:
+      return <I.Edit />
   }
 }
 
@@ -527,18 +759,11 @@ export const AnalyticsWidget: React.FC = async () => {
       <header className="iram-dash__hero">
         <div className="iram-dash__hero-content">
           <p className="iram-dash__hero-label">لوحة التحكم الإدارية</p>
-          <h1 className="iram-dash__hero-title">
-            {greeting(stats.now, user?.name || 'أهلاً')}
-          </h1>
-          <p className="iram-dash__hero-subtitle">
-            إليك ملخص أداء المحتوى خلال آخر 30 يوماً
-          </p>
+          <h1 className="iram-dash__hero-title">{greeting(stats.now, user?.name || 'أهلاً')}</h1>
+          <p className="iram-dash__hero-subtitle">إليك ملخص أداء المحتوى خلال آخر 30 يوماً</p>
         </div>
         <div className="iram-dash__hero-cta">
-          <a
-            href="/admin/collections/articles/create"
-            className="iram-btn iram-btn--primary"
-          >
+          <a href="/admin/collections/articles/create" className="iram-btn iram-btn--primary">
             <I.Plus />
             <span>مقال جديد</span>
           </a>
@@ -561,7 +786,9 @@ export const AnalyticsWidget: React.FC = async () => {
       <div className="iram-dash__kpis">
         <div className="iram-kpi">
           <div className="iram-kpi__head">
-            <span className="iram-kpi__icon iram-kpi__icon--info"><I.Eye /></span>
+            <span className="iram-kpi__icon iram-kpi__icon--info">
+              <I.Eye />
+            </span>
             <span className="iram-kpi__label">المشاهدات — 30 يوماً</span>
           </div>
           <div className="iram-kpi__row">
@@ -578,7 +805,9 @@ export const AnalyticsWidget: React.FC = async () => {
 
         <div className="iram-kpi">
           <div className="iram-kpi__head">
-            <span className="iram-kpi__icon iram-kpi__icon--success"><I.Doc /></span>
+            <span className="iram-kpi__icon iram-kpi__icon--success">
+              <I.Doc />
+            </span>
             <span className="iram-kpi__label">المقالات المنشورة</span>
           </div>
           <div className="iram-kpi__row">
@@ -592,7 +821,9 @@ export const AnalyticsWidget: React.FC = async () => {
 
         <div className="iram-kpi">
           <div className="iram-kpi__head">
-            <span className="iram-kpi__icon iram-kpi__icon--gold"><I.Avg /></span>
+            <span className="iram-kpi__icon iram-kpi__icon--gold">
+              <I.Avg />
+            </span>
             <span className="iram-kpi__label">متوسط القراءة لكل مقال</span>
           </div>
           <div className="iram-kpi__row">
@@ -603,15 +834,15 @@ export const AnalyticsWidget: React.FC = async () => {
 
         <div className="iram-kpi">
           <div className="iram-kpi__head">
-            <span className="iram-kpi__icon iram-kpi__icon--warning"><I.Clock /></span>
+            <span className="iram-kpi__icon iram-kpi__icon--warning">
+              <I.Clock />
+            </span>
             <span className="iram-kpi__label">ساعة الذروة للقراء</span>
           </div>
           <div className="iram-kpi__row">
             <span className="iram-kpi__value iram-kpi__value--sm">{stats.kpi.peakHour.value}</span>
           </div>
-          <div className="iram-kpi__hint">
-            أفضل وقت لنشر المقالات الجديدة
-          </div>
+          <div className="iram-kpi__hint">أفضل وقت لنشر المقالات الجديدة</div>
         </div>
       </div>
 
@@ -643,17 +874,30 @@ export const AnalyticsWidget: React.FC = async () => {
             </div>
           </div>
           <div className="iram-pipeline">
-            <a href="/admin/collections/articles?where[status][equals]=draft" className="iram-pipeline__stage iram-pipeline__stage--draft">
+            <a
+              href="/admin/collections/articles?where[status][equals]=draft"
+              className="iram-pipeline__stage iram-pipeline__stage--draft"
+            >
               <div className="iram-pipeline__count">{stats.pipeline.draft}</div>
               <div className="iram-pipeline__label">مسودة</div>
             </a>
-            <div className="iram-pipeline__arrow"><I.Arrow /></div>
-            <a href="/admin/collections/articles?where[status][equals]=published" className="iram-pipeline__stage iram-pipeline__stage--pub">
+            <div className="iram-pipeline__arrow">
+              <I.Arrow />
+            </div>
+            <a
+              href="/admin/collections/articles?where[status][equals]=published"
+              className="iram-pipeline__stage iram-pipeline__stage--pub"
+            >
               <div className="iram-pipeline__count">{stats.pipeline.published}</div>
               <div className="iram-pipeline__label">منشور</div>
             </a>
-            <div className="iram-pipeline__arrow"><I.Arrow /></div>
-            <a href="/admin/collections/articles?where[status][equals]=archived" className="iram-pipeline__stage iram-pipeline__stage--arch">
+            <div className="iram-pipeline__arrow">
+              <I.Arrow />
+            </div>
+            <a
+              href="/admin/collections/articles?where[status][equals]=archived"
+              className="iram-pipeline__stage iram-pipeline__stage--arch"
+            >
               <div className="iram-pipeline__count">{stats.pipeline.archived}</div>
               <div className="iram-pipeline__label">مؤرشف</div>
             </a>
@@ -684,10 +928,14 @@ export const AnalyticsWidget: React.FC = async () => {
         <div className="iram-panel">
           <div className="iram-panel__head">
             <div>
-              <h3 className="iram-panel__title"><I.Flame /> الأكثر قراءة</h3>
+              <h3 className="iram-panel__title">
+                <I.Flame /> الأكثر قراءة
+              </h3>
               <p className="iram-panel__subtitle">أفضل 5 مقالات حسب إجمالي المشاهدات</p>
             </div>
-            <a href="/admin/collections/articles?sort=-views" className="iram-panel__link">عرض الكل</a>
+            <a href="/admin/collections/articles?sort=-views" className="iram-panel__link">
+              عرض الكل
+            </a>
           </div>
           <div className="iram-top-list">
             {stats.topArticles.length === 0 ? (
@@ -695,13 +943,17 @@ export const AnalyticsWidget: React.FC = async () => {
             ) : (
               stats.topArticles.map((a) => (
                 <a key={a.id} href={`/admin/collections/articles/${a.id}`} className="iram-top-row">
-                  <span className={`iram-top-row__rank${a.rank <= 3 ? ' iram-top-row__rank--gold' : ''}`}>
+                  <span
+                    className={`iram-top-row__rank${a.rank <= 3 ? 'iram-top-row__rank--gold' : ''}`}
+                  >
                     {a.rank}
                   </span>
                   {a.imageUrl ? (
                     <img src={a.imageUrl} alt="" className="iram-top-row__thumb" />
                   ) : (
-                    <div className="iram-top-row__thumb iram-top-row__thumb--empty"><I.Image /></div>
+                    <div className="iram-top-row__thumb iram-top-row__thumb--empty">
+                      <I.Image />
+                    </div>
                   )}
                   <div className="iram-top-row__body">
                     <div className="iram-top-row__title">{a.title}</div>
@@ -742,10 +994,7 @@ export const AnalyticsWidget: React.FC = async () => {
                 return (
                   <div key={i} className="iram-catbar">
                     <div className="iram-catbar__row">
-                      <span
-                        className="iram-catbar__dot"
-                        style={{ background: c.color }}
-                      />
+                      <span className="iram-catbar__dot" style={{ background: c.color }} />
                       <span className="iram-catbar__name">{c.name}</span>
                       <span className="iram-catbar__val">{formatNum(c.views)}</span>
                     </div>
@@ -794,9 +1043,13 @@ export const AnalyticsWidget: React.FC = async () => {
               {stats.actions.map((a, i) => (
                 <li key={i} className={`iram-actions__item iram-actions__item--${a.tone}`}>
                   <a href={a.href}>
-                    <span className="iram-actions__icon"><ActionIcon icon={a.icon} /></span>
+                    <span className="iram-actions__icon">
+                      <ActionIcon icon={a.icon} />
+                    </span>
                     <span className="iram-actions__text">{a.label}</span>
-                    <span className="iram-actions__arrow"><I.Arrow /></span>
+                    <span className="iram-actions__arrow">
+                      <I.Arrow />
+                    </span>
                   </a>
                 </li>
               ))}
@@ -812,7 +1065,9 @@ export const AnalyticsWidget: React.FC = async () => {
             <h3 className="iram-panel__title">النشاط الأخير</h3>
             <p className="iram-panel__subtitle">آخر تعديلات على المقالات</p>
           </div>
-          <a href="/admin/collections/articles?sort=-updatedAt" className="iram-panel__link">عرض الكل</a>
+          <a href="/admin/collections/articles?sort=-updatedAt" className="iram-panel__link">
+            عرض الكل
+          </a>
         </div>
         <ul className="iram-activity">
           {stats.recent.length === 0 ? (

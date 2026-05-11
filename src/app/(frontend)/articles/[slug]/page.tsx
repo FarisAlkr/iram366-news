@@ -8,11 +8,7 @@ import { notFound } from 'next/navigation'
 import { ArticleStatus } from '@/domain/enums'
 import { formatDate } from '@/lib/date'
 import { getPayloadClient } from '@/lib/payload'
-import {
-  getArticleBySlug,
-  getCategories,
-  getSiteSettings,
-} from '@/lib/queries'
+import { getArticleBySlug, getCategories, getSiteSettings } from '@/lib/queries'
 import type { Article, Category, Media, User } from '@/types/payload'
 import { pickMediaUrl, resolveRef } from '@/types/payload'
 
@@ -161,7 +157,7 @@ export default async function ArticlePage({ params, searchParams }: PageProps) {
       />
 
       {isPreview ? (
-        <div className="bg-accent-gold text-navy text-center text-sm font-bold py-2 px-4 sticky top-0 z-50">
+        <div className="sticky top-0 z-50 bg-accent-gold px-4 py-2 text-center text-sm font-bold text-navy">
           وضع المعاينة — هذه مسودة وقد تحتوي على تغييرات غير منشورة
         </div>
       ) : (
@@ -175,10 +171,10 @@ export default async function ArticlePage({ params, searchParams }: PageProps) {
 
       <main className="container-news py-6">
         <nav
-          className="text-sm text-[var(--color-ink-muted)] mb-6 flex items-center gap-2"
+          className="mb-6 flex items-center gap-2 text-sm text-[var(--color-ink-muted)]"
           aria-label="مسار التنقل"
         >
-          <Link href="/" className="hover:text-accent-red transition-colors duration-150">
+          <Link href="/" className="transition-colors duration-150 hover:text-accent-red">
             الرئيسية
           </Link>
           {category && (
@@ -186,17 +182,17 @@ export default async function ArticlePage({ params, searchParams }: PageProps) {
               <span aria-hidden>/</span>
               <Link
                 href={`/category/${category.slug}`}
-                className="hover:text-accent-red transition-colors duration-150"
+                className="transition-colors duration-150 hover:text-accent-red"
               >
                 {category.name}
               </Link>
             </>
           )}
           <span aria-hidden>/</span>
-          <span className="text-ink line-clamp-1">{article.title}</span>
+          <span className="line-clamp-1 text-ink">{article.title}</span>
         </nav>
 
-        <article className="max-w-[var(--content-width)] mx-auto">
+        <article className="mx-auto max-w-[var(--content-width)]">
           <header className="mb-8">
             {category && (
               <div className="mb-3">
@@ -209,15 +205,15 @@ export default async function ArticlePage({ params, searchParams }: PageProps) {
               </div>
             )}
 
-            <h1 className="font-display font-extrabold text-[var(--font-size-h1)] md:text-[2.5rem] leading-tight mb-4 text-balance">
+            <h1 className="mb-4 text-balance font-display font-extrabold leading-tight text-[var(--font-size-h1)] md:text-[2.5rem]">
               {article.title}
             </h1>
 
-            <p className="text-lg text-[var(--color-ink-light)] leading-relaxed mb-5">
+            <p className="mb-5 text-lg leading-relaxed text-[var(--color-ink-light)]">
               {article.excerpt}
             </p>
 
-            <div className="flex flex-wrap items-center gap-4 text-sm text-[var(--color-ink-muted)] pb-5 border-b border-[var(--color-border)]">
+            <div className="flex flex-wrap items-center gap-4 border-b border-[var(--color-border)] pb-5 text-sm text-[var(--color-ink-muted)]">
               {author && (
                 <div className="flex items-center gap-2">
                   {authorAvatar && (
@@ -241,9 +237,10 @@ export default async function ArticlePage({ params, searchParams }: PageProps) {
               <VideoEmbed url={article.videoUrl} title={article.title} />
             </div>
           ) : (
-            heroUrl && image && (
-              <figure className="mb-8 -mx-4 md:mx-0">
-                <div className="relative aspect-[16/9] rounded-lg overflow-hidden">
+            heroUrl &&
+            image && (
+              <figure className="-mx-4 mb-8 md:mx-0">
+                <div className="relative aspect-[16/9] overflow-hidden rounded-lg">
                   <Image
                     src={heroUrl}
                     alt={image.alt || article.title}
@@ -254,7 +251,7 @@ export default async function ArticlePage({ params, searchParams }: PageProps) {
                   />
                 </div>
                 {image.caption && (
-                  <figcaption className="text-sm text-[var(--color-ink-muted)] mt-2 text-center">
+                  <figcaption className="mt-2 text-center text-sm text-[var(--color-ink-muted)]">
                     {image.caption}
                   </figcaption>
                 )}
@@ -270,7 +267,7 @@ export default async function ArticlePage({ params, searchParams }: PageProps) {
               while reading, on both desktop and mobile. */}
           <ZoomControls />
 
-          <div className="prose prose-lg max-w-none mb-8 prose-zoomable">
+          <div className="prose-zoomable prose prose-lg mb-8 max-w-none">
             <RichText content={article.body} />
           </div>
 
@@ -284,18 +281,18 @@ export default async function ArticlePage({ params, searchParams }: PageProps) {
               categoryId={
                 typeof article.category === 'object' && article.category
                   ? article.category.id
-                  : article.category ?? undefined
+                  : (article.category ?? undefined)
               }
             />
           </div>
 
           {article.tags && article.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-8 pt-6 border-t border-[var(--color-border)]">
+            <div className="mb-8 flex flex-wrap gap-2 border-t border-[var(--color-border)] pt-6">
               {article.tags.map((t) => (
                 <Link
                   key={t.tag}
                   href={`/search?q=${encodeURIComponent(t.tag)}`}
-                  className="px-3 py-1 bg-cream-dark text-sm text-[var(--color-ink-light)] rounded-full hover:bg-[var(--color-border)] transition-colors duration-150"
+                  className="rounded-full bg-cream-dark px-3 py-1 text-sm text-[var(--color-ink-light)] transition-colors duration-150 hover:bg-[var(--color-border)]"
                 >
                   #{t.tag}
                 </Link>
@@ -304,19 +301,19 @@ export default async function ArticlePage({ params, searchParams }: PageProps) {
           )}
 
           {author && (
-            <div className="bg-cream-dark rounded-lg p-5 flex items-start gap-4 mb-8">
+            <div className="mb-8 flex items-start gap-4 rounded-lg bg-cream-dark p-5">
               {authorAvatar && (
                 <Image
                   src={pickMediaUrl(authorAvatar, 'thumbnail')}
                   alt={authorAvatar.alt || author.name}
                   width={56}
                   height={56}
-                  className="rounded-full object-cover flex-shrink-0"
+                  className="flex-shrink-0 rounded-full object-cover"
                 />
               )}
               <div>
-                <h3 className="font-display font-bold text-base">{author.name}</h3>
-                <p className="text-sm text-[var(--color-ink-muted)] mt-1">
+                <h3 className="font-display text-base font-bold">{author.name}</h3>
+                <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
                   كاتب في إرم 366 الإخبارية
                 </p>
               </div>
@@ -325,13 +322,13 @@ export default async function ArticlePage({ params, searchParams }: PageProps) {
         </article>
 
         {related.length > 0 && (
-          <section className="mt-12 max-w-[var(--max-width)] mx-auto">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-1 h-8 bg-accent-red rounded-full" />
+          <section className="mx-auto mt-12 max-w-[var(--max-width)]">
+            <div className="mb-6 flex items-center gap-4">
+              <div className="h-8 w-1 rounded-full bg-accent-red" />
               <h2 className="font-display font-bold text-[var(--font-size-h2)]">مقالات ذات صلة</h2>
-              <div className="flex-1 h-px bg-[var(--color-border)]" />
+              <div className="h-px flex-1 bg-[var(--color-border)]" />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {related.map((a) => (
                 <ArticleCard key={a.id} article={a} variant="compact" />
               ))}

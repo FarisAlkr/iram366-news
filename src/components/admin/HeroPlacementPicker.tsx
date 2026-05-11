@@ -85,7 +85,9 @@ export const HeroPlacementPicker: React.FC = () => {
     const newHero: HeroSettings = {
       mode: 'manual',
       mainArticle: refId(safeHero.mainArticle),
-      secondaryArticles: (safeHero.secondaryArticles || []).map(refId).filter((x): x is string | number => x != null),
+      secondaryArticles: (safeHero.secondaryArticles || [])
+        .map(refId)
+        .filter((x): x is string | number => x != null),
     }
 
     if (next === 'main') {
@@ -139,18 +141,20 @@ export const HeroPlacementPicker: React.FC = () => {
         <small>...جاري التحميل</small>
       ) : (
         <div className="iram-hero-pick__buttons">
-          {(['main', 'secondary-1', 'secondary-2', 'secondary-3', 'none'] as Placement[]).map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => apply(p)}
-              disabled={busy || p === current}
-              data-active={p === current || undefined}
-              className={`iram-hero-pick__btn ${p === current ? 'iram-hero-pick__btn--active' : ''}`}
-            >
-              {LABELS[p]}
-            </button>
-          ))}
+          {(['main', 'secondary-1', 'secondary-2', 'secondary-3', 'none'] as Placement[]).map(
+            (p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => apply(p)}
+                disabled={busy || p === current}
+                data-active={p === current || undefined}
+                className={`iram-hero-pick__btn ${p === current ? 'iram-hero-pick__btn--active' : ''}`}
+              >
+                {LABELS[p]}
+              </button>
+            ),
+          )}
         </div>
       )}
 

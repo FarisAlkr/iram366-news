@@ -14,7 +14,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./deploy/postgres-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -22,8 +22,8 @@ services:
     logging:
       driver: json-file
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
 
   app:
     # Prebuilt image from GitHub Container Registry. Built and pushed by
@@ -67,12 +67,12 @@ services:
       CF_ANALYTICS_API_TOKEN: ${CF_ANALYTICS_API_TOKEN:-}
       CF_ACCOUNT_ID: ${CF_ACCOUNT_ID:-}
     expose:
-      - "3000"
+      - '3000'
     healthcheck:
       # /api/health is a DB-free liveness probe. Using /api/users (which
       # hits Postgres) caused the healthcheck to hang along with the rest
       # of the app when the pool was exhausted — see deploy/RUNBOOK.md.
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/api/health"]
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:3000/api/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -80,8 +80,8 @@ services:
     logging:
       driver: json-file
       options:
-        max-size: "10m"
-        max-file: "5"
+        max-size: '10m'
+        max-file: '5'
 
   caddy:
     image: caddy:2-alpine
@@ -90,9 +90,9 @@ services:
       app:
         condition: service_healthy
     ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -103,8 +103,8 @@ services:
     logging:
       driver: json-file
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
 
   autoheal:
     # Watches every container with a Docker healthcheck and automatically
@@ -122,8 +122,8 @@ services:
     logging:
       driver: json-file
       options:
-        max-size: "5m"
-        max-file: "2"
+        max-size: '5m'
+        max-file: '2'
 
 volumes:
   postgres_data:

@@ -47,20 +47,20 @@ deployment are all set up for a real publication on day one.
 
 ### Tech Stack
 
-| Layer            | Choice                                            |
-| ---------------- | ------------------------------------------------- |
-| Framework        | Next.js 15.4 (App Router, Server Components)      |
-| CMS              | Payload CMS 3.x (embedded in Next.js)             |
-| Database         | PostgreSQL 16 (`@payloadcms/db-postgres`)         |
-| Media storage    | Cloudflare R2 (`@payloadcms/storage-s3`)          |
-| Editor           | Lexical (`@payloadcms/richtext-lexical`)          |
-| Styling          | Tailwind CSS 3 (RTL-native, logical properties)   |
-| Reverse proxy    | Caddy 2 (auto-HTTPS, security headers)            |
-| Container        | Docker (multi-stage, standalone Next output)      |
-| Orchestration    | Docker Compose (3 services: db / app / caddy)     |
-| Logger           | Custom structured JSON logger                     |
-| Tests            | Vitest + happy-dom                                |
-| Lint / Format    | ESLint + Prettier                                 |
+| Layer         | Choice                                          |
+| ------------- | ----------------------------------------------- |
+| Framework     | Next.js 15.4 (App Router, Server Components)    |
+| CMS           | Payload CMS 3.x (embedded in Next.js)           |
+| Database      | PostgreSQL 16 (`@payloadcms/db-postgres`)       |
+| Media storage | Cloudflare R2 (`@payloadcms/storage-s3`)        |
+| Editor        | Lexical (`@payloadcms/richtext-lexical`)        |
+| Styling       | Tailwind CSS 3 (RTL-native, logical properties) |
+| Reverse proxy | Caddy 2 (auto-HTTPS, security headers)          |
+| Container     | Docker (multi-stage, standalone Next output)    |
+| Orchestration | Docker Compose (3 services: db / app / caddy)   |
+| Logger        | Custom structured JSON logger                   |
+| Tests         | Vitest + happy-dom                              |
+| Lint / Format | ESLint + Prettier                               |
 
 ### Project layout
 
@@ -115,20 +115,20 @@ ADMIN_PASSWORD=changeme npm run seed
 
 ### Common scripts
 
-| Command                    | What it does                              |
-| -------------------------- | ----------------------------------------- |
-| `npm run dev`              | Next.js dev server                        |
-| `npm run build`            | Production build (standalone output)      |
-| `npm run start`            | Run production server (after build)       |
-| `npm run lint`             | ESLint with `--max-warnings 0`            |
-| `npm run lint:fix`         | Autofix lint issues                       |
-| `npm run format`           | Prettier write                            |
-| `npm run typecheck`        | `tsc --noEmit`                            |
-| `npm test`                 | Run unit tests (vitest)                   |
-| `npm run migrate`          | Apply Payload SQL migrations              |
-| `npm run migrate:create`   | Generate a new migration from schema diff |
-| `npm run migrate:status`   | List applied/pending migrations           |
-| `npm run seed`             | CLI seed (admin + categories + samples)   |
+| Command                  | What it does                              |
+| ------------------------ | ----------------------------------------- |
+| `npm run dev`            | Next.js dev server                        |
+| `npm run build`          | Production build (standalone output)      |
+| `npm run start`          | Run production server (after build)       |
+| `npm run lint`           | ESLint with `--max-warnings 0`            |
+| `npm run lint:fix`       | Autofix lint issues                       |
+| `npm run format`         | Prettier write                            |
+| `npm run typecheck`      | `tsc --noEmit`                            |
+| `npm test`               | Run unit tests (vitest)                   |
+| `npm run migrate`        | Apply Payload SQL migrations              |
+| `npm run migrate:create` | Generate a new migration from schema diff |
+| `npm run migrate:status` | List applied/pending migrations           |
+| `npm run seed`           | CLI seed (admin + categories + samples)   |
 
 ---
 
@@ -155,32 +155,32 @@ Backups run nightly at 03:15 UTC via cron, dumping Postgres → Cloudflare R2 wi
 
 ## Security
 
-| Concern                | Mitigation                                                             |
-| ---------------------- | ---------------------------------------------------------------------- |
-| Brute force / DoS      | Token-bucket rate limiter on `/api/search`, view counter, RSS, seed    |
-| XSS                    | React escapes by default; JSON-LD only for structured data             |
-| SQL injection          | Payload ORM (parameterized); no raw SQL in app code                    |
-| CSRF                   | Payload-managed tokens                                                 |
-| HTTPS                  | Caddy auto-TLS + HSTS preload                                          |
-| Clickjacking           | `X-Frame-Options: DENY` + CSP `frame-ancestors 'none'`                 |
-| MIME sniffing          | `X-Content-Type-Options: nosniff`                                      |
-| Privilege escalation   | Author role cannot publish (downgraded to in-review by hook)           |
-| Single-admin guarantee | Payload hook + Postgres partial unique index (`users_single_admin`)    |
-| Audit trail            | Every CRUD operation logged to `audit-log` (admin-read-only)           |
-| Seed endpoint          | Gated behind `SEED_SECRET` + production opt-in                         |
-| Secrets                | `.env` is gitignored; `.env.example` documents every key               |
-| Admin password         | bcrypt via Payload auth                                                |
+| Concern                | Mitigation                                                          |
+| ---------------------- | ------------------------------------------------------------------- |
+| Brute force / DoS      | Token-bucket rate limiter on `/api/search`, view counter, RSS, seed |
+| XSS                    | React escapes by default; JSON-LD only for structured data          |
+| SQL injection          | Payload ORM (parameterized); no raw SQL in app code                 |
+| CSRF                   | Payload-managed tokens                                              |
+| HTTPS                  | Caddy auto-TLS + HSTS preload                                       |
+| Clickjacking           | `X-Frame-Options: DENY` + CSP `frame-ancestors 'none'`              |
+| MIME sniffing          | `X-Content-Type-Options: nosniff`                                   |
+| Privilege escalation   | Author role cannot publish (downgraded to in-review by hook)        |
+| Single-admin guarantee | Payload hook + Postgres partial unique index (`users_single_admin`) |
+| Audit trail            | Every CRUD operation logged to `audit-log` (admin-read-only)        |
+| Seed endpoint          | Gated behind `SEED_SECRET` + production opt-in                      |
+| Secrets                | `.env` is gitignored; `.env.example` documents every key            |
+| Admin password         | bcrypt via Payload auth                                             |
 
 ---
 
 ## Roles & permissions
 
-| Role     | Articles                                              | Users      | Site settings | Audit log |
-| -------- | ----------------------------------------------------- | ---------- | ------------- | --------- |
-| Admin    | Full CRUD on all                                      | Full CRUD  | Update        | Read      |
-| Editor   | Create + publish + edit any                           | Update     | Read only     | —         |
-| Author   | Create drafts only; edit own; cannot self-publish     | Read names | Read only     | —         |
-| Public   | Read published                                        | Read names | Read only     | —         |
+| Role   | Articles                                          | Users      | Site settings | Audit log |
+| ------ | ------------------------------------------------- | ---------- | ------------- | --------- |
+| Admin  | Full CRUD on all                                  | Full CRUD  | Update        | Read      |
+| Editor | Create + publish + edit any                       | Update     | Read only     | —         |
+| Author | Create drafts only; edit own; cannot self-publish | Read names | Read only     | —         |
+| Public | Read published                                    | Read names | Read only     | —         |
 
 ---
 

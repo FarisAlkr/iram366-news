@@ -44,11 +44,5 @@ export default async function PreviewArticlePage({ params, searchParams }: Props
   })
   const categories = categoriesResult.docs as unknown as Category[]
 
-  return (
-    <ArticleLivePreview
-      initialData={article}
-      categories={categories}
-      serverURL={SITE_URL}
-    />
-  )
+  return <ArticleLivePreview initialData={article} categories={categories} serverURL={SITE_URL} />
 }

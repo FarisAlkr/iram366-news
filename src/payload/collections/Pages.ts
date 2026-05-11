@@ -30,8 +30,7 @@ export const Pages: CollectionConfig = {
       index: true,
       label: 'الرابط',
       admin: {
-        description:
-          'رابط الصفحة في الموقع (إنجليزي بدون مسافات). مثال: about، privacy، contact.',
+        description: 'رابط الصفحة في الموقع (إنجليزي بدون مسافات). مثال: about، privacy، contact.',
         placeholder: 'about',
       },
     },

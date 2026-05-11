@@ -7,11 +7,7 @@
  * in production logs.
  */
 
-import type {
-  CollectionAfterChangeHook,
-  CollectionAfterDeleteHook,
-  PayloadRequest,
-} from 'payload'
+import type { CollectionAfterChangeHook, CollectionAfterDeleteHook, PayloadRequest } from 'payload'
 import { AuditAction } from '../../domain/enums.ts'
 import { logger } from '../../lib/logger.ts'
 
@@ -92,17 +88,6 @@ export const auditAfterChange: CollectionAfterChangeHook = async ({
   return doc
 }
 
-export const auditAfterDelete: CollectionAfterDeleteHook = async ({
-  doc,
-  req,
-  collection,
-  id,
-}) => {
-  await writeLog(
-    req,
-    AuditAction.Delete,
-    collection.slug,
-    id,
-    summarize(doc, collection.slug),
-  )
+export const auditAfterDelete: CollectionAfterDeleteHook = async ({ doc, req, collection, id }) => {
+  await writeLog(req, AuditAction.Delete, collection.slug, id, summarize(doc, collection.slug))
 }

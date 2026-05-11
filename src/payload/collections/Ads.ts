@@ -107,8 +107,7 @@ export const Ads: CollectionConfig = {
       admin: {
         position: 'sidebar',
         date: { pickerAppearance: 'dayAndTime' },
-        description:
-          'يختفي الإعلان تلقائياً بعد هذا التاريخ ويُحوَّل لحالة "منتهي الصلاحية".',
+        description: 'يختفي الإعلان تلقائياً بعد هذا التاريخ ويُحوَّل لحالة "منتهي الصلاحية".',
       },
     },
     {
@@ -150,8 +149,7 @@ export const Ads: CollectionConfig = {
               required: true,
               label: 'اسم الإعلان (داخلي)',
               admin: {
-                description:
-                  'اسم تستخدمه أنت لتمييز الإعلان في القائمة. لا يظهر للقارئ.',
+                description: 'اسم تستخدمه أنت لتمييز الإعلان في القائمة. لا يظهر للقارئ.',
                 placeholder: 'مثال: مطعم النور — رمضان 2026',
               },
             },
@@ -222,8 +220,7 @@ export const Ads: CollectionConfig = {
               defaultValue: true,
               label: 'إظهار شارة "إعلان"',
               admin: {
-                description:
-                  '🚨 يجب أن تكون مفعّلة دائماً للشفافية مع القارئ ولأسباب قانونية.',
+                description: '🚨 يجب أن تكون مفعّلة دائماً للشفافية مع القارئ ولأسباب قانونية.',
               },
             },
           ],
@@ -346,11 +343,7 @@ export const Ads: CollectionConfig = {
       ({ data }) => {
         if (!data) return data
         // Auto-expire if endDate passed and status was active
-        if (
-          data.endDate &&
-          new Date(data.endDate) < new Date() &&
-          data.status === 'active'
-        ) {
+        if (data.endDate && new Date(data.endDate) < new Date() && data.status === 'active') {
           data.status = 'expired'
         }
         return data

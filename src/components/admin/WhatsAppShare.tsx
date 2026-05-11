@@ -3,9 +3,7 @@
 import React from 'react'
 import { useDocumentInfo, useFormFields } from '@payloadcms/ui'
 
-const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL || 'https://iram366news.com'
-).replace(/\/$/, '')
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://iram366news.com').replace(/\/$/, '')
 
 /**
  * One-tap WhatsApp share. Mounted as a `ui` field in the Articles sidebar.

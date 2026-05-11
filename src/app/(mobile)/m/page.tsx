@@ -56,15 +56,18 @@ export default async function MobileDashboardPage() {
   const payload = await getPayloadClient()
 
   const [published, inReview, breaking, recent, totalViews] = await Promise.all([
-    payload.count({ collection: 'articles', where: { status: { equals: ArticleStatus.Published } } }),
-    payload.count({ collection: 'articles', where: { status: { equals: ArticleStatus.InReview } } }),
+    payload.count({
+      collection: 'articles',
+      where: { status: { equals: ArticleStatus.Published } },
+    }),
+    payload.count({
+      collection: 'articles',
+      where: { status: { equals: ArticleStatus.InReview } },
+    }),
     payload.count({
       collection: 'articles',
       where: {
-        and: [
-          { status: { equals: ArticleStatus.Published } },
-          { isBreaking: { equals: true } },
-        ],
+        and: [{ status: { equals: ArticleStatus.Published } }, { isBreaking: { equals: true } }],
       },
     }),
     payload.find({
@@ -92,22 +95,30 @@ export default async function MobileDashboardPage() {
       <main className="m-main">
         <div className="m-stats">
           <div className="m-stat m-stat--accent">
-            <span className="m-stat__icon" aria-hidden>📰</span>
+            <span className="m-stat__icon" aria-hidden>
+              📰
+            </span>
             <span className="m-stat__label">المنشور</span>
             <span className="m-stat__value">{fmt(published.totalDocs)}</span>
           </div>
           <div className="m-stat">
-            <span className="m-stat__icon" aria-hidden>👁️</span>
+            <span className="m-stat__icon" aria-hidden>
+              👁️
+            </span>
             <span className="m-stat__label">إجمالي المشاهدات</span>
             <span className="m-stat__value">{fmt(totalViews)}</span>
           </div>
           <div className="m-stat">
-            <span className="m-stat__icon" aria-hidden>⏳</span>
+            <span className="m-stat__icon" aria-hidden>
+              ⏳
+            </span>
             <span className="m-stat__label">قيد المراجعة</span>
             <span className="m-stat__value">{fmt(inReview.totalDocs)}</span>
           </div>
           <div className="m-stat">
-            <span className="m-stat__icon" aria-hidden>🚨</span>
+            <span className="m-stat__icon" aria-hidden>
+              🚨
+            </span>
             <span className="m-stat__label">عاجل</span>
             <span className="m-stat__value">{fmt(breaking.totalDocs)}</span>
           </div>
@@ -124,23 +135,15 @@ export default async function MobileDashboardPage() {
             <div className="m-list-empty">لا توجد مقالات بعد. اضغط ✍️ لنشر أول مقال.</div>
           )}
           {recent.docs.map((a) => {
-            const image = resolveRef<Media>((a as { featuredImage?: unknown }).featuredImage as never)
+            const image = resolveRef<Media>(
+              (a as { featuredImage?: unknown }).featuredImage as never,
+            )
             const thumb = image ? pickMediaUrl(image, 'thumbnail') : null
             return (
-              <Link
-                key={a.id}
-                href={`/admin/collections/articles/${a.id}`}
-                className="m-list-item"
-              >
+              <Link key={a.id} href={`/admin/collections/articles/${a.id}`} className="m-list-item">
                 <div className="m-list-item__thumb" aria-hidden>
                   {thumb ? (
-                    <Image
-                      src={thumb}
-                      alt=""
-                      width={56}
-                      height={56}
-                      className="m-list-item__img"
-                    />
+                    <Image src={thumb} alt="" width={56} height={56} className="m-list-item__img" />
                   ) : (
                     <span className="m-list-item__thumb-fallback">📰</span>
                   )}
@@ -148,15 +151,21 @@ export default async function MobileDashboardPage() {
                 <div className="m-list-item__body">
                   <h3 className="m-list-item__title">{a.title as string}</h3>
                   <div className="m-list-item__meta">
-                    <span className={STATUS_CLASS[a.status as string] ?? 'm-status m-status--draft'}>
+                    <span
+                      className={STATUS_CLASS[a.status as string] ?? 'm-status m-status--draft'}
+                    >
                       {STATUS_LABEL[a.status as string] ?? (a.status as string)}
                     </span>
                     {a.updatedAt && (
-                      <time className="m-list-item__time">{relativeTime(a.updatedAt as string)}</time>
+                      <time className="m-list-item__time">
+                        {relativeTime(a.updatedAt as string)}
+                      </time>
                     )}
                   </div>
                 </div>
-                <span className="m-list-item__chevron" aria-hidden>‹</span>
+                <span className="m-list-item__chevron" aria-hidden>
+                  ‹
+                </span>
               </Link>
             )
           })}
@@ -173,16 +182,22 @@ function BottomNav({ active }: { active: 'home' | 'new' }) {
     <nav className="m-bottomnav" aria-label="تنقل سفلي">
       <Link
         href="/m"
-        className={`m-bottomnav__item${active === 'home' ? ' m-bottomnav__item--active' : ''}`}
+        className={`m-bottomnav__item${active === 'home' ? 'm-bottomnav__item--active' : ''}`}
       >
-        <span className="m-bottomnav__icon" aria-hidden>🏠</span>
+        <span className="m-bottomnav__icon" aria-hidden>
+          🏠
+        </span>
         <span>الرئيسية</span>
       </Link>
       <Link href="/m/new" className="m-bottomnav__item">
-        <span className="m-bottomnav__plus" aria-hidden>+</span>
+        <span className="m-bottomnav__plus" aria-hidden>
+          +
+        </span>
       </Link>
       <a href="/m/logout" className="m-bottomnav__item">
-        <span className="m-bottomnav__icon" aria-hidden>🚪</span>
+        <span className="m-bottomnav__icon" aria-hidden>
+          🚪
+        </span>
         <span>خروج</span>
       </a>
     </nav>
