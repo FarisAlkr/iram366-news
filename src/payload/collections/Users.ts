@@ -19,6 +19,12 @@ export const Users: CollectionConfig = {
     // the cookie by another year, so a regular user effectively never has
     // to re-login.
     tokenExpiration: 60 * 60 * 24 * 365,
+    // Account-level brute-force defense. After 5 failed logins, Payload
+    // locks the account for 10 minutes regardless of which IP retries —
+    // pairs with the network-level enforce() limit in the mobile login
+    // action to defend against both single-IP and distributed attacks.
+    maxLoginAttempts: 5,
+    lockTime: 10 * 60 * 1000,
   },
   labels: { singular: 'مستخدم', plural: 'المستخدمون' },
   admin: {
