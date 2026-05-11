@@ -27,7 +27,12 @@
 		# sites. Images allowed from R2 + data URIs (Lexical pasted images);
 		# inline styles allowed because Tailwind ships some critical inline
 		# styles.
-		Content-Security-Policy "default-src 'self'; img-src 'self' data: https: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+		# CSP allow-list:
+		#   - script-src: Cloudflare Web Analytics beacon at static.cloudflareinsights.com
+		#     (without this the <script src="..."> in (frontend)/layout.tsx was being
+		#     CSP-blocked and CF Analytics reported 0 page views indefinitely).
+		#   - connect-src: cloudflareinsights.com is where the beacon POSTs telemetry.
+		Content-Security-Policy "default-src 'self'; img-src 'self' data: https: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https: https://cloudflareinsights.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
 		-Server
 		-X-Powered-By
 	}
