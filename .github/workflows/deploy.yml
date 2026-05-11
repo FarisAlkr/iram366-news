@@ -14,6 +14,11 @@ env:
   # GHCR requires the owner segment be lowercase. github.repository_owner
   # preserves case (FarisAlkr → fails). Hardcode lowercase here.
   IMAGE_NAME: ghcr.io/farisalkr/iram366-app
+  # Migrator image: ships the Payload CLI for one-shot `payload migrate`
+  # runs from inside docker-compose. Built from the `migrator` stage of
+  # the same Dockerfile. See Dockerfile + docker-compose.yml migrator
+  # service.
+  MIGRATOR_IMAGE: ghcr.io/farisalkr/iram366-migrator
 
 jobs:
   build-and-deploy:
@@ -34,11 +39,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & push image
+      - name: Build & push runner image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
+          # Explicit target since the Dockerfile now has multiple final-eligible
+          # stages (migrator and runner). Without this, docker would build the
+          # last stage in the file by default.
+          target: runner
           push: true
           tags: |
             ${{ env.IMAGE_NAME }}:latest
@@ -48,6 +57,19 @@ jobs:
           build-args: |
             NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}
             NEXT_PUBLIC_CF_ANALYTICS_TOKEN=${{ secrets.NEXT_PUBLIC_CF_ANALYTICS_TOKEN }}
+
+      - name: Build & push migrator image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: migrator
+          push: true
+          tags: |
+            ${{ env.MIGRATOR_IMAGE }}:latest
+            ${{ env.MIGRATOR_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Sync compose file to VPS
         # The VPS only needs docker-compose.yml + Caddyfile + the deploy/
@@ -61,7 +83,10 @@ jobs:
           target: '/opt/iram366/'
           overwrite: true
 
-      - name: Pull image & restart containers on VPS
+      - name: Pull new images on VPS
+        # Pulls both the runner and the migrator. Done in its own step so the
+        # migrate run below operates on the new code, and so a pull failure
+        # aborts the deploy before anything on the VPS is touched.
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -70,8 +95,44 @@ jobs:
           script: |
             set -e
             cd /opt/iram366
-            export IMAGE_TAG=${{ github.sha }}
-            docker compose pull app
+            # --profile migrate makes the migrator service visible to compose;
+            # without it `compose pull migrator` reports "no such service".
+            docker compose --profile migrate pull app migrator
+
+      - name: Run database migrations
+        # Runs schema migrations on the prod DB. Sequencing is critical:
+        #   * Runs AFTER the new images are pulled, so the migrator container
+        #     contains the new migration files baked into the image.
+        #   * Runs BEFORE `docker compose up -d app` below, so a migration
+        #     failure aborts the workflow with the previous app version still
+        #     serving requests — the site stays up on the old, schema-
+        #     compatible code instead of crashing under a schema mismatch
+        #     (the 2026-05-11 outage class of failure).
+        #
+        # `docker compose run --rm` exits with the migrator's exit code, so
+        # `set -e` will fail the SSH script (and the workflow) if migrate
+        # itself fails. No container swap on migration failure.
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            cd /opt/iram366
+            docker compose --profile migrate run --rm migrator
+
+      - name: Restart app & reload Caddy on VPS
+        # Only reached if the migration step above exited 0. From here on we
+        # know the schema is in sync with the new code.
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            cd /opt/iram366
             docker compose up -d --no-deps app
             # Ensure autoheal exists (no-op if already running)
             docker compose up -d --no-deps autoheal
