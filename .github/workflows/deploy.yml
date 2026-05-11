@@ -75,6 +75,13 @@ jobs:
             docker compose up -d --no-deps app
             # Ensure autoheal exists (no-op if already running)
             docker compose up -d --no-deps autoheal
+            # Reload Caddy if its config changed. The Caddyfile is bind-mounted
+            # read-only into the container, so the freshly-SCP'd file is already
+            # visible on the container's filesystem — but caddy doesn't watch
+            # for changes; it needs an explicit reload. SIGUSR1 makes caddy
+            # gracefully re-parse the file; if the new config is invalid, caddy
+            # keeps the previous one and the signal is a no-op.
+            docker compose kill -s SIGUSR1 caddy || true
             # Show health for the run log
             sleep 6
             docker compose ps
