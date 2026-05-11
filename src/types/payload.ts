@@ -163,4 +163,8 @@ export interface SiteSettings {
     secondaryArticles?: Ref<Article>[] | null
   } | null
   footerText?: string | null
+  signatureUi?: {
+    enableCursorInk?: boolean
+    enableFooterCamel?: boolean
+  } | null
 }
