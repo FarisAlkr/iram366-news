@@ -263,7 +263,16 @@ export default function CursorInk() {
         height: '100vh',
         pointerEvents: 'none',
         mixBlendMode: 'multiply',
-        zIndex: 9999,
+        // Max safe z-index. `mix-blend-mode: multiply` + `position: fixed`
+        // promotes this canvas to its own compositor layer; in some browsers
+        // that layer doesn't repaint cleanly over regions with their own
+        // stacking contexts (sticky headers, mixed-blend descendants,
+        // contained components) — so previously-drawn strokes appeared to
+        // "stick" in the sidebar / footer instead of clearing each frame.
+        // pointer-events: none means an arbitrarily large z-index can't
+        // hijack any user interaction; the only cost is making sure no
+        // future overlay ever needs to render above the ink.
+        zIndex: 2147483647,
       }}
     />
   )
