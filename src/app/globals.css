@@ -1338,3 +1338,56 @@ body.has-pen-cursor input[type='button'],
 body.has-pen-cursor input[type='reset'] {
   cursor: pointer;
 }
+
+/* =====================================================================
+   Speech bubble for the footer camel greeting.
+   Lives as a sibling of the camel inside the footer wrapper, positioned
+   absolutely by JS (per-frame rAF follows the camel's transform). The
+   tail uses two ::after layers: a fill triangle on top of a slightly
+   larger border triangle, so the bubble's 1px gold border is preserved
+   along the tail edges.
+   ===================================================================== */
+.iram-camel-speech {
+  position: absolute;
+  background: #fffbf5;
+  color: #0a2a2f;
+  border: 1px solid #c8964a;
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: auto;
+  z-index: 10;
+  opacity: 0;
+  transform: translateX(-50%);
+  transition: opacity 200ms ease;
+  box-shadow: 0 4px 12px rgba(10, 42, 47, 0.18);
+}
+.iram-camel-speech--visible {
+  opacity: 1;
+}
+.iram-camel-speech::before,
+.iram-camel-speech::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-style: solid;
+}
+/* Outer (border) triangle */
+.iram-camel-speech::before {
+  bottom: -8px;
+  margin-left: -8px;
+  border-width: 8px 8px 0 8px;
+  border-color: #c8964a transparent transparent transparent;
+}
+/* Inner (fill) triangle, slightly smaller and inset by 1px */
+.iram-camel-speech::after {
+  bottom: -7px;
+  margin-left: -7px;
+  border-width: 7px 7px 0 7px;
+  border-color: #fffbf5 transparent transparent transparent;
+}
