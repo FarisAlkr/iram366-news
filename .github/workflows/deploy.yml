@@ -84,9 +84,12 @@ jobs:
           overwrite: true
 
       - name: Pull new images on VPS
-        # Pulls both the runner and the migrator. Done in its own step so the
-        # migrate run below operates on the new code, and so a pull failure
-        # aborts the deploy before anything on the VPS is touched.
+        # Pulls both the runner and the migrator. The migrator image is
+        # *not* invoked by this workflow — schema migrations are run
+        # manually before merging a PR that introduces a new migration
+        # file (see README "Schema migrations"). It's still pulled here so
+        # the operator can `docker compose --profile migrate run --rm
+        # migrator npm run migrate` without an extra pull step.
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -99,32 +102,7 @@ jobs:
             # without it `compose pull migrator` reports "no such service".
             docker compose --profile migrate pull app migrator
 
-      - name: Run database migrations
-        # Runs schema migrations on the prod DB. Sequencing is critical:
-        #   * Runs AFTER the new images are pulled, so the migrator container
-        #     contains the new migration files baked into the image.
-        #   * Runs BEFORE `docker compose up -d app` below, so a migration
-        #     failure aborts the workflow with the previous app version still
-        #     serving requests — the site stays up on the old, schema-
-        #     compatible code instead of crashing under a schema mismatch
-        #     (the 2026-05-11 outage class of failure).
-        #
-        # `docker compose run --rm` exits with the migrator's exit code, so
-        # `set -e` will fail the SSH script (and the workflow) if migrate
-        # itself fails. No container swap on migration failure.
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            set -e
-            cd /opt/iram366
-            docker compose --profile migrate run --rm migrator
-
       - name: Restart app & reload Caddy on VPS
-        # Only reached if the migration step above exited 0. From here on we
-        # know the schema is in sync with the new code.
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}

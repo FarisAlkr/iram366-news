@@ -153,6 +153,77 @@ Backups run nightly at 03:15 UTC via cron, dumping Postgres → Cloudflare R2 wi
 
 ---
 
+## Schema migrations
+
+The deploy workflow **does not** run `payload migrate` automatically. When a PR
+touches `src/payload/collections/` or `src/payload/globals/`, the contributor
+is expected to (a) generate a migration file with `npm run migrate:create`,
+commit it, and (b) **run the migration manually on prod before merging the
+PR**. The CI guard in `.github/workflows/ci.yml` blocks merging when a schema
+file changes but no migration file is added, so step (a) is enforced.
+
+### Why manual
+
+We tried auto-applying migrations from the deploy workflow (PR #7) and ran
+into stacked CLI loader issues — `payload migrate --disable-transpile` can't
+resolve `@/*` TypeScript path aliases at runtime, and `tsx
+node_modules/payload/bin.js migrate` resolves the aliases but hits a CJS
+interop bug in Payload's `loadEnv.js` against `@next/env`. Both are tracked
+as follow-up work; until one is fixed, the CLI runs reliably only from a
+TS-aware loader that doesn't conflict with `@next/env` (e.g. inside
+`next dev`, which is how the original schema bootstrap worked).
+
+### Manual procedure (until automated migrations work)
+
+After merging a PR that introduces a new file under `src/payload/migrations/`
+but **before** the merge triggers a deploy that hits a schema mismatch:
+
+```bash
+# From your laptop:
+ssh iram
+cd /opt/iram366
+
+# Pull the latest migrator image (the deploy workflow does this too, but
+# the manual step is run before that workflow's container swap finishes).
+docker compose --profile migrate pull migrator
+
+# Run the migration. Expect either:
+#   "No pending migrations" if the migration was already applied, OR
+#   one or more "Migrating: <name>" / "Migrated:  <name>" lines.
+docker compose --profile migrate run --rm migrator npm run migrate
+```
+
+**Known limitation:** the command above currently exits non-zero because of
+the loader bugs documented in the previous section. If/when migrate has to
+run before this is fixed, options are:
+
+1. **Hot-patch on prod:** `docker compose exec -T db psql -U iram366 -d
+iram366 -f -` and pipe in the migration's `up()` SQL directly. Then
+   `INSERT INTO payload_migrations (name, batch) VALUES ('<name>', <next>)`
+   to record it as applied.
+2. **Bootstrap workaround** (see `schema_bootstrap.md`): spin up
+   `next dev` in a temporary container; Payload init triggers `push: true`
+   which auto-applies the schema. Only safe on empty / pre-seeded data.
+
+The CI guard prevents the missing-migration-file mistake at PR time; the
+manual procedure here covers the apply step until the loader bugs are
+resolved.
+
+### Verifying state
+
+To check what's currently applied on prod:
+
+```bash
+ssh iram "cd /opt/iram366 && docker compose exec -T db psql -U iram366 \
+  -d iram366 -c 'SELECT * FROM payload_migrations ORDER BY id;'"
+```
+
+The legacy `dev / batch -1` row is the original `push: true` bootstrap
+marker from 2026-04-29. `20260511_192000_initial_baseline / batch 1` is
+the baseline migration capturing the full schema as of the foundation work.
+
+---
+
 ## Security
 
 | Concern                | Mitigation                                                          |
