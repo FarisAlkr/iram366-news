@@ -83,32 +83,6 @@ services:
         max-size: '10m'
         max-file: '5'
 
-  migrator:
-    # One-shot container that runs `payload migrate` against the prod DB.
-    # Used by .github/workflows/deploy.yml between pulling a new image and
-    # restarting `app`. Carries the full Payload CLI (the `app` runtime image
-    # deliberately doesn't ship it — see Dockerfile migrator stage).
-    #
-    # `profiles: [migrate]` keeps this out of the default `docker compose up`
-    # set; it only runs when explicitly invoked with `--profile migrate`.
-    image: ghcr.io/farisalkr/iram366-migrator:latest
-    profiles: [migrate]
-    restart: 'no'
-    depends_on:
-      db:
-        condition: service_healthy
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-iram366}
-      PAYLOAD_SECRET: ${PAYLOAD_SECRET}
-      # NODE_ENV stays at the image default (production) so the config's
-      # `push: process.env.NODE_ENV !== 'production'` correctly returns false
-      # and the migrate command is the sole schema authority.
-    logging:
-      driver: json-file
-      options:
-        max-size: '5m'
-        max-file: '2'
-
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
