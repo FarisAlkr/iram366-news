@@ -34,7 +34,7 @@
  *   - coarse pointer → render nothing (no good interaction model on touch).
  */
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 
 // --- Geometry / tunables ---------------------------------------------------
@@ -60,6 +60,21 @@ export default function FooterCamel() {
   const legFRRef = useRef<SVGGElement | null>(null)
   const legBLRef = useRef<SVGGElement | null>(null)
   const legBRRef = useRef<SVGGElement | null>(null)
+
+  // Click → bow → smile + speech bubble. `isGreeting` controls whether the
+  // bubble exists; `isSmiling` swaps the mouth path. They're set together
+  // but tracked separately so dismiss can clear the bubble while letting
+  // the smile linger (or vice versa) if we ever want that.
+  const [isSmiling, setIsSmiling] = useState(false)
+  const [isGreeting, setIsGreeting] = useState(false)
+  // Two-phase mount for the fade transition: bubbleMounted controls DOM
+  // presence; bubbleVisible toggles the opacity-1 class. Order:
+  //   greet  → mount, next frame → visible (fade-in plays)
+  //   dismiss → visible off, 200ms later → unmount (fade-out completes
+  //              before the element leaves the DOM).
+  const [bubbleMounted, setBubbleMounted] = useState(false)
+  const [bubbleVisible, setBubbleVisible] = useState(false)
+  const bubbleRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -267,9 +282,17 @@ export default function FooterCamel() {
       ephemerals.push(gsap.to(head, { rotate: 0, duration: 0.4, ease: 'power2.out' }))
     }
     const onClick = () => {
-      // Bow head ~10deg, hold 400ms, release. Independent of pause state.
+      // Bow head ~10deg, hold 400ms, release. On bow completion, smile +
+      // greet — the camel "says" السلام عليكم via the speech bubble. The
+      // bow-then-greet sequencing is intentional: the bow reads as the
+      // camel acknowledging the click before "speaking."
       const tl = gsap
-        .timeline()
+        .timeline({
+          onComplete: () => {
+            setIsSmiling(true)
+            setIsGreeting(true)
+          },
+        })
         .to(head, { rotate: 14, duration: 0.18, ease: 'power2.out' })
         .to(head, { rotate: 14, duration: 0.4 })
         .to(head, { rotate: 0, duration: 0.25, ease: 'power2.inOut' })
@@ -304,10 +327,49 @@ export default function FooterCamel() {
     }
   }, [])
 
+  // Bubble lifecycle: mount on greet, set visible next frame so the
+  // opacity-1 transition plays; on dismiss, hide first then unmount after
+  // the 200ms fade finishes.
+  useEffect(() => {
+    if (isGreeting) {
+      setBubbleMounted(true)
+      const id = requestAnimationFrame(() => setBubbleVisible(true))
+      return () => cancelAnimationFrame(id)
+    }
+    setBubbleVisible(false)
+    const id = window.setTimeout(() => setBubbleMounted(false), 200)
+    return () => window.clearTimeout(id)
+  }, [isGreeting])
+
+  // While the bubble is in the DOM, follow the camel's horizontal position
+  // each frame. The bubble is positioned absolutely inside the wrap (not
+  // inside the camel wrapper), so it doesn't inherit the camel's scaleX
+  // flip — the Arabic text stays readable in both walk directions.
+  useEffect(() => {
+    if (!bubbleMounted) return
+    const bubble = bubbleRef.current
+    const camel = camelRef.current
+    const wrap = wrapRef.current
+    if (!bubble || !camel || !wrap) return
+
+    let rafId = 0
+    const update = () => {
+      const camelRect = camel.getBoundingClientRect()
+      const wrapRect = wrap.getBoundingClientRect()
+      const camelCenterX = camelRect.left - wrapRect.left + camelRect.width / 2
+      bubble.style.left = `${camelCenterX}px`
+      rafId = window.requestAnimationFrame(update)
+    }
+    update()
+    return () => window.cancelAnimationFrame(rafId)
+  }, [bubbleMounted])
+
   return (
     <div
       ref={wrapRef}
-      aria-hidden="true"
+      // The wrapper isn't aria-hidden anymore: the speech bubble inside
+      // carries Arabic text that should be read by screen readers when
+      // it's mounted (mounting is gated on a user-initiated click).
       style={{
         position: 'absolute',
         inset: 0,
@@ -316,7 +378,11 @@ export default function FooterCamel() {
         height: `${CAMEL_HEIGHT_PX + 8}px`,
         pointerEvents: 'none',
         zIndex: 5,
-        overflow: 'hidden',
+        // `visible` (not `hidden`) so the speech bubble can extend above
+        // the wrapper into the footer content area. The camel itself
+        // never extends outside the wrapper's bounds, so visible doesn't
+        // change its rendering.
+        overflow: 'visible',
       }}
     >
       <div
@@ -466,12 +532,18 @@ export default function FooterCamel() {
               />
               {/* Nostril */}
               <path d="M 26 32 C 28 32, 30 34, 28 36 C 26 36, 25 34, 26 32 Z" fill="#5c3e15" />
-              {/* Mouth line */}
+              {/* Mouth: neutral curve by default, gentle smile arc while
+                  the greeting is active. Endpoints stay anchored at
+                  (18, 36/38) and (30, 36/38) so the lip corners don't
+                  visibly translate when the path swaps; only the control
+                  points' Y values flip across the line to invert the
+                  curve direction. */}
               <path
-                d="M 18 36 C 22 38, 26 38, 30 36"
+                d={isSmiling ? 'M 18 38 C 22 33, 26 33, 30 38' : 'M 18 36 C 22 38, 26 38, 30 36'}
                 stroke="#5c3e15"
                 strokeWidth="1.2"
                 strokeLinecap="round"
+                fill="none"
               />
               {/* Eye */}
               <ellipse cx="14" cy="14" rx="1.6" ry="1.2" fill="#2a1a08" />
@@ -547,6 +619,22 @@ export default function FooterCamel() {
           </g>
         </svg>
       </div>
+
+      {bubbleMounted && (
+        <div
+          ref={bubbleRef}
+          className={`iram-camel-speech${bubbleVisible ? 'iram-camel-speech--visible' : ''}`}
+          // `bottom` puts the bubble just above the camel's head; `left`
+          // is updated each frame by the position-follow effect.
+          style={{ bottom: `${CAMEL_HEIGHT_PX + 14}px` }}
+          dir="rtl"
+          lang="ar"
+          role="status"
+          aria-live="polite"
+        >
+          السلام عليكم
+        </div>
+      )}
     </div>
   )
 }
