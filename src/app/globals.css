@@ -1353,7 +1353,11 @@ body.has-pen-cursor input[type='reset'] {
   position: absolute;
   width: 100px;
   height: 60px;
-  pointer-events: auto;
+  /* `none`, not `auto`. The cloud has no interactive children; if it
+     captured pointer events it would silently swallow clicks meant for
+     the camel underneath whenever the cloud overlaps the camel's
+     bounding box during a turn / walk. */
+  pointer-events: none;
   z-index: 10;
   opacity: 0;
   transform: translateX(-50%);
