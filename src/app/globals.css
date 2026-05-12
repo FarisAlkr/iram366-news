@@ -1351,7 +1351,10 @@ body.has-pen-cursor input[type='reset'] {
    ===================================================================== */
 .iram-camel-cloud {
   position: absolute;
-  width: 100px;
+  /* Width tuned to fit "السلام عليكم" at the body font-size with a
+     little breathing room on each side; the SVG cloud silhouette is
+     stretched horizontally to match via preserveAspectRatio="none". */
+  width: 124px;
   height: 60px;
   /* `none`, not `auto`. The cloud has no interactive children; if it
      captured pointer events it would silently swallow clicks meant for

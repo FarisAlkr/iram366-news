@@ -687,7 +687,7 @@ export default function FooterCamel() {
           <svg
             className="iram-camel-cloud__shape"
             viewBox="0 0 100 60"
-            preserveAspectRatio="xMidYMid meet"
+            preserveAspectRatio="none"
             aria-hidden="true"
           >
             {/* Cloud body: four overlapping ellipses form a bumpy
