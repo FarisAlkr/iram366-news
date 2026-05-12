@@ -341,10 +341,17 @@ export default function FooterCamel() {
     return () => window.clearTimeout(id)
   }, [isGreeting])
 
-  // While the bubble is in the DOM, follow the camel's horizontal position
-  // each frame. The bubble is positioned absolutely inside the wrap (not
-  // inside the camel wrapper), so it doesn't inherit the camel's scaleX
-  // flip — the Arabic text stays readable in both walk directions.
+  // While the bubble is in the DOM, follow the camel's **head** position
+  // each frame. The head and body sit at different x's in the SVG: head
+  // group origin is translate(42 6) and the head path centers around
+  // x=57 in the 0..260 viewBox. That's a ratio of ~0.219 from the camel
+  // wrapper's left edge when the camel faces left (scaleX = 1), and the
+  // mirror image (~0.781) when it faces right (scaleX = -1).
+  //
+  // gsap.getProperty returns the *current* animated scaleX, including
+  // intermediate values during a turn — we interpolate the head ratio
+  // smoothly so the bubble slides over the camel's center while the
+  // turn animation foreshortens the body, instead of snapping.
   useEffect(() => {
     if (!bubbleMounted) return
     const bubble = bubbleRef.current
@@ -352,12 +359,19 @@ export default function FooterCamel() {
     const wrap = wrapRef.current
     if (!bubble || !camel || !wrap) return
 
+    const HEAD_RATIO_FACING_LEFT = 57 / 260 // ≈ 0.219
+
     let rafId = 0
     const update = () => {
       const camelRect = camel.getBoundingClientRect()
       const wrapRect = wrap.getBoundingClientRect()
-      const camelCenterX = camelRect.left - wrapRect.left + camelRect.width / 2
-      bubble.style.left = `${camelCenterX}px`
+      const scaleX = (gsap.getProperty(camel, 'scaleX') as number) ?? 1
+      // Map scaleX ∈ [1, -1] → flippedFactor ∈ [0, 1].
+      const flippedFactor = (1 - scaleX) / 2
+      const effectiveRatio =
+        HEAD_RATIO_FACING_LEFT + flippedFactor * (1 - 2 * HEAD_RATIO_FACING_LEFT)
+      const headCenterX = camelRect.left - wrapRect.left + camelRect.width * effectiveRatio
+      bubble.style.left = `${headCenterX}px`
       rafId = window.requestAnimationFrame(update)
     }
     update()
@@ -656,16 +670,40 @@ export default function FooterCamel() {
       {bubbleMounted && (
         <div
           ref={bubbleRef}
-          className={`iram-camel-speech${bubbleVisible ? 'iram-camel-speech--visible' : ''}`}
-          // `bottom` puts the bubble just above the camel's head; `left`
-          // is updated each frame by the position-follow effect.
-          style={{ bottom: `${CAMEL_HEIGHT_PX + 14}px` }}
+          className={`iram-camel-cloud${bubbleVisible ? 'iram-camel-cloud--visible' : ''}`}
+          // `bottom` puts the cloud's tail tip just above the camel's
+          // head (head/ear top sits at ~viewBox y=0 → 0px from camel
+          // top → 86px from wrap bottom). +10px gap above that. `left`
+          // is updated each frame by the position-follow effect so the
+          // cloud tracks the head as the camel walks/turns.
+          style={{ bottom: `${CAMEL_HEIGHT_PX + 10}px` }}
           dir="rtl"
           lang="ar"
           role="status"
           aria-live="polite"
         >
-          السلام عليكم
+          <svg
+            className="iram-camel-cloud__shape"
+            viewBox="0 0 100 60"
+            preserveAspectRatio="xMidYMid meet"
+            aria-hidden="true"
+          >
+            {/* Cloud body: four overlapping ellipses form a bumpy
+                silhouette. All fill="white", no stroke; the SVG's
+                drop-shadow filter computes shadow off the combined
+                alpha mask so internal seams don't show. */}
+            <g fill="#ffffff">
+              <ellipse cx="26" cy="28" rx="15" ry="13" />
+              <ellipse cx="48" cy="20" rx="20" ry="15" />
+              <ellipse cx="72" cy="26" rx="16" ry="13" />
+              <ellipse cx="50" cy="32" rx="24" ry="11" />
+              {/* Teardrop tail pointing down toward the camel's head.
+                  Soft curve sides so it reads as a tail and not a
+                  hard triangle. */}
+              <path d="M 44 36 Q 47 50, 50 52 Q 53 50, 56 36 Z" />
+            </g>
+          </svg>
+          <span className="iram-camel-cloud__text">السلام عليكم</span>
         </div>
       )}
     </div>

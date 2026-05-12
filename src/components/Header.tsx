@@ -51,9 +51,9 @@ export async function Header({ siteName, categories, breakingArticles = [] }: He
         <Link
           href="/"
           aria-label={`${siteName} — الصفحة الرئيسية`}
-          className="flex items-center justify-center gap-2 border-b border-white/5 py-1.5 transition-opacity hover:opacity-80 sm:gap-3"
+          className="flex items-center justify-center gap-4 border-b border-white/5 py-3 transition-opacity hover:opacity-80 sm:gap-6 md:py-5"
         >
-          <span className="iram-bar-brand__arabic min-w-0 whitespace-nowrap font-display text-sm font-extrabold tracking-tight text-white sm:text-base">
+          <span className="iram-bar-brand__arabic min-w-0 whitespace-nowrap font-display text-xl font-extrabold tracking-tight text-white sm:text-3xl md:text-4xl">
             {siteName}
           </span>
           {/* eslint-disable-next-line @next/next/no-img-element -- needs CSS mask, Next/Image strips style */}
@@ -61,11 +61,11 @@ export async function Header({ siteName, categories, breakingArticles = [] }: He
             src="/splash-logo.jpeg"
             alt=""
             aria-hidden
-            className="iram-bar-brand__icon h-8 w-auto flex-shrink-0"
+            className="iram-bar-brand__icon h-14 w-auto flex-shrink-0 sm:h-20 md:h-24"
           />
           <span
             dir="ltr"
-            className="iram-bar-brand__english min-w-0 whitespace-nowrap font-display text-sm font-extrabold tracking-tight text-white sm:text-base"
+            className="iram-bar-brand__english min-w-0 whitespace-nowrap font-display text-xl font-extrabold tracking-tight text-white sm:text-3xl md:text-4xl"
           >
             Iram 366 News
           </span>

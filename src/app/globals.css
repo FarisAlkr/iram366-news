@@ -1340,54 +1340,49 @@ body.has-pen-cursor input[type='reset'] {
 }
 
 /* =====================================================================
-   Speech bubble for the footer camel greeting.
+   Speech cloud for the footer camel greeting.
    Lives as a sibling of the camel inside the footer wrapper, positioned
-   absolutely by JS (per-frame rAF follows the camel's transform). The
-   tail uses two ::after layers: a fill triangle on top of a slightly
-   larger border triangle, so the bubble's 1px gold border is preserved
-   along the tail edges.
+   absolutely by JS (per-frame rAF follows the camel's HEAD position,
+   not the camel body's center — head & body don't share an x in the
+   SVG). The cloud silhouette is rendered as inline SVG (composite of
+   overlapping ellipses + a downward teardrop tail). The drop-shadow
+   filter applies to the combined alpha mask, so no internal seams
+   bleed through.
    ===================================================================== */
-.iram-camel-speech {
+.iram-camel-cloud {
   position: absolute;
-  background: #fffbf5;
-  color: #0a2a2f;
-  border: 1px solid #c8964a;
-  border-radius: 12px;
-  padding: 8px 14px;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1;
-  white-space: nowrap;
+  width: 100px;
+  height: 60px;
   pointer-events: auto;
   z-index: 10;
   opacity: 0;
   transform: translateX(-50%);
   transition: opacity 200ms ease;
-  box-shadow: 0 4px 12px rgba(10, 42, 47, 0.18);
 }
-.iram-camel-speech--visible {
+.iram-camel-cloud--visible {
   opacity: 1;
 }
-.iram-camel-speech::before,
-.iram-camel-speech::after {
-  content: '';
+.iram-camel-cloud__shape {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.18));
+}
+.iram-camel-cloud__text {
   position: absolute;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-style: solid;
-}
-/* Outer (border) triangle */
-.iram-camel-speech::before {
-  bottom: -8px;
-  margin-left: -8px;
-  border-width: 8px 8px 0 8px;
-  border-color: #c8964a transparent transparent transparent;
-}
-/* Inner (fill) triangle, slightly smaller and inset by 1px */
-.iram-camel-speech::after {
-  bottom: -7px;
-  margin-left: -7px;
-  border-width: 7px 7px 0 7px;
-  border-color: #fffbf5 transparent transparent transparent;
+  left: 0;
+  right: 0;
+  /* The cloud body occupies viewBox y=2..32 (top portion of the 60-unit
+     SVG); the tail is the bottom ~18 units. Anchor the text vertically
+     near the cloud body's center, slightly above the geometric center
+     so it visually sits inside the bumpy top rather than over the tail. */
+  top: 10px;
+  text-align: center;
+  font-family: var(--font-kufi, inherit);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  color: #0a2a2f;
+  pointer-events: none;
+  user-select: none;
 }
