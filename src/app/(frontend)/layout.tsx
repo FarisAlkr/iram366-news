@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import React from 'react'
-import { IBM_Plex_Sans_Arabic, Noto_Kufi_Arabic } from 'next/font/google'
+import { Amiri, IBM_Plex_Sans_Arabic, Noto_Kufi_Arabic } from 'next/font/google'
 import '../globals.css'
 
 import { BackToHomeFallback } from '@/components/BackToHomeFallback'
@@ -22,6 +22,19 @@ const notoKufi = Noto_Kufi_Arabic({
   weight: ['400', '500', '600', '700', '800'],
   variable: '--font-kufi',
   display: 'swap',
+})
+
+// Amiri is a classical Naskh-style Arabic display face used by the cursor
+// letter-trail effect. `preload: false` keeps it off the LCP critical path
+// — the trail is a client-only, desktop-only signature touch, so loading
+// the font before first paint would penalize mobile and slow networks for
+// a feature they'll never see.
+const amiri = Amiri({
+  subsets: ['arabic'],
+  weight: ['700'],
+  variable: '--font-cursor-arabic',
+  display: 'swap',
+  preload: false,
 })
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
@@ -69,7 +82,11 @@ export default async function FrontendLayout({ children }: { children: React.Rea
   const showCursorInk = cursorInkEnvOn && cursorInkAdminOn
 
   return (
-    <html lang="ar" dir="rtl" className={`${ibmPlex.variable} ${notoKufi.variable}`}>
+    <html
+      lang="ar"
+      dir="rtl"
+      className={`${ibmPlex.variable} ${notoKufi.variable} ${amiri.variable}`}
+    >
       <body className="bg-cream font-body text-ink antialiased">
         <SplashScreen siteName="إرم 366 الإخبارية" />
         <BackToHomeFallback />

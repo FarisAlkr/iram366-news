@@ -1339,6 +1339,16 @@ body.has-pen-cursor input[type='reset'] {
   cursor: pointer;
 }
 
+/* Cursor letter trail uses the Amiri Naskh face. Canvas `ctx.font` is a
+   plain string and cannot resolve CSS variables directly, so we expose
+   the font-family via this class on the trail canvas and read it back
+   with `getComputedStyle(canvas).fontFamily` in JS. `serif` is the
+   fallback if Amiri hasn't loaded yet (display: swap on the font means
+   the trail starts in serif and seamlessly upgrades). */
+.iram-cursor-letter-trail {
+  font-family: var(--font-cursor-arabic), serif;
+}
+
 /* =====================================================================
    Speech cloud for the footer camel greeting.
    Lives as a sibling of the camel inside the footer wrapper, positioned
