@@ -364,6 +364,39 @@ export default function FooterCamel() {
     return () => window.cancelAnimationFrame(rafId)
   }, [bubbleMounted])
 
+  // Dismiss the greeting when the user clicks anywhere outside the camel
+  // or the bubble. The listener is only attached while `isGreeting` is
+  // true; cleanup removes it the moment the greeting flips off, so we
+  // don't accumulate stacked listeners across multiple greet cycles.
+  //
+  // We listen on `mousedown` rather than `click` so the dismiss happens
+  // before any other click handlers downstream (e.g. links inside the
+  // footer) — that prevents the bubble from briefly persisting through
+  // a navigation away from this page.
+  useEffect(() => {
+    if (!isGreeting) return
+    const onOutsideClick = (e: MouseEvent) => {
+      const target = e.target as Node | null
+      const camel = camelRef.current
+      const bubble = bubbleRef.current
+      if (!target) return
+      if (camel && camel.contains(target)) return
+      if (bubble && bubble.contains(target)) return
+      setIsGreeting(false)
+      setIsSmiling(false)
+    }
+    // Defer attach by one frame so the click that *started* the greeting
+    // doesn't immediately dismiss it (the click bubbles up to document
+    // after the onClick handler resolves).
+    const id = requestAnimationFrame(() => {
+      document.addEventListener('mousedown', onOutsideClick)
+    })
+    return () => {
+      cancelAnimationFrame(id)
+      document.removeEventListener('mousedown', onOutsideClick)
+    }
+  }, [isGreeting])
+
   return (
     <div
       ref={wrapRef}
