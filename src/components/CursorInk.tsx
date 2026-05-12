@@ -63,11 +63,22 @@ export default function CursorInk() {
     if (typeof window === 'undefined') return
     if (window.matchMedia('(pointer: coarse)').matches) return
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    // /admin is Payload's UI; its own cursor + interactions shouldn't be
+    // overridden by the calligraphy pen. Belt-and-braces — the
+    // (frontend)/layout.tsx route group already excludes /admin, but
+    // this defends against a future reshuffle of layouts.
+    if (window.location.pathname.startsWith('/admin')) return
 
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d', { alpha: true })
     if (!ctx) return
+
+    // Swap the default arrow for the pen-shaped cursor while the
+    // calligraphy trail is active. globals.css owns the cursor URL and
+    // the interactive-element overrides; this component just toggles the
+    // class on <body> in lockstep with the trail's lifetime.
+    document.body.classList.add('has-pen-cursor')
 
     // --- Sizing with devicePixelRatio --------------------------------------
 
@@ -212,6 +223,7 @@ export default function CursorInk() {
       gsap.ticker.remove(render)
       window.removeEventListener('resize', resize)
       window.removeEventListener('pointermove', onPointerMove)
+      document.body.classList.remove('has-pen-cursor')
     }
   }, [])
 
