@@ -1302,3 +1302,39 @@
     animation: none;
   }
 }
+
+/* =====================================================================
+   Pen-shaped cursor for the calligraphy ink effect.
+   The `has-pen-cursor` class is toggled on <body> by CursorInk.tsx after
+   its own guards pass (no coarse pointer, no prefers-reduced-motion, not
+   on /admin). Interactive elements fall back to the standard pointer /
+   text cursors so users still recognise clickable / editable targets.
+   ===================================================================== */
+body.has-pen-cursor {
+  cursor:
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M 1 1 L 4 5 L 5 4 Z' fill='%233a2410'/><path d='M 2 4 L 4 2 L 22 20 L 20 22 Z' fill='%235c3a1f'/><path d='M 20 22 L 23 25 L 25 23 L 22 20 Z' fill='%233a2410'/></svg>")
+      1 1,
+    auto;
+}
+body.has-pen-cursor a,
+body.has-pen-cursor button,
+body.has-pen-cursor select,
+body.has-pen-cursor [role='button'],
+body.has-pen-cursor [role='link'],
+body.has-pen-cursor [role='menuitem'],
+body.has-pen-cursor [role='option'],
+body.has-pen-cursor [role='tab'] {
+  cursor: pointer;
+}
+body.has-pen-cursor input,
+body.has-pen-cursor textarea,
+body.has-pen-cursor [contenteditable='true'] {
+  cursor: text;
+}
+body.has-pen-cursor input[type='checkbox'],
+body.has-pen-cursor input[type='radio'],
+body.has-pen-cursor input[type='submit'],
+body.has-pen-cursor input[type='button'],
+body.has-pen-cursor input[type='reset'] {
+  cursor: pointer;
+}

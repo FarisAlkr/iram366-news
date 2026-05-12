@@ -40,15 +40,22 @@ export async function Header({ siteName, categories, breakingArticles = [] }: He
       </div>
 
       {/* Top, NON-sticky band — scrolls away on read.
-          On phones: a small brand row + the weather/date bar.
-          On tablet+: just the weather/date bar (which itself centers the
-          site name and logo on tablet+). */}
+          Three-part RTL wordmark on every breakpoint:
+            ┌────────────────────────┬───────┬──────────────────┐
+            │ Arabic (start of RTL)  │ logo  │ English (end)    │
+            └────────────────────────┴───────┴──────────────────┘
+          DOM order is Arabic → logo → English; flex on an RTL page lays
+          them out right-to-left so the visual result matches the diagram.
+          Whole row is one <Link> so any part navigates home. */}
       <div className="bg-navy text-white">
         <Link
           href="/"
           aria-label={`${siteName} — الصفحة الرئيسية`}
-          className="flex items-center justify-center gap-2 border-b border-white/5 py-1.5 transition-opacity hover:opacity-80 sm:hidden"
+          className="flex items-center justify-center gap-2 border-b border-white/5 py-1.5 transition-opacity hover:opacity-80 sm:gap-3"
         >
+          <span className="iram-bar-brand__arabic min-w-0 whitespace-nowrap font-display text-sm font-extrabold tracking-tight text-white sm:text-base">
+            {siteName}
+          </span>
           {/* eslint-disable-next-line @next/next/no-img-element -- needs CSS mask, Next/Image strips style */}
           <img
             src="/splash-logo.jpeg"
@@ -56,11 +63,14 @@ export async function Header({ siteName, categories, breakingArticles = [] }: He
             aria-hidden
             className="iram-bar-brand__icon h-8 w-auto flex-shrink-0"
           />
-          <span className="whitespace-nowrap font-display text-sm font-extrabold tracking-tight text-white">
-            {siteName}
+          <span
+            dir="ltr"
+            className="iram-bar-brand__english min-w-0 whitespace-nowrap font-display text-sm font-extrabold tracking-tight text-white sm:text-base"
+          >
+            Iram 366 News
           </span>
         </Link>
-        <WeatherDateBar towns={towns} siteName={siteName} />
+        <WeatherDateBar towns={towns} />
       </div>
 
       {/* STICKY band — categories + breaking ticker. Stays visible on scroll. */}
