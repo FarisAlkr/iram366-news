@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 export interface Town {
@@ -74,7 +73,6 @@ interface WeatherData {
 
 interface WeatherDateBarProps {
   towns?: Town[]
-  siteName?: string
 }
 
 function weatherIcon(code: number): string {
@@ -123,7 +121,7 @@ function orderedRegions(towns: Town[]): string[] {
   return ordered
 }
 
-export function WeatherDateBar({ towns: customTowns, siteName }: WeatherDateBarProps = {}) {
+export function WeatherDateBar({ towns: customTowns }: WeatherDateBarProps = {}) {
   const towns = customTowns && customTowns.length > 0 ? customTowns : DEFAULT_TOWNS
   const regions = useMemo(() => orderedRegions(towns), [towns])
   const fallbackTown: Town =
@@ -214,22 +212,9 @@ export function WeatherDateBar({ towns: customTowns, siteName }: WeatherDateBarP
     <div className="relative z-50 border-b border-white/10 bg-navy-dark/70 text-base text-white/85 md:text-lg">
       <div className="container-news">
         <div className="relative flex h-16 items-center justify-between">
-          {siteName && (
-            <Link
-              href="/"
-              aria-label={`${siteName} — الصفحة الرئيسية`}
-              className="iram-bar-brand absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-2 whitespace-nowrap font-display text-base font-extrabold tracking-tight text-white transition-opacity hover:opacity-80 sm:flex md:text-lg lg:text-xl"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element -- needs CSS mask, Next/Image strips style */}
-              <img
-                src="/splash-logo.jpeg"
-                alt=""
-                aria-hidden
-                className="iram-bar-brand__icon h-10 w-auto flex-shrink-0 md:h-12 lg:h-14"
-              />
-              <span>{siteName}</span>
-            </Link>
-          )}
+          {/* Brand display moved to the three-part wordmark in Header.tsx;
+              this bar is now weather + town picker (right side, RTL start)
+              and live date/time (left side, RTL end) only. */}
           <div className="flex items-center gap-3">
             <span suppressHydrationWarning>
               {weather ? (
