@@ -130,19 +130,30 @@ export default function FooterCamel() {
       const wrapWidth = wrap.clientWidth
       const camelWidth = camel.offsetWidth
       const travel = Math.max(0, wrapWidth - camelWidth)
-      const stepDuration = travel / WALK_PX_PER_SEC
+      // Guard against a 0-width wrapper (the initial paint can fire before
+      // the footer has its real dimensions). Without this the camel would
+      // sit still at left: 0 with no motion at all.
+      const stepDuration = travel > 0 ? travel / WALK_PX_PER_SEC : 1
 
-      // Camel pauses at each end, turns, then walks back.
+      // Start the camel at the visual right edge facing left (scaleX = 1
+      // matches the SVG's default head-on-the-left orientation, so the
+      // camel walks "forward" during the right→left segment).
+      gsap.set(camel, { x: travel, scaleX: 1 })
+      directionFacing = 1
+
+      // One full loop: walk right→left, dwell, turn to face right, walk
+      // left→right, dwell, turn back. `repeat: -1` cycles continuously so
+      // the camel is always somewhere visible inside the wrapper.
       const tl = gsap.timeline({ repeat: -1, paused: reducedMotion })
-      tl.to(camel, { x: travel, duration: stepDuration, ease: 'none' })
-        .to({}, { duration: EDGE_PAUSE_SEC }) // dwell
+      tl.to(camel, { x: 0, duration: stepDuration, ease: 'none' })
+        .to({}, { duration: EDGE_PAUSE_SEC }) // dwell at left edge
         .call(() => {
           directionFacing = -1
           gsap.to(camel, { scaleX: -1, duration: TURN_SEC, ease: 'power2.inOut' })
         })
         .to({}, { duration: TURN_SEC })
-        .to(camel, { x: 0, duration: stepDuration, ease: 'none' })
-        .to({}, { duration: EDGE_PAUSE_SEC })
+        .to(camel, { x: travel, duration: stepDuration, ease: 'none' })
+        .to({}, { duration: EDGE_PAUSE_SEC }) // dwell at right edge
         .call(() => {
           directionFacing = 1
           gsap.to(camel, { scaleX: 1, duration: TURN_SEC, ease: 'power2.inOut' })
@@ -313,7 +324,13 @@ export default function FooterCamel() {
         style={{
           position: 'absolute',
           bottom: 0,
-          insetInlineStart: 0,
+          // `left` (physical), NOT `insetInlineStart` (logical). The page is
+          // dir="rtl" so insetInlineStart resolves to `right: 0`, anchoring
+          // the wrapper at the visual right edge. GSAP's positive `x` then
+          // translates further right — off-screen. The camel is decorative
+          // and lives in pixel space, so physical `left: 0` is the correct
+          // anchor regardless of writing direction.
+          left: 0,
           width: `${SVG_W * (CAMEL_HEIGHT_PX / SVG_H)}px`,
           height: `${CAMEL_HEIGHT_PX}px`,
           opacity: 0.92,
