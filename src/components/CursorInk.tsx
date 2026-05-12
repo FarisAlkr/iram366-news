@@ -134,6 +134,19 @@ export default function CursorInk() {
     }
     window.addEventListener('pointermove', onPointerMove, { passive: true })
 
+    // Full buffer clear when the cursor leaves the document or the window
+    // loses focus. Without this, switching tabs / alt-tabbing / hovering
+    // off-page would leave a stale trail snapshot, and the next mouse re-
+    // entry would draw a ghost line from the last on-page position to the
+    // re-entry point.
+    const clearBuffer = () => {
+      samples.length = 0
+      lastSpeed = 0
+      idleFadeMultiplier = 1
+    }
+    document.addEventListener('mouseleave', clearBuffer)
+    window.addEventListener('blur', clearBuffer)
+
     // --- Text-aware alpha (throttled) --------------------------------------
     // elementFromPoint is layout-flushing — keep it off the per-frame path.
 
@@ -168,10 +181,20 @@ export default function CursorInk() {
       // entering / leaving body text doesn't snap visually.
       textHitSmoothed += (textHitMultiplier - textHitSmoothed) * TEXT_ALPHA_SMOOTHING
 
-      // Idle fade: once no movement for IDLE_MS, decay multiplier toward 0.
+      // Idle fade: once no movement for IDLE_MS, decay multiplier toward 0
+      // *and* actively shrink the sample buffer. The alpha fade alone wasn't
+      // enough: after a long idle, the next pointermove instantly reset
+      // idleFadeMultiplier to 1, but the old samples were still in the
+      // buffer — so a "ghost stroke" connected the user's old position to
+      // their new one in a single frame.
+      //
+      // Shrinking the buffer in lockstep with the fade ensures that by the
+      // time the trail is visually gone, the samples that drew it are gone
+      // too. 40-sample buffer with 1 drop per ~16ms frame → cleared in
+      // ~640ms, comfortably inside the 500–800ms target.
       if (now - lastMoveTime > IDLE_MS) {
-        // 95%/sec fade → multiplier *= 0.05^dt per frame.
         idleFadeMultiplier *= Math.pow(1 - IDLE_FADE_PER_SECOND, dt)
+        if (samples.length > 0) samples.shift()
       }
 
       ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -223,6 +246,8 @@ export default function CursorInk() {
       gsap.ticker.remove(render)
       window.removeEventListener('resize', resize)
       window.removeEventListener('pointermove', onPointerMove)
+      document.removeEventListener('mouseleave', clearBuffer)
+      window.removeEventListener('blur', clearBuffer)
       document.body.classList.remove('has-pen-cursor')
     }
   }, [])
