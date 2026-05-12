@@ -1354,8 +1354,8 @@ body.has-pen-cursor input[type='reset'] {
   /* Width tuned to fit "السلام عليكم" at the body font-size with a
      little breathing room on each side; the SVG cloud silhouette is
      stretched horizontally to match via preserveAspectRatio="none". */
-  width: 124px;
-  height: 60px;
+  width: 160px;
+  height: 78px;
   /* `none`, not `auto`. The cloud has no interactive children; if it
      captured pointer events it would silently swallow clicks meant for
      the camel underneath whenever the cloud overlaps the camel's
@@ -1383,10 +1383,10 @@ body.has-pen-cursor input[type='reset'] {
      SVG); the tail is the bottom ~18 units. Anchor the text vertically
      near the cloud body's center, slightly above the geometric center
      so it visually sits inside the bumpy top rather than over the tail. */
-  top: 10px;
+  top: 14px;
   text-align: center;
   font-family: var(--font-kufi, inherit);
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 600;
   line-height: 1;
   color: #0a2a2f;
