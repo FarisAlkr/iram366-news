@@ -19,6 +19,8 @@
     "migrate": "payload migrate --disable-transpile",
     "migrate:create": "payload migrate:create --disable-transpile",
     "migrate:status": "payload migrate:status --disable-transpile",
+    "migrate:sql": "bash scripts/apply-migrations.sh",
+    "migrate:sql:status": "docker compose exec -T db psql -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -c 'SELECT name, batch, created_at FROM payload_migrations ORDER BY id'",
     "seed": "tsx src/seed.ts"
   },
   "keywords": [],

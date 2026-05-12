@@ -7,3 +7,4 @@ src/payload/migrations
 tsconfig.tsbuildinfo
 .env
 .env.*
+.claude

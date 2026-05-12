@@ -39,3 +39,6 @@ next-env.d.ts
 
 # local review/audit prompt drafts — kept untracked so they never ship in bundles or docs
 *-review-prompt.md
+
+# Claude Code local agent / settings state — not for sharing across machines
+.claude/
