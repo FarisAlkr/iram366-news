@@ -80,25 +80,11 @@ export default function CursorInk() {
     // class on <body> in lockstep with the trail's lifetime.
     document.body.classList.add('has-pen-cursor')
 
-    // --- Sizing with devicePixelRatio --------------------------------------
-
-    let dpr = window.devicePixelRatio || 1
-    const resize = () => {
-      dpr = window.devicePixelRatio || 1
-      const w = window.innerWidth
-      const h = window.innerHeight
-      canvas.width = Math.round(w * dpr)
-      canvas.height = Math.round(h * dpr)
-      canvas.style.width = `${w}px`
-      canvas.style.height = `${h}px`
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      ctx.lineCap = 'round'
-      ctx.lineJoin = 'round'
-    }
-    resize()
-    window.addEventListener('resize', resize, { passive: true })
-
     // --- Cursor sampling ---------------------------------------------------
+    // State buffers declared first so `resize()` can wipe them on viewport
+    // change (zoom in/out doesn't reliably fire `window.resize`, so any
+    // stale samples in the buffer would draw against the wrong coordinate
+    // space and "stick" until the user zoomed back).
 
     const samples: Sample[] = []
     let lastMoveTime = performance.now()
@@ -107,6 +93,45 @@ export default function CursorInk() {
     let textHitMultiplier = 1 // 1 = clear text, TEXT_ALPHA_DAMPEN = over text
     let textHitSmoothed = 1
     let idleFadeMultiplier = 1
+
+    // --- Sizing with devicePixelRatio + visual viewport --------------------
+    // `window.innerWidth` is the **layout** viewport — unaffected by browser
+    // zoom (Ctrl + / Ctrl -). `window.visualViewport.width` *is* affected.
+    // When the user zooms out, the canvas keeps its full layout-viewport
+    // pixel dimensions while the visual rendering shrinks, so `clearRect`
+    // no longer covers the visible canvas area on every frame and old
+    // strokes appear to "stick" in the under-painted regions until the
+    // user zooms back in. Prefer visualViewport when present.
+
+    let dpr = window.devicePixelRatio || 1
+    const resize = () => {
+      dpr = window.devicePixelRatio || 1
+      const w = window.visualViewport?.width ?? window.innerWidth
+      const h = window.visualViewport?.height ?? window.innerHeight
+      canvas.width = Math.round(w * dpr)
+      canvas.height = Math.round(h * dpr)
+      canvas.style.width = `${w}px`
+      canvas.style.height = `${h}px`
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
+      // Wipe any in-flight samples — they're in the old coordinate space.
+      // Interpolating across a viewport change produces a single long stroke
+      // from the pre-zoom cursor location to the post-zoom location, which
+      // looks like a glitch.
+      samples.length = 0
+      lastSpeed = 0
+      idleFadeMultiplier = 1
+    }
+    resize()
+    window.addEventListener('resize', resize, { passive: true })
+    // visualViewport reports zoom *and* mobile-safari URL-bar collapse
+    // changes; both alter the rendered canvas area. Bind to scroll too —
+    // visualViewport scroll fires when the pinch-zoomed viewport pans,
+    // which also shifts what `clearRect(0,0,width,height)` actually
+    // wipes on screen.
+    window.visualViewport?.addEventListener('resize', resize)
+    window.visualViewport?.addEventListener('scroll', resize)
 
     const onPointerMove = (e: PointerEvent) => {
       const now = performance.now()
@@ -245,6 +270,8 @@ export default function CursorInk() {
     return () => {
       gsap.ticker.remove(render)
       window.removeEventListener('resize', resize)
+      window.visualViewport?.removeEventListener('resize', resize)
+      window.visualViewport?.removeEventListener('scroll', resize)
       window.removeEventListener('pointermove', onPointerMove)
       document.removeEventListener('mouseleave', clearBuffer)
       window.removeEventListener('blur', clearBuffer)

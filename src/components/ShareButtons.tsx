@@ -91,11 +91,11 @@ export function ShareButtons({ url, title }: ShareButtonsProps) {
       {/* Non-interactive brand watermark on the opposite end of the share row.
           Reinforces ownership beside outgoing links without competing with the
           share icons for attention (lower contrast, smaller logo, aria-hidden). */}
-      <div aria-hidden="true" className="pointer-events-none flex items-center gap-1.5 opacity-70">
+      <div aria-hidden="true" className="pointer-events-none flex items-center gap-2">
         {/* eslint-disable-next-line @next/next/no-img-element -- decorative; small file */}
-        <img src="/splash-logo.jpeg" alt="" aria-hidden className="h-5 w-auto flex-shrink-0" />
-        <span className="font-display text-xs font-semibold text-[var(--color-ink-muted)]">
-          إرم 366
+        <img src="/splash-logo.jpeg" alt="" aria-hidden className="h-8 w-auto flex-shrink-0" />
+        <span className="font-display text-sm font-semibold text-[var(--color-ink-muted)]">
+          إرم 366 الإخبارية
         </span>
       </div>
     </div>

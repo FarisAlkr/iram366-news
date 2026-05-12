@@ -670,7 +670,9 @@ export default function FooterCamel() {
       {bubbleMounted && (
         <div
           ref={bubbleRef}
-          className={`iram-camel-cloud${bubbleVisible ? 'iram-camel-cloud--visible' : ''}`}
+          className={
+            bubbleVisible ? 'iram-camel-cloud iram-camel-cloud--visible' : 'iram-camel-cloud'
+          }
           // `bottom` puts the cloud's tail tip just above the camel's
           // head (head/ear top sits at ~viewBox y=0 → 0px from camel
           // top → 86px from wrap bottom). +10px gap above that. `left`
