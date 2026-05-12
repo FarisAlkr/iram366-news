@@ -155,72 +155,84 @@ Backups run nightly at 03:15 UTC via cron, dumping Postgres → Cloudflare R2 wi
 
 ## Schema migrations
 
-The deploy workflow **does not** run `payload migrate` automatically. When a PR
-touches `src/payload/collections/` or `src/payload/globals/`, the contributor
-is expected to (a) generate a migration file with `npm run migrate:create`,
-commit it, and (b) **run the migration manually on prod before merging the
-PR**. The CI guard in `.github/workflows/ci.yml` blocks merging when a schema
-file changes but no migration file is added, so step (a) is enforced.
+Raw SQL migrations applied automatically on deploy. The previous Payload-CLI
+path (`payload migrate`) doesn't work in this project — see
+[Why raw SQL](#why-raw-sql) below.
 
-### Why manual
+### Authoring a new migration
 
-We tried auto-applying migrations from the deploy workflow (PR #7) and ran
-into stacked CLI loader issues — `payload migrate --disable-transpile` can't
-resolve `@/*` TypeScript path aliases at runtime, and `tsx
-node_modules/payload/bin.js migrate` resolves the aliases but hits a CJS
-interop bug in Payload's `loadEnv.js` against `@next/env`. Both are tracked
-as follow-up work; until one is fixed, the CLI runs reliably only from a
-TS-aware loader that doesn't conflict with `@next/env` (e.g. inside
-`next dev`, which is how the original schema bootstrap worked).
+1. Create a file under `src/payload/migrations/sql/` named
+   `YYYYMMDD_HHMMSS_<short_description>.sql`:
 
-### Manual procedure (until automated migrations work)
+   ```bash
+   touch "src/payload/migrations/sql/$(date -u +%Y%m%d_%H%M%S)_add_widget_count.sql"
+   ```
 
-After merging a PR that introduces a new file under `src/payload/migrations/`
-but **before** the merge triggers a deploy that hits a schema mismatch:
+2. Write standard PostgreSQL DDL/DML. The runner wraps the file in
+   `BEGIN; … COMMIT;` with `--single-transaction --set ON_ERROR_STOP=1`,
+   so a failure rolls back cleanly. Prefer idempotent statements
+   (`CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`) where
+   reasonable.
 
-```bash
-# From your laptop:
-ssh iram
-cd /opt/iram366
+3. Run locally against your dev DB before pushing:
 
-# Pull the latest migrator image (the deploy workflow does this too, but
-# the manual step is run before that workflow's container swap finishes).
-docker compose --profile migrate pull migrator
+   ```bash
+   docker compose up -d db
+   set -a && source .env && set +a
+   npm run migrate:sql
+   ```
 
-# Run the migration. Expect either:
-#   "No pending migrations" if the migration was already applied, OR
-#   one or more "Migrating: <name>" / "Migrated:  <name>" lines.
-docker compose --profile migrate run --rm migrator npm run migrate
-```
+   Expect either `No pending migrations.` (if you're up to date) or
+   one `→ <name>` / `✓ <name> applied` pair per applied file.
 
-**Known limitation:** the command above currently exits non-zero because of
-the loader bugs documented in the previous section. If/when migrate has to
-run before this is fixed, options are:
+4. Commit the file together with whatever Payload collection / global
+   change motivated it. The CI guard in `.github/workflows/ci.yml`
+   blocks PRs that touch `src/payload/collections/` or
+   `src/payload/globals/` without a matching new migration file.
 
-1. **Hot-patch on prod:** `docker compose exec -T db psql -U iram366 -d
-iram366 -f -` and pipe in the migration's `up()` SQL directly. Then
-   `INSERT INTO payload_migrations (name, batch) VALUES ('<name>', <next>)`
-   to record it as applied.
-2. **Bootstrap workaround** (see `schema_bootstrap.md`): spin up
-   `next dev` in a temporary container; Payload init triggers `push: true`
-   which auto-applies the schema. Only safe on empty / pre-seeded data.
+5. On merge, the deploy workflow's `Run database migrations` step
+   applies it via `docker compose exec -T db psql …` between pulling
+   the new image and restarting the app. A migration failure aborts
+   the workflow before the container swap, so the previous app
+   version keeps serving traffic.
 
-The CI guard prevents the missing-migration-file mistake at PR time; the
-manual procedure here covers the apply step until the loader bugs are
-resolved.
-
-### Verifying state
-
-To check what's currently applied on prod:
+### Checking applied state
 
 ```bash
-ssh iram "cd /opt/iram366 && docker compose exec -T db psql -U iram366 \
-  -d iram366 -c 'SELECT * FROM payload_migrations ORDER BY id;'"
+# Locally (against the dev DB)
+set -a && source .env && set +a
+npm run migrate:sql:status
+
+# On prod
+ssh iram "cd /opt/iram366 && docker compose exec -T db psql \
+  -U iram366 -d iram366 \
+  -c 'SELECT name, batch, created_at FROM payload_migrations ORDER BY id;'"
 ```
 
-The legacy `dev / batch -1` row is the original `push: true` bootstrap
-marker from 2026-04-29. `20260511_192000_initial_baseline / batch 1` is
-the baseline migration capturing the full schema as of the foundation work.
+Two rows pre-date the SQL runner and are intentionally left in place:
+`dev / batch -1` is the original `push: true` bootstrap marker from
+2026-04-29; `20260511_192000_initial_baseline / batch 1` is the TS
+baseline file capturing the full schema as of the foundation work.
+
+### Why raw SQL
+
+Payload v3's `migrate` CLI has two stacked loader bugs in this project's
+stack:
+
+- `payload migrate --disable-transpile` can't resolve `@/*` TypeScript
+  path aliases at runtime — Node's native ESM resolver doesn't read
+  `tsconfig.paths`, and the Payload config transitively imports files
+  that use `@/lib`, `@/components`, etc.
+- `tsx node_modules/payload/bin.js migrate` resolves the aliases but
+  hits a CJS-interop bug in Payload's `loadEnv.js` against `@next/env`:
+  the default import resolves to `undefined`, and destructuring it
+  crashes the process.
+
+Both are tracked as upstream issues. Until at least one is fixed, the
+`payload migrate` family is parked. Raw SQL via `psql` sidesteps both
+classes of problem and is the standard production database migration
+pattern anyway — every constraint, type, and index is auditable in
+plain SQL, with no transpiler in the chain to misbehave.
 
 ---
 

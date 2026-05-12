@@ -41,30 +41,6 @@ ENV NEXT_PUBLIC_CF_ANALYTICS_TOKEN=${NEXT_PUBLIC_CF_ANALYTICS_TOKEN}
 
 RUN npm run build
 
-# ---- migrator stage ----------------------------------------------------------
-# Slim image carrying the Payload CLI, the schema config, and the migration
-# files — nothing else. Built once per deploy and pushed alongside the runner
-# image. Used by deploy.yml as a one-shot container to apply pending DB
-# migrations before the new app version takes over request serving.
-#
-# Why this exists separately:
-#   * The `runner` stage is the Next.js standalone output — it deliberately
-#     omits `node_modules/.bin/payload`, so the CLI is unavailable there.
-#   * The `builder` stage has everything, but also a multi-minute `next build`
-#     output we don't need for running migrations.
-#
-# This stage skips `next build` entirely and just ships node_modules + source.
-FROM base AS migrator
-COPY --from=deps /app/node_modules ./node_modules
-# `next-env.d.ts` is intentionally NOT copied here: it's in .gitignore (Next
-# regenerates it on every dev/build) and absent from CI's fresh checkout, so
-# listing it makes the migrator image build fail in GitHub Actions even
-# though it works locally. Payload's CLI doesn't need it.
-COPY package.json package-lock.json tsconfig.json next.config.mjs ./
-COPY src ./src
-ENV NODE_ENV=production
-CMD ["npm", "run", "migrate"]
-
 # ---- runner stage ------------------------------------------------------------
 FROM node:${NODE_VERSION}-alpine AS runner
 WORKDIR /app

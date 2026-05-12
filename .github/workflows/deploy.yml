@@ -14,11 +14,6 @@ env:
   # GHCR requires the owner segment be lowercase. github.repository_owner
   # preserves case (FarisAlkr → fails). Hardcode lowercase here.
   IMAGE_NAME: ghcr.io/farisalkr/iram366-app
-  # Migrator image: ships the Payload CLI for one-shot `payload migrate`
-  # runs from inside docker-compose. Built from the `migrator` stage of
-  # the same Dockerfile. See Dockerfile + docker-compose.yml migrator
-  # service.
-  MIGRATOR_IMAGE: ghcr.io/farisalkr/iram366-migrator
 
 jobs:
   build-and-deploy:
@@ -44,10 +39,6 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          # Explicit target since the Dockerfile now has multiple final-eligible
-          # stages (migrator and runner). Without this, docker would build the
-          # last stage in the file by default.
-          target: runner
           push: true
           tags: |
             ${{ env.IMAGE_NAME }}:latest
@@ -58,38 +49,21 @@ jobs:
             NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}
             NEXT_PUBLIC_CF_ANALYTICS_TOKEN=${{ secrets.NEXT_PUBLIC_CF_ANALYTICS_TOKEN }}
 
-      - name: Build & push migrator image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile
-          target: migrator
-          push: true
-          tags: |
-            ${{ env.MIGRATOR_IMAGE }}:latest
-            ${{ env.MIGRATOR_IMAGE }}:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Sync compose file to VPS
-        # The VPS only needs docker-compose.yml + Caddyfile + the deploy/
-        # postgres-init scripts. Code lives inside the image now.
+      - name: Sync compose file + migration runner to VPS
+        # The VPS needs docker-compose.yml + Caddyfile + postgres-init + the
+        # SQL migration runner (`scripts/apply-migrations.sh` plus any pending
+        # files under `src/payload/migrations/sql/`). Code itself lives inside
+        # the image; only these orchestration / migration artifacts ride along.
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: 'docker-compose.yml,Caddyfile,deploy/postgres-init/*'
+          source: 'docker-compose.yml,Caddyfile,deploy/postgres-init/*,scripts/apply-migrations.sh,src/payload/migrations/sql/*'
           target: '/opt/iram366/'
           overwrite: true
 
-      - name: Pull new images on VPS
-        # Pulls both the runner and the migrator. The migrator image is
-        # *not* invoked by this workflow — schema migrations are run
-        # manually before merging a PR that introduces a new migration
-        # file (see README "Schema migrations"). It's still pulled here so
-        # the operator can `docker compose --profile migrate run --rm
-        # migrator npm run migrate` without an extra pull step.
+      - name: Pull new app image on VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -98,9 +72,34 @@ jobs:
           script: |
             set -e
             cd /opt/iram366
-            # --profile migrate makes the migrator service visible to compose;
-            # without it `compose pull migrator` reports "no such service".
-            docker compose --profile migrate pull app migrator
+            docker compose pull app
+
+      - name: Run database migrations
+        # Applies any pending SQL migrations under
+        # `src/payload/migrations/sql/` via `docker compose exec -T db psql`.
+        # Sequencing is critical:
+        #   * Runs AFTER the new image is pulled and the migration files are
+        #     synced (previous SCP step), so the `sql/` directory on the VPS
+        #     reflects this commit's migrations.
+        #   * Runs BEFORE the app container is restarted below — if migrate
+        #     exits non-zero, `set -e` fails the SSH script, the workflow
+        #     aborts, and the previous app version stays up serving traffic.
+        # The script wraps each migration in BEGIN/COMMIT under
+        # --single-transaction + ON_ERROR_STOP=1, so a failure leaves the
+        # database untouched (no half-applied migration, no spurious tracking
+        # row).
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            cd /opt/iram366
+            # scp-action preserves the executable bit, but defensive chmod
+            # in case future SCP-tool changes don't.
+            chmod +x scripts/apply-migrations.sh
+            ./scripts/apply-migrations.sh
 
       - name: Restart app & reload Caddy on VPS
         uses: appleboy/ssh-action@v1.0.3
