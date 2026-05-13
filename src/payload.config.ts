@@ -57,6 +57,11 @@ export default buildConfig({
         '/components/admin/KeyboardProvider#KeyboardProvider',
         '/components/admin/OnboardingTour#OnboardingTour',
         '/components/admin/NotificationBell#NotificationBell',
+        // Floating one-click light/dark theme toggle in the corner.
+        // Registered as a provider so it mounts on every admin page;
+        // it portals the actual button to document.body so it floats
+        // independent of the layout's stacking context.
+        '/components/admin/ThemeToggle#ThemeToggle',
       ],
       // Custom admin route at /admin/stats — full-page editorial + audience
       // stats. See src/components/admin/StatsView.tsx.
