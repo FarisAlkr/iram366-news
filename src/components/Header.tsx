@@ -40,14 +40,23 @@ export async function Header({ siteName, categories, breakingArticles = [] }: He
       </div>
 
       {/* Top, NON-sticky band — scrolls away on read.
-          Three-part RTL wordmark on every breakpoint:
-            ┌────────────────────────┬───────┬──────────────────┐
-            │ Arabic (start of RTL)  │ logo  │ English (end)    │
-            └────────────────────────┴───────┴──────────────────┘
-          DOM order is Arabic → logo → English; flex on an RTL page lays
-          them out right-to-left so the visual result matches the diagram.
-          Whole row is one <Link> so any part navigates home. */}
+          Stack order top→bottom:
+            1. WeatherDateBar (live town + clock — informational, takes the
+               very top)
+            2. Three-part RTL wordmark (Arabic + logo + English) — brand
+               identity directly below the weather strip
+          Then the STICKY band (categories nav + breaking ticker) follows
+          as a sibling below. The wordmark used to sit above WeatherDateBar
+          but the editor preferred weather/clock at the very top so the
+          logo lands right above the navigation it brands. */}
       <div className="bg-navy text-white">
+        <WeatherDateBar towns={towns} />
+        {/* DOM order is Arabic → logo → English; flex on an RTL page lays
+            them out right-to-left so the visual result is:
+              ┌────────────────────────┬───────┬──────────────────┐
+              │ Arabic (start of RTL)  │ logo  │ English (end)    │
+              └────────────────────────┴───────┴──────────────────┘
+            Whole row is one <Link> so any part navigates home. */}
         <Link
           href="/"
           aria-label={`${siteName} — الصفحة الرئيسية`}
@@ -70,7 +79,6 @@ export async function Header({ siteName, categories, breakingArticles = [] }: He
             Iram 366 News
           </span>
         </Link>
-        <WeatherDateBar towns={towns} />
       </div>
 
       {/* STICKY band — categories + breaking ticker. Stays visible on scroll. */}
