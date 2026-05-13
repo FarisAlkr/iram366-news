@@ -63,8 +63,40 @@ function stripExtension(name: string): string {
   return dot > 0 ? name.slice(0, dot) : name
 }
 
+// Permissive image detection — accepts a file when EITHER its MIME type
+// claims to be an image, OR its filename ends in a known image extension.
+// The MIME-only check (the prior implementation) rejected files that
+// arrive with an empty `type` field — common when dragging from non-
+// system sources (chat clients, some cloud-sync apps), or when the OS
+// hasn't registered a MIME for an exotic format. The extension fallback
+// catches those without inviting arbitrary binaries through, because we
+// keep an allowlist of known image extensions.
+const IMAGE_EXTENSIONS = [
+  '.jpg',
+  '.jpeg',
+  '.jpe',
+  '.jfif',
+  '.png',
+  '.gif',
+  '.webp',
+  '.avif',
+  '.heic',
+  '.heif',
+  '.tiff',
+  '.tif',
+  '.bmp',
+  '.svg',
+] as const
+
+function isImageFile(f: File): boolean {
+  if (f.size <= 0) return false
+  if (f.type && f.type.startsWith('image/')) return true
+  const lower = f.name.toLowerCase()
+  return IMAGE_EXTENSIONS.some((ext) => lower.endsWith(ext))
+}
+
 function filterImageFiles(list: FileList | File[]): File[] {
-  return Array.from(list).filter((f) => f.size > 0 && f.type.startsWith('image/'))
+  return Array.from(list).filter(isImageFile)
 }
 
 export const BulkGalleryUploader: React.FC = () => {
@@ -185,41 +217,55 @@ export const BulkGalleryUploader: React.FC = () => {
     await processFiles(files)
   }
 
+  // NOTE — the previous implementation gated all drag handlers on
+  // `dataTransfer.types.includes('Files')`. Editor reported drag-and-drop
+  // wasn't working at all. Root cause: some OS / browser combinations
+  // (notably Safari on macOS, and certain drag sources on Windows
+  // Chromium) don't populate `types` reliably during the drag — the
+  // string list comes through empty or contains a vendor-prefixed token
+  // instead of the standard 'Files'. With the gate, all four handlers
+  // bail and the browser falls back to opening the file URL on drop.
+  //
+  // The correct pattern is: always preventDefault on dragover (the only
+  // way to accept a drop at all) and inspect `dataTransfer.files` on the
+  // drop event itself. If files come through, process them; if not,
+  // no-op. The visible drop-zone state ignores types as well — any
+  // drag-over the zone shows the affordance, which is harmless if the
+  // drag turns out not to be files (the drop just does nothing).
+
   const onDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
-    // Only react to drags that contain files. dragging text, a link, an
-    // image from elsewhere in the page → ignore.
-    if (!e.dataTransfer?.types?.includes('Files')) return
     e.preventDefault()
     dragCounterRef.current += 1
     if (!dragActive) setDragActive(true)
   }
 
   const onDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    // Required to allow drop. Without preventDefault on dragover, the
-    // browser refuses the drop and falls back to navigating to the
-    // file's URL (which on a local file means a useless file:// nav).
-    if (!e.dataTransfer?.types?.includes('Files')) return
+    // CRITICAL — without preventDefault here the browser refuses the
+    // drop and falls back to navigating to file://… on a local image.
     e.preventDefault()
-    // Indicate this is a copy-from-OS, not a move. Browsers display a
-    // "+ copy" cursor with this hint, matching editor intuition that
-    // dragging from a folder shouldn't move/delete the source file.
-    e.dataTransfer.dropEffect = 'copy'
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'
   }
 
   const onDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    if (!e.dataTransfer?.types?.includes('Files')) return
+    e.preventDefault()
     dragCounterRef.current = Math.max(0, dragCounterRef.current - 1)
     if (dragCounterRef.current === 0) setDragActive(false)
   }
 
   const onDrop = async (e: React.DragEvent<HTMLDivElement>) => {
-    if (!e.dataTransfer?.types?.includes('Files')) return
     e.preventDefault()
     dragCounterRef.current = 0
     setDragActive(false)
-    const dropped = e.dataTransfer.files
+    const dropped = e.dataTransfer?.files
     if (!dropped || dropped.length === 0) return
     const files = filterImageFiles(dropped)
+    if (files.length === 0) {
+      // Surface a clear note rather than silently doing nothing — the
+      // editor will know the drop registered but their files weren't
+      // recognized as images.
+      setStatuses([{ name: 'لم يتم التعرّف على ملفات صور', state: 'error' }])
+      return
+    }
     await processFiles(files)
   }
 
