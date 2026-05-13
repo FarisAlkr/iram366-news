@@ -5269,3 +5269,560 @@ select:focus-visible,
     }
   }
 }
+
+// ============================================================
+// .iram-bgu — Bulk Gallery Uploader v2 (asset drop area design)
+// ============================================================
+// Replaces .iram-bulk-gallery rules above (kept for compatibility
+// with anything else still using that class). The new design uses
+// the iram-bgu prefix and follows the "asset drop area" model:
+//   - clean white surface
+//   - subtle navy hairline (no aggressive gold)
+//   - tile grid with per-file preview thumbnails
+//   - status painted on each tile
+//   - success/error banner above the grid
+
+.iram-bgu {
+  position: relative;
+  background: var(--iram-surface);
+  border: 1px solid var(--iram-border);
+  border-radius: var(--iram-radius);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+
+  &--drag {
+    border-color: var(--iram-navy-700);
+    border-style: solid;
+    background: var(--iram-surface-2);
+    box-shadow: 0 0 0 4px rgba(10, 42, 47, 0.06);
+  }
+
+  // Hidden file input — keeps the picker triggerable from the zone
+  // button without exposing the ugly default button.
+  &__file {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  // ----- Drop zone -----
+  &__zone {
+    appearance: none;
+    background: transparent;
+    border: 1.5px dashed var(--iram-border-hov);
+    border-radius: var(--iram-radius);
+    color: var(--iram-ink-2);
+    padding: 32px 24px;
+    min-height: 140px;
+    cursor: pointer;
+    transition:
+      border-color 160ms ease,
+      background 160ms ease,
+      transform 160ms ease;
+    text-align: center;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+      border-color: var(--iram-navy-700);
+      background: var(--iram-surface-2);
+    }
+    &:focus-visible {
+      outline: 2px solid var(--iram-navy-700);
+      outline-offset: 3px;
+    }
+  }
+
+  // When tiles are present, the zone collapses into a slim "+ add more" strip
+  &--has-tiles .iram-bgu__zone {
+    min-height: auto;
+    padding: 14px 16px;
+
+    .iram-bgu__icon {
+      display: none;
+    }
+    .iram-bgu__zone-title {
+      font-size: 13.5px;
+      font-weight: 600;
+
+      &::before {
+        content: '+';
+        display: inline-block;
+        margin-inline-end: 8px;
+        font-size: 18px;
+        font-weight: 400;
+        opacity: 0.55;
+        vertical-align: -1px;
+      }
+    }
+    .iram-bgu__zone-sub {
+      display: none;
+    }
+  }
+
+  &__zone-inner {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    max-width: 480px;
+  }
+
+  &__zone-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__zone-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--iram-navy-900);
+    letter-spacing: -0.005em;
+  }
+
+  &__zone-sub {
+    font-size: 12.5px;
+    color: var(--iram-ink-3);
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
+  &__icon {
+    color: var(--iram-navy-700);
+    opacity: 0.85;
+  }
+
+  // ----- Drop overlay -----
+  &__drop-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: rgba(10, 42, 47, 0.92);
+    color: #fff;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    border-radius: var(--iram-radius);
+    pointer-events: none;
+    z-index: 2;
+    animation: iram-bgu-fade 160ms ease;
+
+    .iram-bgu__icon {
+      color: #fff;
+      width: 48px;
+      height: 48px;
+      opacity: 1;
+    }
+  }
+
+  // ----- Banner -----
+  &__banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: var(--iram-radius-sm);
+    background: var(--iram-surface-2);
+    border: 1px solid var(--iram-border);
+    font-size: 13px;
+    color: var(--iram-ink-2);
+    transition:
+      background 240ms ease,
+      border-color 240ms ease,
+      color 240ms ease;
+
+    &--success {
+      background: #f0faf3;
+      border-color: #b6e2c2;
+      color: #145c2c;
+
+      strong {
+        color: #0d4a22;
+      }
+      .iram-bgu__banner-check {
+        background: #16a34a;
+      }
+    }
+
+    &--partial {
+      background: #fff4e6;
+      border-color: #fad9a3;
+      color: #84540a;
+
+      strong {
+        color: #6a4308;
+      }
+      .iram-bgu__banner-warn {
+        background: #d97706;
+      }
+    }
+  }
+
+  &__banner-text {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    line-height: 1.4;
+
+    strong {
+      font-weight: 700;
+      font-feature-settings:
+        'tnum' 1,
+        'lnum' 1;
+    }
+  }
+
+  &__banner-spinner {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--iram-border-hov);
+    border-top-color: var(--iram-navy-700);
+    animation: iram-bgu-spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+
+  &__banner-check,
+  &__banner-warn {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--iram-navy-700);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  &__banner-clear {
+    appearance: none;
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: var(--iram-radius-sm);
+    opacity: 0.7;
+    transition:
+      opacity 120ms ease,
+      background 120ms ease;
+    font-family: inherit;
+
+    &:hover {
+      opacity: 1;
+      background: rgba(0, 0, 0, 0.04);
+    }
+  }
+
+  // ----- Tile grid -----
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 14px;
+  }
+
+  &__tile {
+    position: relative;
+    background: var(--iram-surface);
+    border: 1px solid var(--iram-border);
+    border-radius: var(--iram-radius-sm);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition:
+      transform 160ms ease,
+      box-shadow 160ms ease,
+      border-color 160ms ease;
+    animation: iram-bgu-fade 240ms ease;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--iram-shadow);
+    }
+
+    &--error {
+      border-color: #e8b3b3;
+    }
+    &--success {
+      border-color: #c5e3d0;
+    }
+    &--expanded {
+      grid-column: 1 / -1;
+      box-shadow: var(--iram-shadow-lg);
+
+      .iram-bgu__thumb-wrap {
+        aspect-ratio: 4 / 1;
+      }
+    }
+  }
+
+  &__thumb-wrap {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    background: #f4f3ef;
+    overflow: hidden;
+  }
+
+  &__thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    user-select: none;
+  }
+
+  &__overlay {
+    position: absolute;
+    inset: 0;
+    background: transparent;
+    pointer-events: none;
+    transition: background 240ms ease;
+  }
+
+  &__tile--pending .iram-bgu__overlay,
+  &__tile--uploading .iram-bgu__overlay {
+    background: rgba(255, 255, 255, 0.42);
+  }
+  &__tile--uploading .iram-bgu__overlay {
+    background: linear-gradient(
+      120deg,
+      rgba(255, 255, 255, 0.3) 0%,
+      rgba(255, 255, 255, 0.55) 50%,
+      rgba(255, 255, 255, 0.3) 100%
+    );
+    background-size: 220% 100%;
+    animation: iram-bgu-shimmer 1.4s ease-in-out infinite;
+  }
+
+  // ----- Tile badge (top-corner) -----
+  &__badge {
+    position: absolute;
+    top: 8px;
+    inset-inline-start: 8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    transition:
+      background 180ms ease,
+      color 180ms ease;
+
+    &--pending {
+      color: var(--iram-ink-3);
+    }
+    &--uploading {
+      color: var(--iram-navy-700);
+    }
+    &--success {
+      background: #16a34a;
+      color: #fff;
+    }
+    &--error {
+      background: #dc2626;
+      color: #fff;
+    }
+  }
+
+  // ----- Remove (×) on top-end corner -----
+  &__remove {
+    position: absolute;
+    top: 8px;
+    inset-inline-end: 8px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--iram-ink-2);
+    font-size: 17px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+    z-index: 3;
+    transition:
+      background 120ms ease,
+      color 120ms ease,
+      transform 120ms ease;
+    font-family: inherit;
+
+    &:hover {
+      background: #1a1a1a;
+      color: #fff;
+      transform: scale(1.08);
+    }
+  }
+
+  // ----- Click trigger covering the whole thumb for error tiles -----
+  &__tile-trigger {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  // ----- Filename + size strip below thumb -----
+  &__meta {
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  &__name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--iram-ink-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__size {
+    font-size: 10.5px;
+    color: var(--iram-ink-muted);
+    font-feature-settings:
+      'tnum' 1,
+      'lnum' 1;
+  }
+
+  &__size-warn {
+    padding: 6px 10px;
+    font-size: 10.5px;
+    color: #84540a;
+    background: #fff4e6;
+    border-top: 1px solid #fad9a3;
+    line-height: 1.4;
+  }
+
+  // ----- Error expansion panel -----
+  &__error-panel {
+    padding: 12px 14px;
+    background: #fbeeee;
+    border-top: 1px solid #f1c8c8;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    animation: iram-bgu-fade 180ms ease;
+  }
+
+  &__error-msg {
+    margin: 0;
+    font-size: 13px;
+    color: #7f1d1d;
+    line-height: 1.55;
+  }
+
+  &__error-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 11px;
+    color: var(--iram-ink-muted);
+
+    span {
+      font-feature-settings:
+        'tnum' 1,
+        'lnum' 1;
+      padding: 2px 6px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 4px;
+    }
+  }
+
+  &__error-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  // ----- Buttons inside error panel -----
+  &__btn {
+    appearance: none;
+    background: var(--iram-surface);
+    border: 1px solid var(--iram-border);
+    color: var(--iram-navy-900);
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: var(--iram-radius-sm);
+    cursor: pointer;
+    transition:
+      background 120ms ease,
+      border-color 120ms ease;
+    font-family: inherit;
+
+    &:hover {
+      background: var(--iram-surface-2);
+      border-color: var(--iram-border-hov);
+    }
+
+    &--primary {
+      background: var(--iram-navy-900);
+      color: #fff;
+      border-color: var(--iram-navy-900);
+
+      &:hover {
+        background: var(--iram-navy-800);
+        border-color: var(--iram-navy-800);
+      }
+    }
+  }
+}
+
+// ----- Animations -----
+@keyframes iram-bgu-fade {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes iram-bgu-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@keyframes iram-bgu-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

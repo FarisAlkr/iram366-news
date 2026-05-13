@@ -6,40 +6,41 @@ import { useForm, useFormFields } from '@payloadcms/ui'
 /**
  * Bulk multi-file uploader for the Articles gallery field.
  *
- * Two equivalent interaction modes (both feed the same upload pipeline):
- *   1. Click anywhere on the box → native OS multi-file picker opens.
- *   2. Drag files from a folder window onto the box → release → upload.
+ * UI model — "asset drop area":
  *
- * Why this exists: the Payload `/admin` stock array UI only lets editors
- * "Add Row → pick one file" per image. Mobile `/m/new` had multi-pick
- * built into its server action from day one. This component restores
- * desktop parity.
+ *   Idle state:
+ *     A clean drop zone with a refined illustration, headline, and
+ *     supported-formats line. No emoji button, no aggressive gold
+ *     borders — soft white surface with a subtle navy hairline.
  *
- * Error reporting is the focus of this iteration. Earlier versions
- * silently swallowed server rejections (the dominant case: the editor
- * drags a HEIC from iPhoto, my client lets it through, the server
- * Media collection rejects it because its allowlist is jpeg/png/webp/
- * avif/svg only → editor sees a vague "فشل الرفع" and gives up).
+ *   Files picked → tile grid:
+ *     Each picked file becomes a 140×140 preview tile (rendered from
+ *     a local Object URL the moment the file is picked, no waiting
+ *     for the server). Status is PAINTED ON the tile:
+ *       - PENDING: thumbnail visible, dim overlay
+ *       - UPLOADING: thumbnail visible, soft shimmer overlay
+ *       - SUCCESS: thumbnail visible, green check badge top-corner
+ *       - ERROR: thumbnail visible, red X badge, click expands the
+ *                detailed error message + "نسخ التفاصيل التقنية"
  *
- * Now we surface for every failed file:
- *   - what happened (specific Arabic message)
- *   - why (HTTP status + server message when available)
- *   - what to do next (re-encode, re-login, smaller file, …)
- *   - a "copy diagnostic" button to paste back to support
+ *   Banner above the grid:
+ *     Live count during upload ("3 من 5 رُفعت بنجاح"). When the batch
+ *     finishes successfully it flips to a green confirmation banner
+ *     "✓ تم رفع 5 صور بنجاح — أُضيفت إلى المعرض أدناه" so the editor
+ *     SEES the completion. If anything failed, an amber banner shows
+ *     "تم رفع N، فشل M" with the failing tiles already marked.
  *
- * Drag handlers use native addEventListener (not React synthetic events)
- * to bypass Payload admin's react-dnd HTML5Backend which can intercept
- * file drops at the window level. stopPropagation on the drop keeps
- * react-dnd from seeing it.
+ * Drag-and-drop uses native DOM listeners (not React synthetic events)
+ * to bypass Payload admin's react-dnd HTML5Backend.
+ *
+ * Server-side contract: the file allowlist here MUST match the Media
+ * collection's `upload.mimeTypes` exactly (jpeg/png/webp/avif/svg).
+ * Drift between client and server produces silent rejections.
  */
 
 // =============================================================================
-// Server contract — MUST match Media collection
-// (src/payload/collections/Media.ts: `upload.mimeTypes`)
+// Constants
 // =============================================================================
-// If you add a MIME here, also add it on the server side; if you add one
-// on the server, mirror it here. Drift between client and server is what
-// produced the "silent rejection" bug this iteration fixes.
 const ALLOWED_MIME = [
   'image/jpeg',
   'image/png',
@@ -48,18 +49,10 @@ const ALLOWED_MIME = [
   'image/svg+xml',
 ] as const
 
-// Filename extensions that map onto ALLOWED_MIME. Used as a fallback
-// when File.type is empty (some drag sources don't set MIME). If both
-// MIME and extension fail, the file is rejected client-side with a
-// specific "نوع الملف غير مدعوم" message — no server roundtrip needed.
 const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.jfif', '.png', '.webp', '.avif', '.svg'] as const
 
-// Soft limit — files above this get a pre-flight warning chip. Server
-// can usually handle them but they take a while and may time out on
-// slow connections. (Payload's default body limit is generous but not
-// infinite; tune if the server starts 413-ing.)
-const SOFT_SIZE_BYTES = 8 * 1024 * 1024 // 8 MB
-const HARD_SIZE_BYTES = 50 * 1024 * 1024 // 50 MB
+const SOFT_SIZE_BYTES = 8 * 1024 * 1024 // 8 MB — warn the editor a single file may be slow
+const HARD_SIZE_BYTES = 50 * 1024 * 1024 // 50 MB — reject client-side
 
 const ALT_MAX_LEN = 120
 
@@ -72,35 +65,39 @@ type GalleryRow = {
   id?: string
 }
 
-type ErrorKind =
-  | 'mime' // file type not supported
-  | 'empty' // 0-byte file
-  | 'too-big' // exceeds HARD_SIZE_BYTES
-  | 'auth' // 401
-  | 'permission' // 403
-  | 'too-large-server' // 413
-  | 'unsupported-server' // 415
-  | 'validation' // 422
-  | 'rate-limit' // 429
-  | 'server' // 5xx
-  | 'parse' // non-JSON response
-  | 'network' // fetch threw
-  | 'unknown-success-shape' // 2xx but no doc.id
-  | 'no-image-files' // pre-flight: nothing passed the filter
+type TileState = 'pending' | 'uploading' | 'success' | 'error'
 
-interface UploadStatus {
-  name: string
-  state: 'pending' | 'ok' | 'error'
-  // Human-readable Arabic explanation shown on the chip.
-  message?: string
-  // Diagnostic context for "copy diagnostic" button.
-  diag?: {
-    kind: ErrorKind
-    mime?: string
-    sizeBytes?: number
-    httpStatus?: number
-    serverMessage?: string
-  }
+type ErrorKind =
+  | 'mime'
+  | 'empty'
+  | 'too-big'
+  | 'auth'
+  | 'permission'
+  | 'too-large-server'
+  | 'unsupported-server'
+  | 'validation'
+  | 'rate-limit'
+  | 'server'
+  | 'parse'
+  | 'network'
+  | 'unknown-success-shape'
+
+interface Tile {
+  // Stable id for React keys — generated on add, never reused.
+  id: string
+  file: File
+  // blob: URL created with URL.createObjectURL — used for the preview
+  // image. MUST be revoked on tile removal / unmount or memory leaks.
+  previewUrl: string
+  state: TileState
+  // For error tiles only.
+  errorMessage?: string
+  errorKind?: ErrorKind
+  httpStatus?: number
+  serverMessage?: string
+  // For success tiles — the media id returned by Payload, so the
+  // dispatched gallery row points at the right media doc.
+  mediaId?: string | number
 }
 
 // =============================================================================
@@ -117,8 +114,7 @@ function fileExtension(name: string): string {
 }
 
 function isLikelyImageByName(name: string): boolean {
-  const ext = fileExtension(name)
-  return (ALLOWED_EXTENSIONS as readonly string[]).includes(ext)
+  return (ALLOWED_EXTENSIONS as readonly string[]).includes(fileExtension(name))
 }
 
 function isAllowedMime(mime: string | undefined | null): boolean {
@@ -132,8 +128,19 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-// Map server error responses into the categorized {kind, message} shape.
-// Each branch is a separate Arabic sentence with what + why + next step.
+function truncateName(name: string, max = 22): string {
+  if (name.length <= max) return name
+  const ext = fileExtension(name)
+  const head = stripExtension(name).slice(0, max - ext.length - 1)
+  return `${head}…${ext}`
+}
+
+function newTileId(): string {
+  return `t_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+}
+
+// Map a server response error onto a categorized message. Used to
+// populate the per-tile error overlay AND the diagnostic block.
 function categorizeHttpError(
   status: number,
   serverMessage: string | undefined,
@@ -142,69 +149,86 @@ function categorizeHttpError(
   if (status === 401) {
     return {
       kind: 'auth',
-      message:
-        'انتهت جلسة الدخول. أعد تسجيل الدخول من نافذة جديدة، ثم عد إلى هذه الصفحة وأعد المحاولة.',
+      message: 'انتهت جلسة الدخول. أعد تسجيل الدخول ثم حاول مجدداً.',
     }
   }
   if (status === 403) {
     return {
       kind: 'permission',
-      message: 'ليس لديك صلاحية لرفع الوسائط — تواصل مع مدير النظام لرفع صلاحيات حسابك.',
+      message: 'ليس لديك صلاحية لرفع الوسائط. تواصل مع مدير النظام.',
     }
   }
   if (status === 413) {
     return {
       kind: 'too-large-server',
-      message: `الخادم يرفض الملف لأنه كبير (${formatBytes(file.size)}). جرّب ضغط الصورة أو تصغيرها قبل الرفع.`,
+      message: `الخادم رفض الملف (${formatBytes(file.size)}). صغّر الصورة قبل المحاولة.`,
     }
   }
   if (status === 415) {
     return {
       kind: 'unsupported-server',
-      message: `الخادم رفض نوع الملف ${file.type || 'غير محدد'}. الأنواع المدعومة: JPG، PNG، WEBP، AVIF، SVG.`,
+      message: `نوع الملف ${file.type || 'غير محدد'} غير مدعوم. الأنواع المدعومة: JPG, PNG, WEBP, AVIF, SVG.`,
     }
   }
   if (status === 422) {
     const detail = serverMessage ? ` — ${serverMessage}` : ''
     return {
       kind: 'validation',
-      message: `الخادم رفض البيانات${detail}. قد يكون الملف تالفاً أو ينقصه حقل مطلوب.`,
+      message: `الخادم رفض البيانات${detail}.`,
     }
   }
   if (status === 429) {
-    return {
-      kind: 'rate-limit',
-      message: 'محاولات كثيرة بسرعة — انتظر دقيقة ثم أعد المحاولة.',
-    }
+    return { kind: 'rate-limit', message: 'محاولات كثيرة بسرعة. انتظر دقيقة وأعد المحاولة.' }
   }
   if (status >= 500) {
     return {
       kind: 'server',
-      message: `خطأ في الخادم (${status}). أعد المحاولة بعد قليل، فإن استمر بلّغ المدير.`,
+      message: `خطأ في الخادم (${status}). أعد المحاولة بعد قليل.`,
     }
   }
-  // Generic non-2xx fallback
   const detail = serverMessage ? `: ${serverMessage}` : ''
-  return {
-    kind: 'server',
-    message: `فشل الرفع (HTTP ${status})${detail}`,
-  }
+  return { kind: 'server', message: `فشل الرفع (HTTP ${status})${detail}` }
 }
 
-function buildDiagnostic(s: UploadStatus): string {
-  const parts: string[] = []
-  parts.push(`[bulk-gallery diagnostic]`)
-  parts.push(`file: ${s.name}`)
-  if (s.diag) {
-    parts.push(`kind: ${s.diag.kind}`)
-    if (s.diag.mime !== undefined) parts.push(`mime: ${s.diag.mime || '(empty)'}`)
-    if (s.diag.sizeBytes !== undefined) parts.push(`size: ${formatBytes(s.diag.sizeBytes)}`)
-    if (s.diag.httpStatus !== undefined) parts.push(`http: ${s.diag.httpStatus}`)
-    if (s.diag.serverMessage) parts.push(`server: ${s.diag.serverMessage}`)
-  }
-  if (s.message) parts.push(`shown: ${s.message}`)
+function buildDiagnostic(t: Tile): string {
+  const parts: string[] = [
+    `[bulk-gallery diagnostic]`,
+    `file: ${t.file.name}`,
+    `size: ${formatBytes(t.file.size)}`,
+    `mime: ${t.file.type || '(empty)'}`,
+    `state: ${t.state}`,
+  ]
+  if (t.errorKind) parts.push(`kind: ${t.errorKind}`)
+  if (t.httpStatus !== undefined) parts.push(`http: ${t.httpStatus}`)
+  if (t.serverMessage) parts.push(`server: ${t.serverMessage}`)
+  if (t.errorMessage) parts.push(`shown: ${t.errorMessage}`)
   return parts.join('\n')
 }
+
+// =============================================================================
+// Drop-zone illustration — inline SVG, no external assets
+// =============================================================================
+const DropIllustration: React.FC = () => (
+  <svg
+    width="56"
+    height="56"
+    viewBox="0 0 56 56"
+    fill="none"
+    aria-hidden="true"
+    className="iram-bgu__icon"
+  >
+    <rect x="4" y="10" width="48" height="36" rx="6" stroke="currentColor" strokeWidth="1.6" />
+    <circle cx="18" cy="22" r="3.5" stroke="currentColor" strokeWidth="1.6" />
+    <path
+      d="M4 38l12-12 12 12 6-6 18 18"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinejoin="round"
+      strokeLinecap="round"
+    />
+    <path d="M40 6v12M34 12h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+  </svg>
+)
 
 // =============================================================================
 // Component
@@ -216,15 +240,17 @@ export const BulkGalleryUploader: React.FC = () => {
     gallery: fields?.gallery?.value,
   }))
 
-  const [busy, setBusy] = React.useState(false)
-  const [statuses, setStatuses] = React.useState<UploadStatus[]>([])
+  const [tiles, setTiles] = React.useState<Tile[]>([])
   const [dragActive, setDragActive] = React.useState(false)
+  // ID of the tile whose error panel is expanded (one at a time).
+  const [expandedError, setExpandedError] = React.useState<string | null>(null)
   const inputRef = React.useRef<HTMLInputElement>(null)
   const boxRef = React.useRef<HTMLDivElement>(null)
   const dragCounterRef = React.useRef(0)
 
-  // Latest gallery/title snapshots — refs so the native event handlers
-  // bound once in useEffect always see current values without re-bind.
+  // Latest gallery/title snapshots in refs — the upload pipeline reads
+  // these inside the long-lived async loop so it always sees current
+  // values without us tearing down listeners.
   const galleryRef = React.useRef(gallery)
   const titleRef = React.useRef(title)
   React.useEffect(() => {
@@ -239,114 +265,107 @@ export const BulkGalleryUploader: React.FC = () => {
     dispatchFieldsRef.current = dispatchFields
   }, [dispatchFields])
 
+  // Revoke any in-flight Object URLs when the component unmounts to
+  // prevent memory leaks on a long admin session.
+  React.useEffect(() => {
+    return () => {
+      tiles.forEach((t) => {
+        if (t.previewUrl) URL.revokeObjectURL(t.previewUrl)
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // ---------------------------------------------------------------------------
-  // Pre-flight — classify every picked file BEFORE any network round-trip.
-  // Returns: { ok: File[] to upload, errors: UploadStatus[] to display }.
+  // Pre-flight — classify a file before allocating an Object URL or
+  // pushing it as a pending tile. Returns the rejection tile when bad.
   // ---------------------------------------------------------------------------
-  const preflightFiles = React.useCallback(
-    (
-      raw: File[],
-    ): {
-      ok: File[]
-      errors: UploadStatus[]
-    } => {
-      const ok: File[] = []
-      const errors: UploadStatus[] = []
-
-      for (const f of raw) {
-        // Empty file
-        if (f.size <= 0) {
-          errors.push({
-            name: f.name,
-            state: 'error',
-            message: 'الملف فارغ (0 بايت). قد يكون تالفاً أو لم يكتمل تحميله.',
-            diag: { kind: 'empty', mime: f.type, sizeBytes: f.size },
-          })
-          continue
+  const preflight = React.useCallback(
+    (f: File): { ok: true } | { ok: false; kind: ErrorKind; message: string } => {
+      if (f.size <= 0) {
+        return {
+          ok: false,
+          kind: 'empty',
+          message: 'الملف فارغ (0 بايت). قد يكون تالفاً.',
         }
-
-        // Hard size limit
-        if (f.size > HARD_SIZE_BYTES) {
-          errors.push({
-            name: f.name,
-            state: 'error',
-            message: `الملف أكبر من الحد المسموح به محلياً (${formatBytes(f.size)} > ${formatBytes(HARD_SIZE_BYTES)}). صغّر الصورة قبل الرفع.`,
-            diag: { kind: 'too-big', mime: f.type, sizeBytes: f.size },
-          })
-          continue
-        }
-
-        // Type allowlist — MIME first, extension fallback
-        const mimeOk = isAllowedMime(f.type)
-        const extOk = isLikelyImageByName(f.name)
-        if (!mimeOk && !extOk) {
-          const detected = f.type || fileExtension(f.name) || 'غير محدد'
-          errors.push({
-            name: f.name,
-            state: 'error',
-            message: `نوع الملف غير مدعوم (${detected}). تُقبل: JPG، PNG، WEBP، AVIF، SVG. للصور من iPhone (HEIC) صدّرها كـ JPG أولاً.`,
-            diag: { kind: 'mime', mime: f.type, sizeBytes: f.size },
-          })
-          continue
-        }
-
-        ok.push(f)
       }
-
-      return { ok, errors }
+      if (f.size > HARD_SIZE_BYTES) {
+        return {
+          ok: false,
+          kind: 'too-big',
+          message: `الملف أكبر من ${formatBytes(HARD_SIZE_BYTES)} (${formatBytes(f.size)}). صغّره أولاً.`,
+        }
+      }
+      const mimeOk = isAllowedMime(f.type)
+      const extOk = isLikelyImageByName(f.name)
+      if (!mimeOk && !extOk) {
+        const detected = f.type || fileExtension(f.name) || 'غير محدد'
+        return {
+          ok: false,
+          kind: 'mime',
+          message: `نوع غير مدعوم (${detected}). الأنواع المسموحة: JPG, PNG, WEBP, AVIF, SVG. صور iPhone (HEIC) صدّرها كـ JPG أولاً.`,
+        }
+      }
+      return { ok: true }
     },
     [],
   )
 
+  // ---------------------------------------------------------------------------
+  // Process a batch of newly picked / dropped files.
+  // ---------------------------------------------------------------------------
   const processFiles = React.useCallback(
     async (rawFiles: File[]) => {
       if (rawFiles.length === 0) return
 
-      const { ok: filesToUpload, errors: preflightErrors } = preflightFiles(rawFiles)
+      // Build initial tiles synchronously so the preview grid appears
+      // immediately while uploads run in the background. Bad files get
+      // pushed as 'error' tiles right away — same UI as failed uploads.
+      const newTiles: Tile[] = rawFiles.map((file) => {
+        const pf = preflight(file)
+        const previewUrl = URL.createObjectURL(file)
+        if (pf.ok) {
+          return {
+            id: newTileId(),
+            file,
+            previewUrl,
+            state: 'pending',
+          }
+        }
+        return {
+          id: newTileId(),
+          file,
+          previewUrl,
+          state: 'error',
+          errorMessage: pf.message,
+          errorKind: pf.kind,
+        }
+      })
 
-      // Seed status list with both the pending uploads AND the pre-flight
-      // rejections, so the editor sees the whole picture immediately.
-      const initial: UploadStatus[] = [
-        ...filesToUpload.map((f) => ({ name: f.name, state: 'pending' as const })),
-        ...preflightErrors,
-      ]
-      setStatuses(initial)
+      setTiles((prev) => [...prev, ...newTiles])
 
-      if (filesToUpload.length === 0) {
-        // Everything was rejected before upload — surface and stop.
-        return
-      }
-
+      // Pull title + gallery snapshot for upload context.
       const baseGallery: GalleryRow[] = Array.isArray(galleryRef.current)
         ? [...(galleryRef.current as GalleryRow[])]
         : []
       const titleStr = typeof titleRef.current === 'string' ? titleRef.current : ''
       const altBase = titleStr ? titleStr.slice(0, ALT_MAX_LEN) : ''
 
-      setBusy(true)
+      const successfullyUploaded: GalleryRow[] = []
 
-      const newRows: GalleryRow[] = []
-      for (let i = 0; i < filesToUpload.length; i++) {
-        const file = filesToUpload[i]
-        if (!file) continue
-        const alt = altBase || stripExtension(file.name).slice(0, ALT_MAX_LEN) || 'image'
+      // Upload one at a time. Parallel would be faster, but a slow
+      // network × a 10-file batch could OOM the browser; serial gives
+      // each tile a clear pending → uploading → success/error path.
+      for (const tile of newTiles) {
+        if (tile.state === 'error') continue // skipped by pre-flight
 
+        // Mark tile as uploading.
+        setTiles((prev) => prev.map((t) => (t.id === tile.id ? { ...t, state: 'uploading' } : t)))
+
+        const alt = altBase || stripExtension(tile.file.name).slice(0, ALT_MAX_LEN) || 'image'
         const fd = new FormData()
-        fd.append('file', file)
+        fd.append('file', tile.file)
         fd.append('_payload', JSON.stringify({ alt }))
-
-        // Soft size warning for slow uploads — not an error, but shows
-        // the editor why a single file is taking a while.
-        const isLarge = file.size > SOFT_SIZE_BYTES
-        if (isLarge) {
-          setStatuses((prev) =>
-            prev.map((s, idx) =>
-              idx === i
-                ? { ...s, message: `جاري الرفع — ${formatBytes(file.size)} (قد يستغرق وقتاً)` }
-                : s,
-            ),
-          )
-        }
 
         try {
           const res = await fetch('/api/media', {
@@ -356,8 +375,6 @@ export const BulkGalleryUploader: React.FC = () => {
           })
 
           if (!res.ok) {
-            // Pull a server message if there is one. Payload returns
-            // `{ errors: [{ message }] }` on validation/MIME errors.
             let serverMessage: string | undefined
             const ct = res.headers.get('content-type') ?? ''
             try {
@@ -365,132 +382,111 @@ export const BulkGalleryUploader: React.FC = () => {
                 const body = (await res.json()) as { errors?: { message?: string }[] }
                 serverMessage = body?.errors?.[0]?.message
               } else {
-                // Non-JSON response (HTML error page from Caddy/Next, plain text)
                 const text = (await res.text()).slice(0, 200)
                 if (text.trim()) serverMessage = text
               }
             } catch {
-              /* swallow parse error — categorizeHttpError handles undefined */
+              /* fall through */
             }
-
-            const { kind, message } = categorizeHttpError(res.status, serverMessage, file)
-            setStatuses((prev) =>
-              prev.map((s, idx) =>
-                idx === i
+            const { kind, message } = categorizeHttpError(res.status, serverMessage, tile.file)
+            setTiles((prev) =>
+              prev.map((t) =>
+                t.id === tile.id
                   ? {
-                      ...s,
+                      ...t,
                       state: 'error',
-                      message,
-                      diag: {
-                        kind,
-                        mime: file.type,
-                        sizeBytes: file.size,
-                        httpStatus: res.status,
-                        serverMessage,
-                      },
+                      errorMessage: message,
+                      errorKind: kind,
+                      httpStatus: res.status,
+                      serverMessage,
                     }
-                  : s,
+                  : t,
               ),
             )
             continue
           }
 
-          // 2xx — verify shape before trusting it.
           let mediaId: string | number | undefined
           try {
             const data = (await res.json()) as { doc?: { id?: string | number } }
             mediaId = data?.doc?.id
           } catch (parseErr) {
-            setStatuses((prev) =>
-              prev.map((s, idx) =>
-                idx === i
+            setTiles((prev) =>
+              prev.map((t) =>
+                t.id === tile.id
                   ? {
-                      ...s,
+                      ...t,
                       state: 'error',
-                      message:
-                        'الخادم أعاد استجابة غير قابلة للقراءة (ليست JSON). أعد المحاولة وإن استمر بلّغ المدير.',
-                      diag: {
-                        kind: 'parse',
-                        mime: file.type,
-                        sizeBytes: file.size,
-                        httpStatus: res.status,
-                        serverMessage: parseErr instanceof Error ? parseErr.message : undefined,
-                      },
+                      errorMessage: 'استجابة الخادم غير قابلة للقراءة. أعد المحاولة.',
+                      errorKind: 'parse',
+                      httpStatus: res.status,
+                      serverMessage: parseErr instanceof Error ? parseErr.message : undefined,
                     }
-                  : s,
+                  : t,
               ),
             )
             continue
           }
 
           if (!mediaId) {
-            setStatuses((prev) =>
-              prev.map((s, idx) =>
-                idx === i
+            setTiles((prev) =>
+              prev.map((t) =>
+                t.id === tile.id
                   ? {
-                      ...s,
+                      ...t,
                       state: 'error',
-                      message:
-                        'الرفع نجح لكن الخادم لم يُعد معرّف الصورة — أعد المحاولة، فإن استمر بلّغ المدير.',
-                      diag: {
-                        kind: 'unknown-success-shape',
-                        mime: file.type,
-                        sizeBytes: file.size,
-                        httpStatus: res.status,
-                      },
+                      errorMessage: 'الرفع نجح لكن لم يُعد معرّف الصورة.',
+                      errorKind: 'unknown-success-shape',
+                      httpStatus: res.status,
                     }
-                  : s,
+                  : t,
               ),
             )
             continue
           }
 
-          newRows.push({ image: mediaId, caption: '' })
-          setStatuses((prev) =>
-            prev.map((s, idx) =>
-              idx === i ? { ...s, state: 'ok', message: 'تم الرفع', diag: undefined } : s,
-            ),
+          setTiles((prev) =>
+            prev.map((t) => (t.id === tile.id ? { ...t, state: 'success', mediaId } : t)),
           )
+          successfullyUploaded.push({ image: mediaId, caption: '' })
         } catch (err) {
-          // fetch() threw — usually offline, DNS, CORS, or aborted request.
-          const errMsg = err instanceof Error ? err.message : String(err)
-          setStatuses((prev) =>
-            prev.map((s, idx) =>
-              idx === i
+          setTiles((prev) =>
+            prev.map((t) =>
+              t.id === tile.id
                 ? {
-                    ...s,
+                    ...t,
                     state: 'error',
-                    message:
-                      'تعذّر الاتصال بالخادم. تحقق من اتصال الإنترنت ثم أعد المحاولة. إن كنت متصلاً، أعد تحميل الصفحة.',
-                    diag: {
-                      kind: 'network',
-                      mime: file.type,
-                      sizeBytes: file.size,
-                      serverMessage: errMsg,
-                    },
+                    errorMessage: 'تعذّر الاتصال بالخادم. تحقق من الإنترنت وأعد المحاولة.',
+                    errorKind: 'network',
+                    serverMessage: err instanceof Error ? err.message : String(err),
                   }
-                : s,
+                : t,
             ),
           )
         }
       }
 
-      // One bulk dispatch at the end for all newly-attached rows. Pushing
-      // one-at-a-time would re-render the array editor N times and lose
-      // any in-flight caption edits the editor might be doing.
-      if (newRows.length > 0) {
+      // One bulk dispatch at the end — appends every successful upload
+      // to the existing gallery array. Re-reads galleryRef.current at
+      // dispatch time in case the editor was editing rows below while
+      // the uploads ran.
+      if (successfullyUploaded.length > 0) {
+        const currentGallery: GalleryRow[] = Array.isArray(galleryRef.current)
+          ? [...(galleryRef.current as GalleryRow[])]
+          : baseGallery
         dispatchFieldsRef.current({
           type: 'UPDATE',
           path: 'gallery',
-          value: [...baseGallery, ...newRows],
+          value: [...currentGallery, ...successfullyUploaded],
         })
       }
-
-      setBusy(false)
     },
-    [preflightFiles],
+    [preflight],
   )
 
+  // ---------------------------------------------------------------------------
+  // Input + drag handlers
+  // ---------------------------------------------------------------------------
   const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const fileList = e.target.files
     if (!fileList || fileList.length === 0) return
@@ -499,20 +495,13 @@ export const BulkGalleryUploader: React.FC = () => {
     await processFiles(files)
   }
 
-  // Click anywhere on the box (outside the explicit button) → trigger
-  // the hidden file input. Always-works fallback in case drag-and-drop
-  // is blocked by another admin layer.
-  const onBoxClick = (e: React.MouseEvent) => {
-    if (busy) return
-    const target = e.target as HTMLElement
-    if (target.closest('.iram-bulk-gallery__btn')) return
-    // If the click was inside an error chip's copy button, also skip.
-    if (target.closest('.iram-bulk-gallery__copy')) return
-    inputRef.current?.click()
-  }
+  const openPicker = React.useCallback(() => {
+    if (!inputRef.current) return
+    inputRef.current.click()
+  }, [])
 
-  // Native DOM event listeners (not React synthetic) — bypasses any
-  // window-level interceptors (react-dnd) that could swallow file drops.
+  // Native DOM listeners for drag/drop — survives any window-level
+  // event interception (react-dnd HTML5Backend in Payload's admin).
   React.useEffect(() => {
     const node = boxRef.current
     if (!node) return
@@ -524,8 +513,7 @@ export const BulkGalleryUploader: React.FC = () => {
       setDragActive(true)
     }
     const onDragOver = (e: DragEvent) => {
-      // MANDATORY — without preventDefault on dragover the browser
-      // refuses the drop and navigates to file://… on a local image.
+      // MANDATORY — without this the browser refuses the drop.
       e.preventDefault()
       e.stopPropagation()
       if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'
@@ -540,9 +528,9 @@ export const BulkGalleryUploader: React.FC = () => {
       e.stopPropagation()
       dragCounterRef.current = 0
       setDragActive(false)
-      const fileList = e.dataTransfer?.files
-      if (!fileList || fileList.length === 0) return
-      void processFiles(Array.from(fileList))
+      const fl = e.dataTransfer?.files
+      if (!fl || fl.length === 0) return
+      void processFiles(Array.from(fl))
     }
 
     node.addEventListener('dragenter', onDragEnter)
@@ -557,121 +545,428 @@ export const BulkGalleryUploader: React.FC = () => {
     }
   }, [processFiles])
 
-  const copyDiagnostic = async (s: UploadStatus) => {
-    const text = buildDiagnostic(s)
+  // ---------------------------------------------------------------------------
+  // Tile actions
+  // ---------------------------------------------------------------------------
+  const removeTile = (id: string) => {
+    setTiles((prev) => {
+      const t = prev.find((x) => x.id === id)
+      if (t?.previewUrl) URL.revokeObjectURL(t.previewUrl)
+      return prev.filter((x) => x.id !== id)
+    })
+    if (expandedError === id) setExpandedError(null)
+  }
+
+  const clearAll = () => {
+    tiles.forEach((t) => {
+      if (t.previewUrl) URL.revokeObjectURL(t.previewUrl)
+    })
+    setTiles([])
+    setExpandedError(null)
+  }
+
+  const retryTile = async (id: string) => {
+    const t = tiles.find((x) => x.id === id)
+    if (!t) return
+    // Reset to pending and re-run a single-item batch. processFiles
+    // doesn't know about retry semantics so we directly re-run the
+    // upload-only path inline.
+    setTiles((prev) =>
+      prev.map((x) =>
+        x.id === id
+          ? {
+              ...x,
+              state: 'uploading',
+              errorMessage: undefined,
+              errorKind: undefined,
+              httpStatus: undefined,
+              serverMessage: undefined,
+            }
+          : x,
+      ),
+    )
+    setExpandedError(null)
+
+    const titleStr = typeof titleRef.current === 'string' ? titleRef.current : ''
+    const altBase = titleStr ? titleStr.slice(0, ALT_MAX_LEN) : ''
+    const alt = altBase || stripExtension(t.file.name).slice(0, ALT_MAX_LEN) || 'image'
+    const fd = new FormData()
+    fd.append('file', t.file)
+    fd.append('_payload', JSON.stringify({ alt }))
+
     try {
-      await navigator.clipboard.writeText(text)
-    } catch {
-      // clipboard API blocked (e.g. insecure context) — open a prompt
-      // so the editor can copy manually.
-      window.prompt('انسخ النص أدناه لإرساله إلى المدير:', text)
+      const res = await fetch('/api/media', { method: 'POST', body: fd, credentials: 'include' })
+      if (!res.ok) {
+        let serverMessage: string | undefined
+        try {
+          const body = (await res.json()) as { errors?: { message?: string }[] }
+          serverMessage = body?.errors?.[0]?.message
+        } catch {
+          /* */
+        }
+        const { kind, message } = categorizeHttpError(res.status, serverMessage, t.file)
+        setTiles((prev) =>
+          prev.map((x) =>
+            x.id === id
+              ? {
+                  ...x,
+                  state: 'error',
+                  errorMessage: message,
+                  errorKind: kind,
+                  httpStatus: res.status,
+                  serverMessage,
+                }
+              : x,
+          ),
+        )
+        return
+      }
+      const data = (await res.json()) as { doc?: { id?: string | number } }
+      const mediaId = data?.doc?.id
+      if (!mediaId) {
+        setTiles((prev) =>
+          prev.map((x) =>
+            x.id === id
+              ? {
+                  ...x,
+                  state: 'error',
+                  errorMessage: 'الرفع نجح لكن لم يُعد معرّف الصورة.',
+                  errorKind: 'unknown-success-shape',
+                  httpStatus: res.status,
+                }
+              : x,
+          ),
+        )
+        return
+      }
+      setTiles((prev) => prev.map((x) => (x.id === id ? { ...x, state: 'success', mediaId } : x)))
+      // Append the retried upload to the gallery field too.
+      const currentGallery: GalleryRow[] = Array.isArray(galleryRef.current)
+        ? [...(galleryRef.current as GalleryRow[])]
+        : []
+      dispatchFieldsRef.current({
+        type: 'UPDATE',
+        path: 'gallery',
+        value: [...currentGallery, { image: mediaId, caption: '' }],
+      })
+    } catch (err) {
+      setTiles((prev) =>
+        prev.map((x) =>
+          x.id === id
+            ? {
+                ...x,
+                state: 'error',
+                errorMessage: 'تعذّر الاتصال. أعد المحاولة.',
+                errorKind: 'network',
+                serverMessage: err instanceof Error ? err.message : String(err),
+              }
+            : x,
+        ),
+      )
     }
   }
 
-  const pickedCount = statuses.length
-  const okCount = statuses.filter((s) => s.state === 'ok').length
-  const errorCount = statuses.filter((s) => s.state === 'error').length
-  const pendingCount = statuses.filter((s) => s.state === 'pending').length
-  const errors = statuses.filter((s) => s.state === 'error')
+  const copyDiagnostic = async (t: Tile) => {
+    const text = buildDiagnostic(t)
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch {
+      window.prompt('انسخ النص أدناه:', text)
+    }
+  }
 
-  const containerClass = `iram-bulk-gallery${dragActive ? ' iram-bulk-gallery--drag' : ''}`
+  // ---------------------------------------------------------------------------
+  // Derived stats
+  // ---------------------------------------------------------------------------
+  const counts = React.useMemo(() => {
+    let pending = 0
+    let uploading = 0
+    let success = 0
+    let error = 0
+    for (const t of tiles) {
+      if (t.state === 'pending') pending++
+      else if (t.state === 'uploading') uploading++
+      else if (t.state === 'success') success++
+      else error++
+    }
+    return { pending, uploading, success, error, total: tiles.length }
+  }, [tiles])
+
+  const isBusy = counts.pending > 0 || counts.uploading > 0
+  const hasTiles = counts.total > 0
+  const allDone = hasTiles && !isBusy
 
   return (
     <div
       ref={boxRef}
-      className={containerClass}
+      className={`iram-bgu${dragActive ? 'iram-bgu--drag' : ''}${hasTiles ? 'iram-bgu--has-tiles' : ''}`}
       dir="rtl"
-      role="button"
-      tabIndex={0}
-      onClick={onBoxClick}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          inputRef.current?.click()
-        }
-      }}
     >
-      <label className="iram-bulk-gallery__btn" onClick={(e) => e.stopPropagation()}>
-        <span aria-hidden>🖼️</span>
-        <span>{busy ? '... جاري الرفع' : 'اختر صوراً للمعرض (دفعة واحدة)'}</span>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/avif,image/svg+xml"
-          multiple
-          onChange={onPick}
-          disabled={busy}
-          aria-label="رفع عدة صور للمعرض"
-        />
-      </label>
+      {/* Hidden file input — programmatically triggered by the drop
+          zone, the picker button, and the "+ add more" tile. */}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/avif,image/svg+xml"
+        multiple
+        onChange={onPick}
+        aria-label="رفع عدة صور للمعرض"
+        className="iram-bgu__file"
+      />
 
-      <small className="iram-bulk-gallery__hint">
-        اضغط على الصندوق لاختيار عدة صور، أو اسحبها من مجلدك وأفلتها هنا. الأنواع المدعومة: JPG،
-        PNG، WEBP، AVIF، SVG. الحدّ الأقصى لحجم الصورة: {formatBytes(HARD_SIZE_BYTES)}.
-      </small>
+      {/* Drop zone — visible always; collapses to a slim strip when
+          tiles are present so the grid takes the visual focus. */}
+      <button
+        type="button"
+        className="iram-bgu__zone"
+        onClick={openPicker}
+        aria-label={hasTiles ? 'إضافة المزيد من الصور' : 'اختيار صور لرفعها'}
+      >
+        <div className="iram-bgu__zone-inner">
+          {!hasTiles && <DropIllustration />}
+          <div className="iram-bgu__zone-text">
+            <strong className="iram-bgu__zone-title">
+              {hasTiles ? 'إضافة المزيد من الصور' : 'اسحب الصور هنا أو اضغط للاختيار'}
+            </strong>
+            {!hasTiles && (
+              <span className="iram-bgu__zone-sub">
+                JPG · PNG · WEBP · AVIF · SVG — حتى {formatBytes(HARD_SIZE_BYTES)} لكل صورة
+              </span>
+            )}
+          </div>
+        </div>
+      </button>
 
+      {/* Drop overlay during drag */}
       {dragActive && (
-        <div className="iram-bulk-gallery__drop-overlay" aria-hidden>
-          <span>أفلت الصور هنا للرفع</span>
+        <div className="iram-bgu__drop-overlay" aria-hidden>
+          <DropIllustration />
+          <span>أفلت الصور هنا</span>
         </div>
       )}
 
-      {pickedCount > 0 && (
-        <div className="iram-bulk-gallery__status" aria-live="polite">
-          {busy ? (
-            <span>
-              {okCount + errorCount} من {pickedCount} اكتمل
-              {pendingCount > 0 ? ` — ${pendingCount} متبقّية` : ''}
-            </span>
-          ) : (
-            <span>
-              {okCount > 0 && (
+      {hasTiles && (
+        <>
+          {/* Banner — live counts during upload, success/partial-success when done */}
+          <div
+            className={`iram-bgu__banner${
+              allDone && counts.error === 0
+                ? 'iram-bgu__banner--success'
+                : allDone && counts.error > 0
+                  ? 'iram-bgu__banner--partial'
+                  : ''
+            }`}
+            role="status"
+            aria-live="polite"
+          >
+            <div className="iram-bgu__banner-text">
+              {isBusy ? (
                 <>
-                  تم رفع {okCount} من {pickedCount}
+                  <span className="iram-bgu__banner-spinner" aria-hidden />
+                  <span>
+                    جاري الرفع — {counts.success + counts.error} من {counts.total}
+                  </span>
+                </>
+              ) : counts.error === 0 ? (
+                <>
+                  <span className="iram-bgu__banner-check" aria-hidden>
+                    ✓
+                  </span>
+                  <span>
+                    تم رفع <strong>{counts.success}</strong> {counts.success === 1 ? 'صورة' : 'صور'}{' '}
+                    بنجاح — أُضيفت إلى المعرض أدناه
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="iram-bgu__banner-warn" aria-hidden>
+                    !
+                  </span>
+                  <span>
+                    تم رفع <strong>{counts.success}</strong>، فشل <strong>{counts.error}</strong> —
+                    اضغط على البطاقات الحمراء لرؤية السبب
+                  </span>
                 </>
               )}
-              {okCount > 0 && errorCount > 0 ? ' — ' : ''}
-              {errorCount > 0 && <>فشلت {errorCount}</>}
-              {okCount === 0 && errorCount === pickedCount && 'لم يتم رفع أي ملف'}
-            </span>
-          )}
+            </div>
+            {allDone && (
+              <button
+                type="button"
+                className="iram-bgu__banner-clear"
+                onClick={clearAll}
+                aria-label="مسح هذه القائمة"
+              >
+                إخفاء
+              </button>
+            )}
+          </div>
 
-          {errors.length > 0 && (
-            <ul className="iram-bulk-gallery__errors">
-              {errors.map((s, idx) => (
-                <li key={idx} className="iram-bulk-gallery__error">
-                  <div className="iram-bulk-gallery__error-head">
-                    <strong>{s.name}</strong>
-                    {s.diag?.httpStatus !== undefined && (
-                      <span className="iram-bulk-gallery__error-code">
-                        HTTP {s.diag.httpStatus}
-                      </span>
+          {/* Tile grid */}
+          <div className="iram-bgu__grid">
+            {tiles.map((t) => {
+              const isExpanded = expandedError === t.id
+              const isError = t.state === 'error'
+              return (
+                <div
+                  key={t.id}
+                  className={`iram-bgu__tile iram-bgu__tile--${t.state}${
+                    isExpanded ? 'iram-bgu__tile--expanded' : ''
+                  }`}
+                >
+                  <div className="iram-bgu__thumb-wrap">
+                    {/* Local Object URL preview — raw <img> is correct here
+                        (Object URLs aren't valid next/image sources). */}
+                    <img
+                      src={t.previewUrl}
+                      alt={t.file.name}
+                      className="iram-bgu__thumb"
+                      draggable={false}
+                    />
+
+                    {/* State overlay — fades the thumb while uploading,
+                        fully transparent on success/error so badges
+                        sit on top of the image. */}
+                    <div className="iram-bgu__overlay" aria-hidden />
+
+                    {/* Status badge top-corner */}
+                    <div className={`iram-bgu__badge iram-bgu__badge--${t.state}`} aria-hidden>
+                      {t.state === 'pending' && (
+                        <svg viewBox="0 0 16 16" width="14" height="14">
+                          <circle
+                            cx="8"
+                            cy="8"
+                            r="6"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          />
+                        </svg>
+                      )}
+                      {t.state === 'uploading' && (
+                        <svg viewBox="0 0 16 16" width="14" height="14">
+                          <circle
+                            cx="8"
+                            cy="8"
+                            r="6"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeDasharray="20 14"
+                            strokeLinecap="round"
+                          >
+                            <animateTransform
+                              attributeName="transform"
+                              type="rotate"
+                              from="0 8 8"
+                              to="360 8 8"
+                              dur="1s"
+                              repeatCount="indefinite"
+                            />
+                          </circle>
+                        </svg>
+                      )}
+                      {t.state === 'success' && (
+                        <svg viewBox="0 0 16 16" width="14" height="14">
+                          <path
+                            d="M3 8.5l3.5 3.5L13 5"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
+                      {t.state === 'error' && (
+                        <svg viewBox="0 0 16 16" width="14" height="14">
+                          <path
+                            d="M4 4l8 8M12 4l-8 8"
+                            stroke="currentColor"
+                            strokeWidth="2.2"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      )}
+                    </div>
+
+                    {/* Remove (x) button — only when NOT mid-upload */}
+                    {t.state !== 'uploading' && t.state !== 'pending' && (
+                      <button
+                        type="button"
+                        className="iram-bgu__remove"
+                        onClick={() => removeTile(t.id)}
+                        aria-label="إزالة من القائمة"
+                      >
+                        ×
+                      </button>
+                    )}
+
+                    {/* Click target — opens the error detail panel for
+                        error tiles. Success/uploading tiles ignore clicks. */}
+                    {isError && (
+                      <button
+                        type="button"
+                        className="iram-bgu__tile-trigger"
+                        onClick={() => setExpandedError(isExpanded ? null : t.id)}
+                        aria-label={isExpanded ? 'إخفاء تفاصيل الخطأ' : 'عرض تفاصيل الخطأ'}
+                        aria-expanded={isExpanded}
+                      />
                     )}
                   </div>
-                  {s.message && <div className="iram-bulk-gallery__error-msg">{s.message}</div>}
-                  <div className="iram-bulk-gallery__error-meta">
-                    {s.diag?.sizeBytes !== undefined && (
-                      <span>الحجم: {formatBytes(s.diag.sizeBytes)}</span>
-                    )}
-                    {s.diag?.mime !== undefined && (
-                      <span>النوع: {s.diag.mime || '(غير محدد)'}</span>
-                    )}
-                    <button
-                      type="button"
-                      className="iram-bulk-gallery__copy"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        void copyDiagnostic(s)
-                      }}
-                    >
-                      نسخ التفاصيل التقنية
-                    </button>
+
+                  <div className="iram-bgu__meta">
+                    <span className="iram-bgu__name" title={t.file.name}>
+                      {truncateName(t.file.name)}
+                    </span>
+                    <span className="iram-bgu__size">{formatBytes(t.file.size)}</span>
                   </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+
+                  {/* Error panel — expands below the tile when clicked */}
+                  {isError && isExpanded && (
+                    <div className="iram-bgu__error-panel">
+                      <p className="iram-bgu__error-msg">{t.errorMessage}</p>
+                      <div className="iram-bgu__error-meta">
+                        {t.httpStatus !== undefined && <span>HTTP {t.httpStatus}</span>}
+                        <span>{t.file.type || '(نوع غير محدد)'}</span>
+                      </div>
+                      <div className="iram-bgu__error-actions">
+                        <button
+                          type="button"
+                          className="iram-bgu__btn iram-bgu__btn--primary"
+                          onClick={() => void retryTile(t.id)}
+                        >
+                          إعادة المحاولة
+                        </button>
+                        <button
+                          type="button"
+                          className="iram-bgu__btn"
+                          onClick={() => void copyDiagnostic(t)}
+                        >
+                          نسخ التفاصيل التقنية
+                        </button>
+                        <button
+                          type="button"
+                          className="iram-bgu__btn"
+                          onClick={() => removeTile(t.id)}
+                        >
+                          إزالة
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Size warning chip for soft-limit files (visible
+                      during pending/uploading so the editor knows why
+                      it's slow). */}
+                  {t.file.size > SOFT_SIZE_BYTES &&
+                    (t.state === 'pending' || t.state === 'uploading') && (
+                      <div className="iram-bgu__size-warn">حجم كبير — قد يستغرق وقتاً</div>
+                    )}
+                </div>
+              )
+            })}
+          </div>
+        </>
       )}
     </div>
   )
