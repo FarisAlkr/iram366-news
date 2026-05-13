@@ -5083,6 +5083,7 @@ select:focus-visible,
    Mirrors the mobile /m/new bulk-pick experience: one click → OS multi-file
    dialog → all picked files upload to /api/media and append as gallery rows. */
 .iram-bulk-gallery {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -5091,6 +5092,30 @@ select:focus-visible,
   border: 1.5px dashed var(--iram-gold-400);
   border-radius: var(--iram-radius);
   margin-bottom: 12px;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+
+  &--drag {
+    background: var(--iram-gold-100);
+    border-color: var(--iram-navy-900);
+    border-style: solid;
+  }
+
+  &__drop-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 42, 47, 0.86);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: var(--iram-radius);
+    pointer-events: none;
+    z-index: 2;
+  }
 
   &__btn {
     display: inline-flex;
