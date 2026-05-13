@@ -326,12 +326,26 @@ export const Articles: CollectionConfig = {
               ],
             },
             {
+              // Bulk multi-file uploader for the gallery array below.
+              // Editor parity with the mobile /m/new flow: pick many files
+              // in one OS dialog, each gets uploaded to /api/media and
+              // appended as a new row in `gallery`. Captions remain
+              // per-row editable after upload.
+              name: 'galleryBulkUploader',
+              type: 'ui',
+              admin: {
+                components: {
+                  Field: '/components/admin/BulkGalleryUploader#BulkGalleryUploader',
+                },
+              },
+            },
+            {
               name: 'gallery',
               type: 'array',
               label: '🖼️ معرض الصور (متعدد)',
               admin: {
                 description:
-                  'لإضافة عدة صور في نهاية المقال — مثل تغطية حدث بصور متعددة، أو ملف مصوّر. كل صورة تظهر في شبكة قابلة للنقر، وعند الضغط تكبر مع التعليق. إذا أردت الصور داخل النص بين الفقرات، استخدم زر Upload في محرر "نص المقال" بدلاً من ذلك.',
+                  'لإضافة عدة صور في نهاية المقال — مثل تغطية حدث بصور متعددة، أو ملف مصوّر. كل صورة تظهر في شبكة قابلة للنقر، وعند الضغط تكبر مع التعليق. لرفع عدة صور دفعة واحدة، استخدم الزر أعلاه. إذا أردت الصور داخل النص بين الفقرات، استخدم زر Upload في محرر "نص المقال" بدلاً من ذلك.',
               },
               labels: { singular: 'صورة', plural: 'الصور' },
               fields: [
