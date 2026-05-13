@@ -124,10 +124,10 @@ export function Chatbot() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? 'إغلاق المساعد' : 'افتح المساعد'}
-        className="iram-chatbot-toggle fixed bottom-5 start-5 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-navy shadow-lg transition-transform hover:scale-105"
+        className="iram-chatbot-toggle fixed bottom-5 start-5 z-[60] flex h-[72px] w-[72px] items-center justify-center rounded-full bg-navy shadow-lg transition-transform hover:scale-105"
       >
         {open ? (
-          <span aria-hidden className="text-2xl text-white">
+          <span aria-hidden className="text-3xl text-white">
             ×
           </span>
         ) : (

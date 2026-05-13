@@ -84,16 +84,16 @@ export default async function FrontendLayout({ children }: { children: React.Rea
   const showCursorInk = cursorInkEnvOn && cursorInkAdminOn
   const socialHubAdminOn = siteSettings.socialHub?.enabled !== false
   const showSocialHub = socialHubEnvOn && socialHubAdminOn
-  // Pass only the platform-URL fields the hub knows about — strip
-  // `email`, which is a different channel (mailto:) handled elsewhere
-  // and not part of this component's responsibility.
+  // Pass only the platforms the hub surfaces. YouTube and email stay
+  // in the CMS — YouTube is intentionally hidden from this hub (the
+  // footer link list handles it); email is a different channel
+  // (mailto:) handled elsewhere.
   const socialUrls = {
     whatsapp: siteSettings.socialLinks?.whatsapp ?? null,
     facebook: siteSettings.socialLinks?.facebook ?? null,
     instagram: siteSettings.socialLinks?.instagram ?? null,
     telegram: siteSettings.socialLinks?.telegram ?? null,
     tiktok: siteSettings.socialLinks?.tiktok ?? null,
-    youtube: siteSettings.socialLinks?.youtube ?? null,
   }
 
   return (
