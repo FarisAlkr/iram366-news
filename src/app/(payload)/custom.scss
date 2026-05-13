@@ -6285,20 +6285,28 @@ body[data-theme] .nav-wrapper {
 // ============================================================
 
 // ============================================================
-// Theme toggle — floating button (top-end corner of viewport)
+// Theme toggle — floating button paired with the notification bell
 // ============================================================
 // One-click light/dark switch. Mounted via the ThemeToggle provider
 // in payload.config.ts; portals its button to document.body so it
 // floats above the entire admin layout regardless of stacking
-// context. Positioned at top-left (physical) which in this RTL
-// admin = visual left = away from the sidebar.
+// context.
+//
+// Positioned NEXT TO the notification bell (which uses
+// `inset-inline-end: 24px; top: 18px; size 42×42`). RTL-aware
+// logical positioning: in RTL admin both sit on the visual left as
+// a row; in any future LTR run they'd sit on the visual right as a
+// row. 76px = 24 (bell offset) + 42 (bell width) + 10 (gap).
+//
+// Sized + cornered to MATCH the bell exactly so they read as a
+// matching pair, not as two random widgets.
 .iram-theme-toggle {
   position: fixed;
-  top: 12px;
-  left: 12px; // physical, not logical — sidebar is on the visual right
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+  top: 18px;
+  inset-inline-end: 76px;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
   border: 1px solid transparent;
   cursor: pointer;
   display: inline-flex;
@@ -6306,17 +6314,20 @@ body[data-theme] .nav-wrapper {
   justify-content: center;
   background: var(--iram-navy-900);
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(10, 42, 47, 0.18);
-  z-index: 100;
+  box-shadow: var(--iram-shadow-sm);
+  z-index: 9001; // one above the bell (9000) so a hover/active state
+  // can layer on top if needed
   transition:
     transform 160ms ease,
     box-shadow 160ms ease,
-    background 160ms ease;
+    background 160ms ease,
+    border-color 160ms ease;
   padding: 0;
 
   &:hover {
-    transform: scale(1.08);
-    box-shadow: 0 4px 14px rgba(10, 42, 47, 0.28);
+    transform: translateY(-1px);
+    box-shadow: var(--iram-shadow);
+    border-color: var(--iram-gold-400);
   }
   &:focus-visible {
     outline: 2px solid var(--iram-gold-500);
