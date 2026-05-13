@@ -31,7 +31,13 @@
  * Accessibility:
  *   - aria-hidden on the visual node; never in tab order.
  *   - prefers-reduced-motion → render a static camel (still hover/click-able).
- *   - coarse pointer → render nothing (no good interaction model on touch).
+ *   - coarse pointer (touch) → fully active. The walk timeline and the
+ *     tap-to-greet behavior run unchanged; hover-only interactions
+ *     (pause-on-hover, head cursor-tracking) simply don't fire because
+ *     touch never produces pointerenter/pointermove without a tap,
+ *     which is correct degradation. (Earlier versions early-returned
+ *     on coarse pointer entirely — the editor specifically asked for
+ *     the camel to move and respond to taps on mobile.)
  */
 
 import { useEffect, useRef, useState } from 'react'
@@ -78,7 +84,13 @@ export default function FooterCamel() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    if (window.matchMedia('(pointer: coarse)').matches) return
+    // Note: previously this effect early-returned on `(pointer: coarse)`,
+    // disabling the camel entirely on touch devices. The editor wants the
+    // camel to walk and respond to taps on mobile, so the guard is gone.
+    // Hover-only interactions (pointerenter/pointerleave pause, cursor-
+    // tracking head rotation) are still bound below — they simply don't
+    // fire on touch because touch doesn't produce those events without
+    // a held gesture, which is correct degradation.
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
