@@ -114,49 +114,39 @@ export const HeroPlacementPicker: React.FC = () => {
     setBusy(true)
     setError(null)
 
-    const safeHero: HeroSettings = hero ?? {}
-    const newHero: HeroSettings = {
-      mode: 'manual',
-      mainArticle: refId(safeHero.mainArticle),
-      secondaryArticles: (safeHero.secondaryArticles || [])
-        .map(refId)
-        .filter((x): x is string | number => x != null),
-    }
-
-    if (next === 'main') {
-      // Promote to main; if it was a secondary, drop it from there.
-      newHero.mainArticle = articleId
-      newHero.secondaryArticles = (newHero.secondaryArticles || []).filter((x) => x !== articleId)
-    } else if (next.startsWith('secondary-')) {
-      const slot = Number(next.split('-')[1]) - 1
-      const arr = (newHero.secondaryArticles || []).slice()
-      // If this article already in another secondary slot, remove it first.
-      const existingIdx = arr.indexOf(articleId)
-      if (existingIdx >= 0 && existingIdx !== slot) arr.splice(existingIdx, 1)
-      // Pad up to slot index with null then assign
-      while (arr.length <= slot) arr.push(null as unknown as string | number)
-      arr[slot] = articleId
-      newHero.secondaryArticles = arr.filter((x): x is string | number => x != null)
-      // If it was the main, demote
-      if (newHero.mainArticle === articleId) newHero.mainArticle = null
-    } else {
-      // 'none' — remove from any slot
-      if (newHero.mainArticle === articleId) newHero.mainArticle = null
-      newHero.secondaryArticles = (newHero.secondaryArticles || []).filter((x) => x !== articleId)
-    }
-
+    // POST to the narrow `/api/admin/hero-placement` endpoint instead of
+    // PATCHing `/api/globals/site-settings` directly. The global is
+    // locked to role=admin in SiteSettings.ts (and shouldn't be loosened
+    // — admins control siteName, logo, etc.), so editors hitting the
+    // PATCH would 403 with the misleading "تأكد من صلاحيات حسابك"
+    // message. The narrow endpoint elevates the write to admin via
+    // `overrideAccess: true` after verifying the caller is at least an
+    // Editor — same write surface, correctly scoped permission.
     try {
-      const res = await fetch('/api/globals/site-settings', {
-        method: 'PATCH',
+      const res = await fetch('/api/admin/hero-placement', {
+        method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ homepageHero: newHero }),
+        body: JSON.stringify({ articleId, placement: next }),
       })
-      if (!res.ok) throw new Error('save failed')
-      const data = await res.json()
-      setHero(data?.result?.homepageHero ?? data?.homepageHero ?? newHero)
+      if (!res.ok) {
+        // Surface the server's Arabic message verbatim when present —
+        // it already distinguishes "not signed in" / "wrong role" /
+        // "article not found" so the editor knows what to do.
+        let serverMessage: string | undefined
+        try {
+          const body = (await res.json()) as { error?: string }
+          serverMessage = body?.error
+        } catch {
+          /* JSON parse failure — fall through to generic */
+        }
+        setError(serverMessage ?? 'فشل الحفظ — حاول لاحقاً')
+        return
+      }
+      const data = (await res.json()) as { homepageHero?: HeroSettings }
+      setHero(data?.homepageHero ?? null)
     } catch {
-      setError('فشل الحفظ — تأكد من صلاحيات حسابك')
+      setError('تعذّر الاتصال بالخادم — حاول لاحقاً')
     } finally {
       setBusy(false)
     }
