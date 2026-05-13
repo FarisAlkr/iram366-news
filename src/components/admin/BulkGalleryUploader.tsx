@@ -12,10 +12,16 @@ import { useForm, useFormFields } from '@payloadcms/ui'
  * only lets editors click "Add Row" one file at a time, which the editor
  * called out as a productivity gap.
  *
- * This component restores parity: one click → pick many files → all of
- * them stream up to /api/media → each successful upload appends a row
- * to the existing gallery array field. Captions stay empty (editable
- * per-row after upload, same as before).
+ * This component restores parity in two interaction modes:
+ *
+ *   1. Click the button → native OS multi-file picker → select many at
+ *      once → all upload in sequence.
+ *   2. Drag files from a folder / desktop window directly onto the drop
+ *      zone (the gold-bordered box) → release → all upload in sequence.
+ *
+ * Both paths feed the same processFiles() helper, so the upload behavior
+ * (sequential POST to /api/media, alt-text fallback, per-file error
+ * handling, single bulk dispatch at end) is identical.
  *
  * Implementation notes:
  *  - Uploads are sequential (for-of with await). Parallel would be faster
@@ -31,6 +37,11 @@ import { useForm, useFormFields } from '@payloadcms/ui'
  *    upload never aborts the others.
  *  - We don't touch the existing gallery rows — we only append. So the
  *    editor can mix bulk-uploaded images with hand-added ones freely.
+ *  - Drag-and-drop: dragenter/dragover/dragleave are counted via a ref
+ *    rather than a plain boolean because dragover fires per child element;
+ *    a naive boolean flips false/true rapidly as the cursor crosses
+ *    internal nodes. The counter only flips visual state when the dragenter
+ *    count goes to zero.
  */
 
 type GalleryRow = {
@@ -52,6 +63,10 @@ function stripExtension(name: string): string {
   return dot > 0 ? name.slice(0, dot) : name
 }
 
+function filterImageFiles(list: FileList | File[]): File[] {
+  return Array.from(list).filter((f) => f.size > 0 && f.type.startsWith('image/'))
+}
+
 export const BulkGalleryUploader: React.FC = () => {
   const { dispatchFields } = useForm()
   // Read the current title (for alt-text default) and the live gallery
@@ -63,105 +78,166 @@ export const BulkGalleryUploader: React.FC = () => {
 
   const [busy, setBusy] = React.useState(false)
   const [statuses, setStatuses] = React.useState<UploadStatus[]>([])
+  const [dragActive, setDragActive] = React.useState(false)
   const inputRef = React.useRef<HTMLInputElement>(null)
+  // dragenter/dragover/dragleave fire per child element as the cursor
+  // moves across them. A plain boolean would flicker. Counter pattern:
+  // increment on dragenter, decrement on dragleave; visual is active
+  // while counter > 0.
+  const dragCounterRef = React.useRef(0)
+
+  const processFiles = React.useCallback(
+    async (rawFiles: File[]) => {
+      if (rawFiles.length === 0) return
+
+      // Snapshot now to avoid races: if the editor's typing in another
+      // field while uploads run, we don't want our dispatch to clobber
+      // their edits. We mutate the snapshot and write the whole array
+      // back at the end.
+      const baseGallery: GalleryRow[] = Array.isArray(gallery) ? [...(gallery as GalleryRow[])] : []
+      const titleStr = typeof title === 'string' ? title : ''
+      const altBase = titleStr ? titleStr.slice(0, ALT_MAX_LEN) : ''
+
+      setBusy(true)
+      setStatuses(rawFiles.map((f) => ({ name: f.name, state: 'pending' })))
+
+      const newRows: GalleryRow[] = []
+      for (let i = 0; i < rawFiles.length; i++) {
+        const file = rawFiles[i]
+        if (!file) continue
+        const alt = altBase || stripExtension(file.name).slice(0, ALT_MAX_LEN) || 'image'
+
+        // Payload's REST endpoint for upload collections accepts
+        // multipart/form-data with a `file` part plus a `_payload`
+        // JSON string carrying the rest of the fields. (`alt` is the
+        // only required Media field.)
+        const fd = new FormData()
+        fd.append('file', file)
+        fd.append('_payload', JSON.stringify({ alt }))
+
+        try {
+          const res = await fetch('/api/media', {
+            method: 'POST',
+            body: fd,
+            credentials: 'include',
+          })
+          if (!res.ok) {
+            let message = 'فشل الرفع'
+            try {
+              const body = (await res.json()) as { errors?: { message?: string }[] }
+              const first = body?.errors?.[0]?.message
+              if (first) message = first
+            } catch {
+              /* not JSON — leave message generic */
+            }
+            setStatuses((prev) =>
+              prev.map((s, idx) => (idx === i ? { ...s, state: 'error', message } : s)),
+            )
+            continue
+          }
+          const data = (await res.json()) as { doc?: { id?: string | number } }
+          const mediaId = data?.doc?.id
+          if (!mediaId) {
+            setStatuses((prev) =>
+              prev.map((s, idx) =>
+                idx === i ? { ...s, state: 'error', message: 'استجابة غير متوقعة' } : s,
+              ),
+            )
+            continue
+          }
+          newRows.push({ image: mediaId, caption: '' })
+          setStatuses((prev) => prev.map((s, idx) => (idx === i ? { ...s, state: 'ok' } : s)))
+        } catch (err) {
+          // Network / CORS / aborted — log and move on. The other files
+          // in the batch still get a chance.
+          console.error('[bulk gallery] upload failed:', err)
+          setStatuses((prev) =>
+            prev.map((s, idx) =>
+              idx === i ? { ...s, state: 'error', message: 'فشل الاتصال' } : s,
+            ),
+          )
+        }
+      }
+
+      // One bulk write at the end. Payload's array dispatch wants the
+      // whole new array; pushing rows one-by-one would re-render the
+      // editor N times and lose intermediate field focus.
+      if (newRows.length > 0) {
+        dispatchFields({
+          type: 'UPDATE',
+          path: 'gallery',
+          value: [...baseGallery, ...newRows],
+        })
+      }
+
+      setBusy(false)
+    },
+    [gallery, title, dispatchFields],
+  )
 
   const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const fileList = e.target.files
     if (!fileList || fileList.length === 0) return
-
-    // Snapshot now to avoid races: if the editor's typing in another
-    // field while uploads run, we don't want our dispatch to clobber
-    // their edits. We mutate the snapshot and write the whole array
-    // back at the end.
-    const baseGallery: GalleryRow[] = Array.isArray(gallery) ? [...(gallery as GalleryRow[])] : []
-    const titleStr = typeof title === 'string' ? title : ''
-    const altBase = titleStr ? titleStr.slice(0, ALT_MAX_LEN) : ''
-
-    const files = Array.from(fileList).filter((f) => f.size > 0 && f.type.startsWith('image/'))
-
-    // Reset the input now so the editor can immediately pick more if
-    // they want to (or re-pick the same file after removing a row).
+    const files = filterImageFiles(fileList)
+    // Reset the input so the editor can re-pick the same file after
+    // removing a row.
     if (inputRef.current) inputRef.current.value = ''
+    await processFiles(files)
+  }
 
-    setBusy(true)
-    setStatuses(files.map((f) => ({ name: f.name, state: 'pending' })))
+  const onDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    // Only react to drags that contain files. dragging text, a link, an
+    // image from elsewhere in the page → ignore.
+    if (!e.dataTransfer?.types?.includes('Files')) return
+    e.preventDefault()
+    dragCounterRef.current += 1
+    if (!dragActive) setDragActive(true)
+  }
 
-    const newRows: GalleryRow[] = []
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i]
-      if (!file) continue
-      const alt = altBase || stripExtension(file.name).slice(0, ALT_MAX_LEN) || 'image'
+  const onDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    // Required to allow drop. Without preventDefault on dragover, the
+    // browser refuses the drop and falls back to navigating to the
+    // file's URL (which on a local file means a useless file:// nav).
+    if (!e.dataTransfer?.types?.includes('Files')) return
+    e.preventDefault()
+    // Indicate this is a copy-from-OS, not a move. Browsers display a
+    // "+ copy" cursor with this hint, matching editor intuition that
+    // dragging from a folder shouldn't move/delete the source file.
+    e.dataTransfer.dropEffect = 'copy'
+  }
 
-      // Payload's REST endpoint for upload collections accepts
-      // multipart/form-data with a `file` part plus a `_payload`
-      // JSON string carrying the rest of the fields. (`alt` is the
-      // only required Media field.)
-      const fd = new FormData()
-      fd.append('file', file)
-      fd.append('_payload', JSON.stringify({ alt }))
+  const onDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!e.dataTransfer?.types?.includes('Files')) return
+    dragCounterRef.current = Math.max(0, dragCounterRef.current - 1)
+    if (dragCounterRef.current === 0) setDragActive(false)
+  }
 
-      try {
-        const res = await fetch('/api/media', {
-          method: 'POST',
-          body: fd,
-          credentials: 'include',
-        })
-        if (!res.ok) {
-          let message = 'فشل الرفع'
-          try {
-            const body = (await res.json()) as { errors?: { message?: string }[] }
-            const first = body?.errors?.[0]?.message
-            if (first) message = first
-          } catch {
-            /* not JSON — leave message generic */
-          }
-          setStatuses((prev) =>
-            prev.map((s, idx) => (idx === i ? { ...s, state: 'error', message } : s)),
-          )
-          continue
-        }
-        const data = (await res.json()) as { doc?: { id?: string | number } }
-        const mediaId = data?.doc?.id
-        if (!mediaId) {
-          setStatuses((prev) =>
-            prev.map((s, idx) =>
-              idx === i ? { ...s, state: 'error', message: 'استجابة غير متوقعة' } : s,
-            ),
-          )
-          continue
-        }
-        newRows.push({ image: mediaId, caption: '' })
-        setStatuses((prev) => prev.map((s, idx) => (idx === i ? { ...s, state: 'ok' } : s)))
-      } catch (err) {
-        // Network / CORS / aborted — log and move on. The other files
-        // in the batch still get a chance.
-        console.error('[bulk gallery] upload failed:', err)
-        setStatuses((prev) =>
-          prev.map((s, idx) => (idx === i ? { ...s, state: 'error', message: 'فشل الاتصال' } : s)),
-        )
-      }
-    }
-
-    // One bulk write at the end. Payload's array dispatch wants the
-    // whole new array; pushing rows one-by-one would re-render the
-    // editor N times and lose intermediate field focus.
-    if (newRows.length > 0) {
-      dispatchFields({
-        type: 'UPDATE',
-        path: 'gallery',
-        value: [...baseGallery, ...newRows],
-      })
-    }
-
-    setBusy(false)
+  const onDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    if (!e.dataTransfer?.types?.includes('Files')) return
+    e.preventDefault()
+    dragCounterRef.current = 0
+    setDragActive(false)
+    const dropped = e.dataTransfer.files
+    if (!dropped || dropped.length === 0) return
+    const files = filterImageFiles(dropped)
+    await processFiles(files)
   }
 
   const pickedCount = statuses.length
   const okCount = statuses.filter((s) => s.state === 'ok').length
   const errorCount = statuses.filter((s) => s.state === 'error').length
 
+  const containerClass = `iram-bulk-gallery${dragActive ? ' iram-bulk-gallery--drag' : ''}`
+
   return (
-    <div className="iram-bulk-gallery" dir="rtl">
+    <div
+      className={containerClass}
+      dir="rtl"
+      onDragEnter={onDragEnter}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+    >
       <label className="iram-bulk-gallery__btn">
         <span aria-hidden>🖼️</span>
         <span>{busy ? '... جاري الرفع' : 'اختر صوراً للمعرض (دفعة واحدة)'}</span>
@@ -177,9 +253,18 @@ export const BulkGalleryUploader: React.FC = () => {
       </label>
 
       <small className="iram-bulk-gallery__hint">
-        اختر عدة صور دفعة واحدة — ستضاف إلى المعرض أدناه. أضف التعليق لكل صورة من السطر المقابل بعد
-        الرفع.
+        اختر عدة صور دفعة واحدة، أو اسحبها من مجلدك وأفلتها هنا — ستضاف إلى المعرض أدناه. أضف
+        التعليق لكل صورة من السطر المقابل بعد الرفع.
       </small>
+
+      {/* Drop overlay — only visible while a file drag is hovering. The
+          overlay is `pointer-events: none` in CSS so it doesn't interfere
+          with the underlying drop event bubbling up to the container. */}
+      {dragActive && (
+        <div className="iram-bulk-gallery__drop-overlay" aria-hidden>
+          <span>أفلت الصور هنا للرفع</span>
+        </div>
+      )}
 
       {pickedCount > 0 && (
         <div className="iram-bulk-gallery__status" aria-live="polite">
