@@ -5077,3 +5077,68 @@ select:focus-visible,
   padding: 8px 12px !important;
   font-weight: 600 !important;
 }
+
+/* ===== Bulk gallery uploader =====
+   Mounted as a UI field directly above the gallery array on Articles.
+   Mirrors the mobile /m/new bulk-pick experience: one click → OS multi-file
+   dialog → all picked files upload to /api/media and append as gallery rows. */
+.iram-bulk-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--iram-gold-50);
+  border: 1.5px dashed var(--iram-gold-400);
+  border-radius: var(--iram-radius);
+  margin-bottom: 12px;
+
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--iram-navy-900);
+    color: #fff;
+    border-radius: var(--iram-radius-sm);
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.12s;
+    user-select: none;
+
+    &:hover {
+      opacity: 0.92;
+    }
+
+    input[type='file'] {
+      display: none;
+    }
+  }
+
+  &__hint {
+    color: var(--iram-ink-muted);
+    font-size: 11.5px;
+    line-height: 1.55;
+  }
+
+  &__status {
+    font-size: 12px;
+    color: var(--iram-navy-900);
+    padding: 6px 10px;
+    background: var(--iram-surface);
+    border: 1px solid var(--iram-border);
+    border-radius: var(--iram-radius-sm);
+  }
+
+  &__errors {
+    margin: 6px 0 0;
+    padding-inline-start: 18px;
+    font-size: 11.5px;
+    color: #b91c1c;
+
+    li + li {
+      margin-top: 2px;
+    }
+  }
+}
