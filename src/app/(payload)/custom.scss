@@ -5096,9 +5096,18 @@ select:focus-visible,
   border-radius: var(--iram-radius);
   margin-bottom: 14px;
   text-align: center;
+  cursor: pointer;
   transition:
     background 0.12s,
     border-color 0.12s;
+
+  &:hover {
+    background: var(--iram-gold-100);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--iram-navy-900);
+    outline-offset: 2px;
+  }
 
   &--drag {
     background: var(--iram-gold-100);
