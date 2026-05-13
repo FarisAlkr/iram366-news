@@ -167,4 +167,7 @@ export interface SiteSettings {
     enableCursorInk?: boolean
     enableFooterCamel?: boolean
   } | null
+  socialHub?: {
+    enabled?: boolean
+  } | null
 }

@@ -285,5 +285,25 @@ export const SiteSettings: GlobalConfig = {
         },
       ],
     },
+    {
+      name: 'socialHub',
+      type: 'group',
+      label: 'مركز روابط التواصل الاجتماعي',
+      admin: {
+        description:
+          'مركز عائم في الزاوية السفلية اليسرى يفتح روابط الشبكات الاجتماعية المعرّفة في "روابط التواصل الاجتماعي" أعلاه. لا تظهر أيقونة لمنصة إذا كان رابطها فارغاً.',
+      },
+      fields: [
+        {
+          name: 'enabled',
+          type: 'checkbox',
+          defaultValue: true,
+          label: 'تفعيل مركز التواصل الاجتماعي',
+          admin: {
+            description: 'يمكن إيقافه مؤقتاً دون نشر جديد.',
+          },
+        },
+      ],
+    },
   ],
 }
