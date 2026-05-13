@@ -56,14 +56,19 @@ import { gsap } from 'gsap'
 
 // The phrase, broken into individual rendering units. Arabic ligatures
 // are handled by the font (Amiri shapes letters contextually), so we
-// can iterate by Unicode code points.
-const PHRASE = 'إرم 366 الإخبارية'
+// can iterate by Unicode code points. Three hyphens between each word
+// act as visual word-separators in the trail — without them the
+// glyphs of "إرم", "366" and "الإخبارية" run together in the user's
+// eye as one long string of letters. The hyphens are stamped like any
+// other character (no whitespace skip in the loop).
+const PHRASE = 'إرم---366---الإخبارية'
 const LETTERS = Array.from(PHRASE) // safe code-point iteration
 
 const STAMP_DISTANCE_PX = 60 // distance the cursor travels between letter stamps
 const MAX_STAMPS = 20 // ring-buffer cap
 const MAX_AGE = 60 // frames a stamp lives (≈ 1 s at 60 fps)
 const IDLE_MS_TO_STOP_STAMPING = 500 // after this long without movement, stop adding stamps
+const PHRASE_PAUSE_MS = 1000 // pause between full iterations of the phrase
 const FONT_SIZE_PX = 28
 const FONT_WEIGHT = 700
 const COLOR = '#c8964a'
@@ -126,6 +131,13 @@ export default function CursorInk() {
     let haveLastSample = false
     let accumulatedDistance = 0
     let lastMoveTime = performance.now()
+    // Timestamp (performance.now) until which new letter stamps are
+    // suppressed. Set after each full iteration of the phrase so the
+    // sequence pauses for PHRASE_PAUSE_MS before starting the next
+    // cycle from index 0. During the pause we still *drain* the
+    // accumulated travel distance — otherwise resuming would dump a
+    // backlog of stamps at once.
+    let pauseUntil = 0
 
     // --- Sizing with devicePixelRatio + visual viewport --------------------
     // Same zoom/viewport handling as the previous ink-stroke
@@ -206,14 +218,37 @@ export default function CursorInk() {
       // reads in order even when the user flicks the mouse.
       while (accumulatedDistance >= STAMP_DISTANCE_PX) {
         accumulatedDistance -= STAMP_DISTANCE_PX
+
+        // Inter-iteration pause: after the phrase completes, suppress
+        // new stamps for PHRASE_PAUSE_MS so the next cycle starts
+        // visibly fresh. We still drain accumulatedDistance above so a
+        // user moving steadily through the pause doesn't see a burst
+        // of stamps the instant the pause ends.
+        if (now < pauseUntil) continue
+
         const ch = LETTERS[letterIndex % LETTERS.length] ?? ''
         letterIndex++
         // Skip whitespace glyphs — stamping a space leaves an awkward
         // visual gap because fillText on " " renders nothing but the
-        // sequence still advances. Advance the index but don't push.
-        if (ch.trim().length === 0) continue
-        stamps.push({ char: ch, x, y, age: 0 })
-        if (stamps.length > MAX_STAMPS) stamps.shift()
+        // sequence still advances. Defensive: PHRASE currently has no
+        // whitespace, but this keeps behavior sane if someone edits it.
+        if (ch.trim().length === 0) {
+          // The check below for "did we just complete a full iteration"
+          // still needs to run, hence we don't pre-empt with continue
+          // before the modulo check — fall through.
+        } else {
+          stamps.push({ char: ch, x, y, age: 0 })
+          if (stamps.length > MAX_STAMPS) stamps.shift()
+        }
+
+        // If letterIndex just hit a multiple of LETTERS.length, we
+        // finished a full pass through the phrase — schedule the
+        // inter-iteration pause. (letterIndex was just incremented, so
+        // value 0 means we haven't placed anything yet, never matches
+        // here.)
+        if (letterIndex > 0 && letterIndex % LETTERS.length === 0) {
+          pauseUntil = now + PHRASE_PAUSE_MS
+        }
       }
     }
     window.addEventListener('pointermove', onPointerMove, { passive: true })
