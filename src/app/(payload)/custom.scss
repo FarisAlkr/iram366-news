@@ -6283,3 +6283,80 @@ body[data-theme] .nav-wrapper {
 // ============================================================
 // END dark-mode contrast fix
 // ============================================================
+
+// ============================================================
+// Theme toggle — floating button (top-end corner of viewport)
+// ============================================================
+// One-click light/dark switch. Mounted via the ThemeToggle provider
+// in payload.config.ts; portals its button to document.body so it
+// floats above the entire admin layout regardless of stacking
+// context. Positioned at top-left (physical) which in this RTL
+// admin = visual left = away from the sidebar.
+.iram-theme-toggle {
+  position: fixed;
+  top: 12px;
+  left: 12px; // physical, not logical — sidebar is on the visual right
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--iram-navy-900);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(10, 42, 47, 0.18);
+  z-index: 100;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+  padding: 0;
+
+  &:hover {
+    transform: scale(1.08);
+    box-shadow: 0 4px 14px rgba(10, 42, 47, 0.28);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--iram-gold-500);
+    outline-offset: 2px;
+  }
+
+  // Icon swap — show ONLY the icon that represents the destination
+  // state (the action), not the current one. In dark mode we show
+  // the sun (= "click to switch to light"); in light mode we show
+  // the moon.
+  &__icon {
+    display: none;
+  }
+  &--light &__icon--moon {
+    display: block;
+  }
+  &--dark &__icon--sun {
+    display: block;
+  }
+
+  // Light-mode button: navy bg, white icon.
+  // Dark-mode button: light cream bg, navy icon — inverted so the
+  // button stays visually loud in either theme.
+  &--dark {
+    background: var(--iram-gold-400);
+    color: var(--iram-navy-900);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+
+    &:hover {
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
+    }
+  }
+}
+
+// Honor reduced-motion — disable the hover scale.
+@media (prefers-reduced-motion: reduce) {
+  .iram-theme-toggle {
+    transition: none;
+    &:hover {
+      transform: none;
+    }
+  }
+}
