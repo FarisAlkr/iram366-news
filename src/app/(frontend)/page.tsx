@@ -1,9 +1,3 @@
-// `force-dynamic` because page.tsx queries Postgres at render time. Without
-// it Next.js tries to statically prerender the homepage during `next build`,
-// when the DB is not reachable from inside the Docker build context, and
-// the build crashes with `cannot connect to Postgres`.
-export const dynamic = 'force-dynamic'
-
 import { ArticleStatus, HeroMode } from '@/domain/enums'
 import { getPayloadClient } from '@/lib/payload'
 import { getCategories, getSiteSettings, listPublishedArticles } from '@/lib/queries'
@@ -78,8 +72,6 @@ async function resolveHero(
 }
 
 export default async function HomePage() {
-  const payload = await getPayloadClient()
-
   const [siteSettings, categories, breakingResult, featuredResult, latestResult, mostReadResult] =
     await Promise.all([
       getSiteSettings(),
@@ -92,24 +84,44 @@ export default async function HomePage() {
 
   const hero = await resolveHero(siteSettings, featuredResult.docs, latestResult.docs)
 
-  // Per-category latest — parallelized.
-  const categoryArticles = await Promise.all(
-    categories.map(async (cat: Category) => {
-      const result = await payload.find({
-        collection: 'articles',
-        where: {
-          category: { equals: cat.id },
-          status: { equals: ArticleStatus.Published },
-        },
-        limit: 4,
-        sort: '-publishedAt',
-        depth: 1,
-      })
-      return { category: cat, articles: result.docs as unknown as Article[] }
-    }),
-  )
+  // Per-category latest — parallelized. (Note: this is N+1 across categories;
+  // consolidation is the next commit.) The whole block is wrapped in a guard
+  // so a build-time DB outage produces empty sections rather than a build
+  // failure — same pattern as the read helpers in lib/queries.ts.
+  // Skip when categories is empty (e.g. build-time when the lib short-circuits
+  // to []). Avoids a needless payload init that would throw on a stub DB.
+  let categoryArticles: Array<{ category: Category; articles: Article[] }> = []
+  if (categories.length > 0) {
+    try {
+      const payload = await getPayloadClient()
+      categoryArticles = await Promise.all(
+        categories.map(async (cat: Category) => {
+          try {
+            const result = await payload.find({
+              collection: 'articles',
+              where: {
+                category: { equals: cat.id },
+                status: { equals: ArticleStatus.Published },
+              },
+              limit: 4,
+              sort: '-publishedAt',
+              depth: 1,
+            })
+            return { category: cat, articles: result.docs as unknown as Article[] }
+          } catch {
+            return { category: cat, articles: [] as Article[] }
+          }
+        }),
+      )
+    } catch {
+      categoryArticles = categories.map((cat) => ({ category: cat, articles: [] }))
+    }
+  }
 
   const siteName = siteSettings.siteName ?? 'إرم 366 الإخبارية'
+  const breaking = breakingResult.docs
+  const latest = latestResult.docs
+  const mostRead = mostReadResult.docs
 
   return (
     <>
@@ -117,7 +129,7 @@ export default async function HomePage() {
         siteName={siteName}
         categories={categories.map((c) => ({ name: c.name, slug: c.slug }))}
         logo={siteSettings.logo}
-        breakingArticles={breakingResult.docs.map((a) => ({
+        breakingArticles={breaking.map((a) => ({
           title: a.title,
           slug: a.slug,
         }))}
@@ -135,7 +147,7 @@ export default async function HomePage() {
             <div>
               <SectionHeading title="آخر الأخبار" />
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {latestResult.docs.map((article) => (
+                {latest.map((article) => (
                   <ArticleCard key={article.id} article={article} />
                 ))}
               </div>
@@ -144,7 +156,7 @@ export default async function HomePage() {
             <div className="hidden space-y-4 lg:block">
               <AdSlot placement="sidebar-top" />
               <Sidebar
-                mostRead={mostReadResult.docs.map((a) => ({
+                mostRead={mostRead.map((a) => ({
                   title: a.title,
                   slug: a.slug,
                   featuredImage: a.featuredImage,
