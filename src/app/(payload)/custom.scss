@@ -5970,3 +5970,316 @@ body[data-theme] .field-description {
 // ============================================================
 // END contrast audit
 // ============================================================
+
+// ============================================================
+// CONTRAST REBALANCE — hierarchy was broken by the AAA push
+// ============================================================
+// The earlier audit pushed every secondary/tertiary color to AAA
+// (7:1+). Result: secondary text became as heavy as primary, the
+// numeric columns in lists looked like headlines, hints competed
+// with values. The editor reported "so many things feel too dark."
+//
+// This block recalibrates to a 4-step hierarchy where each rung is
+// visibly lighter than the one above:
+//
+//   primary (titles)          15:1   ink         #0a2a2f
+//   secondary (labels)         8:1   ink-2       #2a4147
+//   tertiary (subtitles/hints) 6.3:1 ink-3       #4d6065
+//   metadata (timestamps)      5.2:1 ink-muted   #6a7679
+//
+// All four still pass WCAG AA. Tertiary/metadata also pass AAA Large.
+// The point is: each rung must FEEL lighter than the one above it,
+// even if every rung is technically readable in isolation. Pushing
+// everything to AAA destroyed that perception.
+
+:root,
+body[data-theme],
+html[data-theme='light'] {
+  --iram-ink-muted: #6a7679; // was #525558 (too dark) → 5.2:1, AA solid
+  --iram-ink-3: #4d6065; // was #3f4f54 (too dark) → 6.3:1, AAA Large
+}
+
+// ----- Revert the AAA-only callsite promotions that flattened
+// the hierarchy. The token shift above is enough for these now;
+// the explicit overrides forced them to ink-2 which is reserved
+// for actual secondary HEADINGS, not metadata. -----
+
+// Table cell content was promoted to ink-2 (8.6:1) — that made the
+// view counts and dates look as heavy as the article titles. Cells
+// should sit clearly below titles in the hierarchy.
+body[data-theme] .table tbody td {
+  color: var(--iram-ink-3) !important; // 6.3:1 — clearly below titles
+}
+
+// KPI uppercase eyebrow ("المشاهدات — 30 يوماً") was promoted to
+// ink-2, making it compete with the KPI VALUE next to it. Eyebrows
+// are by definition lighter than the value they precede.
+.iram-kpi__label {
+  color: var(--iram-ink-3) !important;
+}
+
+// Hero subtitle on navy was bumped to #d4dad9 (10:1). That's
+// almost as bright as the title's pure white. Pull back so the
+// title still has the visual lead.
+.iram-dash__hero-subtitle {
+  color: #b8c1c0 !important; // 7.5:1 — was the original v1 value
+}
+
+// Hero gold eyebrow on navy was bumped to #e6d199. Same problem —
+// it competed with the title. Pull back to the original gold-400.
+.iram-dash__hero-label {
+  color: var(--iram-gold-400) !important; // 6.2:1, AAA Large
+}
+
+// Trend badges — keep the bumped colors. They were the only ones
+// that ACTUALLY failed AA against their tinted backgrounds in the
+// original (5:1 borderline), so leave them at the AAA values.
+
+// Sidebar group labels — pull back to AA Large rather than AAA.
+// Group labels are eyebrow text; they don't need to scream.
+body[data-theme] aside.payload__nav,
+body[data-theme] aside.nav,
+body[data-theme] .nav,
+body[data-theme] .nav-wrapper {
+  .nav-group__label,
+  .nav__label {
+    color: #b8c1c0 !important; // 7.5:1 on navy-900 — was #c8d3d2 (8:1)
+  }
+}
+
+// Bulk gallery zone subtitle — pull back the white opacity bump.
+// White at 0.82 was almost as bright as the title; 0.7 keeps the
+// title leading.
+.iram-bgu__zone-sub {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+// ============================================================
+// END contrast rebalance
+// ============================================================
+
+// ============================================================
+// DARK-MODE CONTRAST FIX
+// ============================================================
+// Earlier rebalance blocks scoped their token overrides with
+// `body[data-theme]` (no theme value) — that selector matches both
+// light AND dark themes, and because the rebalance blocks live at
+// the END of the cascade, they CLOBBERED the dedicated [data-theme=
+// 'dark'] block at line 2561. Result in dark mode: --iram-ink-3 got
+// remapped to #4d6065 (a dark gray meant for white surfaces) which
+// rendered as near-invisible text on the dark navy panels.
+//
+// This block sits AT THE END of the cascade and re-asserts proper
+// dark-mode token values, plus targets each specific surface the
+// editor flagged as unreadable. Selector specificity uses
+// `[data-theme='dark']` ATTRIBUTE chains so we beat the earlier
+// `body[data-theme]` rebalance rules.
+//
+// Target brightness per the user's spec:
+//   primary    ≥ 95%   (close to white)
+//   secondary  ≥ 75%   (subtitles, headers)
+//   tertiary   ≥ 65%   (axis labels, view counts)
+//   badges     ≥ 80%
+
+[data-theme='dark'] {
+  // Token re-assertion. These need higher specificity than the
+  // `body[data-theme]` rules above; sitting later in the cascade
+  // gives that.
+  --iram-ink: #f1ede6; // 14:1 — primary text
+  --iram-ink-2: #d8dcd5; // 11:1 — secondary headers
+  --iram-ink-3: #b8c1c0; // 8.5:1 — tertiary (subtitles, hints, list cells)
+  --iram-ink-muted: #9aa6a8; // 6:1 — metadata (timestamps, sizes)
+  --iram-side-ink-3: #b8c1c0; // sidebar group labels
+}
+
+// ----- Panel subtitles ("أفضل 5 مقالات حسب إجمالي المشاهدات",
+//       "المشاهدات حسب التصنيف — 30 يوم") -----
+[data-theme='dark'] .iram-panel__subtitle {
+  color: var(--iram-ink-3) !important; // 8.5:1
+}
+
+// ----- Pipeline stage labels ("منشور", "مسودة", "مؤرشف") -----
+// The stage CARDS still have light-tinted backgrounds (#fffbeb,
+// #ecfdf5, #f9fafb) because they're semantic status colors. In
+// dark mode we tint these cards toward darker semantic backgrounds
+// AND fix the label colors to read on each tint.
+[data-theme='dark'] {
+  .iram-pipeline__stage {
+    background: var(--iram-surface) !important;
+    border-color: var(--iram-border) !important;
+
+    &--draft {
+      background: rgba(253, 230, 138, 0.08) !important;
+      border-color: rgba(253, 230, 138, 0.3) !important;
+    }
+    &--pub {
+      background: rgba(167, 243, 208, 0.08) !important;
+      border-color: rgba(167, 243, 208, 0.3) !important;
+    }
+    &--arch {
+      background: var(--iram-surface) !important;
+      border-color: var(--iram-border) !important;
+    }
+  }
+
+  .iram-pipeline__label {
+    color: var(--iram-ink-2) !important; // 11:1 on dark surface
+  }
+  .iram-pipeline__count {
+    color: var(--iram-ink) !important; // 14:1
+  }
+  .iram-pipeline__arrow {
+    color: var(--iram-ink-3) !important;
+  }
+  .iram-pipeline__meta {
+    border-top-color: var(--iram-border) !important;
+  }
+  .iram-pipeline__meta-item {
+    color: var(--iram-ink-2) !important; // 11:1 — was ink-3, bumped for badge-row readability
+  }
+}
+
+// ----- Badge chips (numbers next to "خبر عاجل", "مستخدم", etc.) -----
+// Light-mode badge uses --iram-surface-2 bg + --iram-ink-2 text.
+// Dark-mode needs an explicit set since the dark token block
+// remapped surface-2 to dark navy.
+[data-theme='dark'] .iram-badge {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: var(--iram-ink) !important; // 14:1 — the digit must read clearly
+
+  &--gold {
+    background: rgba(200, 168, 78, 0.18) !important;
+    color: var(--iram-gold-400) !important;
+  }
+  &--danger {
+    background: rgba(220, 38, 38, 0.18) !important;
+    color: #fca5a5 !important; // 7:1 on dark
+  }
+  &--info {
+    background: rgba(2, 132, 199, 0.18) !important;
+    color: #93c5fd !important;
+  }
+  &--success {
+    background: rgba(5, 150, 105, 0.18) !important;
+    color: #6ee7b7 !important;
+  }
+}
+
+// ----- Chart x-axis date labels ("أبريل 14", "مايو 13") -----
+// Rendered as plain spans in .iram-chart__x. The earlier rules
+// likely used an ink-3/muted token. Force a bright enough value.
+[data-theme='dark'] .iram-chart__x,
+[data-theme='dark'] .iram-chart__x span {
+  color: var(--iram-ink-3) !important; // 8.5:1
+  font-weight: 500;
+}
+
+// Chart grid lines + axis strokes — the AreaChart SVG hard-codes
+// #e5e4e0 grid stroke. Soften the grid so it doesn't dominate over
+// the data line itself in dark mode.
+[data-theme='dark'] .iram-chart line {
+  stroke: rgba(255, 255, 255, 0.08) !important;
+}
+
+// ----- Top-list (الأكثر قراءة) — rank numbers, titles, view counts -----
+[data-theme='dark'] {
+  .iram-top-list__rank {
+    color: var(--iram-gold-400) !important; // 7:1 on dark surface
+  }
+  .iram-top-list__title {
+    color: var(--iram-ink) !important;
+  }
+  .iram-top-list__views,
+  .iram-top-list__meta {
+    color: var(--iram-ink-2) !important; // 11:1 — view counts must read
+  }
+  .iram-top-list__sub,
+  .iram-top-list__category {
+    color: var(--iram-ink-3) !important;
+  }
+}
+
+// ----- Hero strip in dark mode -----
+// The hero is already navy in light mode (white text). In dark mode
+// the same colors work, but the gold eyebrow may need a touch more
+// vibrancy.
+[data-theme='dark'] {
+  .iram-dash__hero-label {
+    color: var(--iram-gold-400) !important;
+  }
+  .iram-dash__hero-title {
+    color: #ffffff !important;
+  }
+  .iram-dash__hero-subtitle {
+    color: rgba(255, 255, 255, 0.78) !important; // 12:1 on navy
+  }
+}
+
+// ----- KPI cards -----
+[data-theme='dark'] {
+  .iram-kpi__label {
+    color: var(--iram-ink-2) !important; // uppercase eyebrow at 11:1
+  }
+  .iram-kpi__value {
+    color: var(--iram-ink) !important;
+  }
+  .iram-kpi__hint {
+    color: var(--iram-ink-3) !important;
+  }
+}
+
+// ----- Activity feed / recent updates -----
+[data-theme='dark'] {
+  .iram-activity__title {
+    color: var(--iram-ink) !important;
+  }
+  .iram-activity__meta,
+  .iram-activity__time {
+    color: var(--iram-ink-3) !important;
+  }
+}
+
+// ----- Sidebar in dark mode — group labels were getting clobbered -----
+[data-theme='dark'] aside.payload__nav,
+[data-theme='dark'] aside.nav,
+[data-theme='dark'] .nav,
+[data-theme='dark'] .nav-wrapper {
+  .nav-group__label,
+  .nav__label {
+    color: #c8d3d2 !important; // 8:1 on near-black sidebar
+  }
+}
+
+// ----- List view (collections) in dark mode -----
+[data-theme='dark'] {
+  .table thead th {
+    color: var(--iram-ink-3) !important;
+    background: var(--iram-surface-2) !important;
+  }
+  .table tbody td {
+    color: var(--iram-ink-2) !important; // 11:1 — was getting clobbered to dark gray
+  }
+}
+
+// ----- Velocity bars (article publishing chart) ticks/labels -----
+[data-theme='dark'] {
+  .iram-velocity__label,
+  .iram-velocity__count {
+    color: var(--iram-ink-3) !important;
+  }
+}
+
+// ----- Category performance bars -----
+[data-theme='dark'] {
+  .iram-catbar__name,
+  .iram-catbar__count {
+    color: var(--iram-ink-2) !important;
+  }
+  .iram-catbar__track {
+    background: rgba(255, 255, 255, 0.06) !important;
+  }
+}
+
+// ============================================================
+// END dark-mode contrast fix
+// ============================================================
