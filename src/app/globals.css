@@ -1269,8 +1269,11 @@
   animation: chatbot-glow 4.5s ease-in-out infinite;
 }
 .iram-chatbot-toggle__logo {
-  width: 36px;
-  height: 36px;
+  /* Scaled proportionally with the 56→72 px FAB bump (≈ same 67 %
+     fill ratio the prior 36 px on 56 px FAB had). Keeps the soft
+     mask edge from looking cramped inside the larger circle. */
+  width: 48px;
+  height: 48px;
   -webkit-mask-image: radial-gradient(ellipse, black 55%, transparent 92%);
   mask-image: radial-gradient(ellipse, black 55%, transparent 92%);
   filter: drop-shadow(0 0 8px rgba(200, 168, 78, 0.5));
