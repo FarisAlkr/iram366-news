@@ -1,4 +1,4 @@
-import { ArticleStatus, HeroMode } from '@/domain/enums'
+import { HeroMode } from '@/domain/enums'
 import { getPayloadClient } from '@/lib/payload'
 import { getCategories, getSiteSettings, listPublishedArticles } from '@/lib/queries'
 import type { Article, Category } from '@/types/payload'
@@ -84,38 +84,38 @@ export default async function HomePage() {
 
   const hero = await resolveHero(siteSettings, featuredResult.docs, latestResult.docs)
 
-  // Per-category latest — parallelized. (Note: this is N+1 across categories;
-  // consolidation is the next commit.) The whole block is wrapped in a guard
-  // so a build-time DB outage produces empty sections rather than a build
-  // failure — same pattern as the read helpers in lib/queries.ts.
-  // Skip when categories is empty (e.g. build-time when the lib short-circuits
-  // to []). Avoids a needless payload init that would throw on a stub DB.
-  let categoryArticles: Array<{ category: Category; articles: Article[] }> = []
+  // Per-category latest, now consolidated into a single query (audit F-1.4-2).
+  // The old code ran one `payload.find` per category — six DB roundtrips on
+  // every ISR regeneration. The replacement fetches recent published articles
+  // in one go (limit sized to cover ~CATEGORY_LATEST_PER_CATEGORY × N
+  // categories with generous headroom for an uneven distribution) and groups
+  // them in JS. Categories with no recent content surface empty and are
+  // filtered out by the existing `visibleCats` step in the JSX.
+  const CATEGORY_LATEST_PER_CATEGORY = 4
+  const POOL_LIMIT = Math.max(60, categories.length * CATEGORY_LATEST_PER_CATEGORY * 4)
+  let categoryArticles: Array<{ category: Category; articles: Article[] }> = categories.map(
+    (cat) => ({ category: cat, articles: [] }),
+  )
   if (categories.length > 0) {
-    try {
-      const payload = await getPayloadClient()
-      categoryArticles = await Promise.all(
-        categories.map(async (cat: Category) => {
-          try {
-            const result = await payload.find({
-              collection: 'articles',
-              where: {
-                category: { equals: cat.id },
-                status: { equals: ArticleStatus.Published },
-              },
-              limit: 4,
-              sort: '-publishedAt',
-              depth: 1,
-            })
-            return { category: cat, articles: result.docs as unknown as Article[] }
-          } catch {
-            return { category: cat, articles: [] as Article[] }
-          }
-        }),
-      )
-    } catch {
-      categoryArticles = categories.map((cat) => ({ category: cat, articles: [] }))
+    const pool = await listPublishedArticles({ limit: POOL_LIMIT, depth: 1 })
+    const byCategory = new Map<number | string, Article[]>()
+    for (const article of pool.docs) {
+      const ref = article.category
+      const id =
+        typeof ref === 'object' && ref && 'id' in ref
+          ? ref.id
+          : (ref as number | string | undefined)
+      if (id === undefined) continue
+      const bucket = byCategory.get(id) ?? []
+      if (bucket.length < CATEGORY_LATEST_PER_CATEGORY) {
+        bucket.push(article)
+        byCategory.set(id, bucket)
+      }
     }
+    categoryArticles = categories.map((cat) => ({
+      category: cat,
+      articles: byCategory.get(cat.id) ?? [],
+    }))
   }
 
   const siteName = siteSettings.siteName ?? 'إرم 366 الإخبارية'
