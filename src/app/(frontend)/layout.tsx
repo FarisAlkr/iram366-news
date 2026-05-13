@@ -7,6 +7,7 @@ import { BackToHomeFallback } from '@/components/BackToHomeFallback'
 import { Chatbot } from '@/components/Chatbot'
 import CursorInkMount from '@/components/CursorInkMount'
 import { ScrollProgress } from '@/components/ScrollProgress'
+import SocialHubMount from '@/components/SocialHubMount'
 import { SplashScreen } from '@/components/SplashScreen'
 import { getSiteSettings } from '@/lib/queries'
 
@@ -75,11 +76,25 @@ const CF_ANALYTICS_TOKEN = process.env.NEXT_PUBLIC_CF_ANALYTICS_TOKEN
 // control. Both must be enabled for the effect to render. Env defaults to
 // enabled — only `=== 'false'` disables.
 const cursorInkEnvOn = process.env.NEXT_PUBLIC_FEATURE_CURSOR_INK !== 'false'
+const socialHubEnvOn = process.env.NEXT_PUBLIC_FEATURE_SOCIAL_HUB !== 'false'
 
 export default async function FrontendLayout({ children }: { children: React.ReactNode }) {
   const siteSettings = await getSiteSettings()
   const cursorInkAdminOn = siteSettings.signatureUi?.enableCursorInk !== false
   const showCursorInk = cursorInkEnvOn && cursorInkAdminOn
+  const socialHubAdminOn = siteSettings.socialHub?.enabled !== false
+  const showSocialHub = socialHubEnvOn && socialHubAdminOn
+  // Pass only the platform-URL fields the hub knows about — strip
+  // `email`, which is a different channel (mailto:) handled elsewhere
+  // and not part of this component's responsibility.
+  const socialUrls = {
+    whatsapp: siteSettings.socialLinks?.whatsapp ?? null,
+    facebook: siteSettings.socialLinks?.facebook ?? null,
+    instagram: siteSettings.socialLinks?.instagram ?? null,
+    telegram: siteSettings.socialLinks?.telegram ?? null,
+    tiktok: siteSettings.socialLinks?.tiktok ?? null,
+    youtube: siteSettings.socialLinks?.youtube ?? null,
+  }
 
   return (
     <html
@@ -104,6 +119,7 @@ export default async function FrontendLayout({ children }: { children: React.Rea
           />
         )}
         {showCursorInk && <CursorInkMount />}
+        {showSocialHub && <SocialHubMount urls={socialUrls} />}
       </body>
     </html>
   )
