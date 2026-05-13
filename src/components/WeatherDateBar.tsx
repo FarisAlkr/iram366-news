@@ -209,7 +209,7 @@ export function WeatherDateBar({ towns: customTowns }: WeatherDateBarProps = {})
   const formatted = now ? formatNow(now) : null
 
   return (
-    <div className="relative z-50 border-b border-white/10 bg-navy-dark/70 text-base text-white/85 md:text-lg">
+    <div className="relative z-[60] border-b border-white/10 bg-navy-dark/70 text-base text-white/85 md:text-lg">
       <div className="container-news">
         <div className="relative flex h-16 items-center justify-between">
           {/* Brand display moved to the three-part wordmark in Header.tsx;
