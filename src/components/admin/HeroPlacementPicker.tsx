@@ -44,6 +44,15 @@ export const HeroPlacementPicker: React.FC = () => {
   const [loading, setLoading] = React.useState(true)
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  // Pending placement chosen *before* the article has an ID (i.e. on
+  // the create-new flow). The mobile editor at /m/new bakes placement
+  // into the same form submit that creates the article; the desktop
+  // admin has the picker as a separate UI field with no access to the
+  // create payload, so we capture the intent here and apply it the
+  // instant useDocumentInfo() flips from no-id → real-id after the
+  // first save. (Editors complained the desktop picker showed a
+  // "save first" dead-end with no buttons — see the issue triage.)
+  const [pendingPlacement, setPendingPlacement] = React.useState<Placement | null>(null)
 
   const load = React.useCallback(async () => {
     setLoading(true)
@@ -65,19 +74,43 @@ export const HeroPlacementPicker: React.FC = () => {
     load()
   }, [load])
 
-  if (!articleId) {
-    return (
-      <div className="iram-hero-pick iram-hero-pick--idle">
-        <strong>📍 موضع المقال على الصفحة الرئيسية</strong>
-        <small>احفظ المقال أولاً ثم اختر موضعه.</small>
-      </div>
-    )
-  }
+  // Flush pending placement once the article has an ID. This is what
+  // makes the desktop create-flow feel like the mobile flow — the user
+  // chose "main" up front, saved the article, and now we send the
+  // placement update without them having to click the button again.
+  // `apply` reads `articleId` and `hero` directly, so we depend on
+  // `pendingPlacement` and `articleId` to schedule the flush; the
+  // function reference is intentionally not in the deps array — we
+  // want exactly one flush per (articleId, pendingPlacement) pair.
+  React.useEffect(() => {
+    if (!articleId || !pendingPlacement) return
+    // Don't fire while we're still loading the hero settings — apply()
+    // composes a new hero object from the current snapshot, and acting
+    // on a stale (null) snapshot would wipe other articles' placements.
+    if (loading) return
+    const target = pendingPlacement
+    setPendingPlacement(null)
+    // Fire-and-forget; apply() handles its own error display.
+    void apply(target)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [articleId, pendingPlacement, loading])
 
-  const current = placementOf(articleId, hero)
+  // Current placement reflects what's actually saved on the server (for
+  // existing articles) OR what the user has provisionally chosen (for a
+  // brand-new article waiting for its first save). The `pendingPlacement
+  // ?? …` fallback gives the buttons real visual feedback during the
+  // pre-save window — without it, the picker would look broken because
+  // clicks "did nothing."
+  const current: Placement = articleId ? placementOf(articleId, hero) : (pendingPlacement ?? 'none')
 
   const apply = async (next: Placement) => {
     if (busy || next === current) return
+    // No article ID yet → defer. Store the intent locally; the effect
+    // below will fire it off as soon as the first save lands.
+    if (!articleId) {
+      setPendingPlacement(next)
+      return
+    }
     setBusy(true)
     setError(null)
 
@@ -159,9 +192,21 @@ export const HeroPlacementPicker: React.FC = () => {
       )}
 
       {error && <small className="iram-hero-pick__error">{error}</small>}
-      <small className="iram-hero-pick__hint">
-        التغيير يضبط وضع الصفحة الرئيسية على &quot;يدوي&quot; تلقائياً.
-      </small>
+      {!articleId && pendingPlacement && (
+        <small className="iram-hero-pick__hint">
+          سيُطبَّق هذا الموضع تلقائياً فور حفظ المقال للمرة الأولى.
+        </small>
+      )}
+      {!articleId && !pendingPlacement && (
+        <small className="iram-hero-pick__hint">
+          اختر الموضع الآن — سيُطبَّق بعد حفظ المقال للمرة الأولى.
+        </small>
+      )}
+      {articleId && (
+        <small className="iram-hero-pick__hint">
+          التغيير يضبط وضع الصفحة الرئيسية على &quot;يدوي&quot; تلقائياً.
+        </small>
+      )}
     </div>
   )
 }
