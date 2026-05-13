@@ -4,6 +4,7 @@ import { BreakingToggleCell as BreakingToggleCell_90c18a095f4005fed242ec48307059
 import { HeroPlacementPicker as HeroPlacementPicker_6bc0b253ee3514f653be1f6ee8b1479e } from '../../../components/admin/HeroPlacementPicker'
 import { WhatsAppShare as WhatsAppShare_bfbad98fef8efeeb4db9b62b461a1de6 } from '../../../components/admin/WhatsAppShare'
 import { SlugAutofill as SlugAutofill_8e7f1338a21329b5e21b5fc0a030788d } from '../../../components/admin/SlugAutofill'
+import { BulkGalleryUploader as BulkGalleryUploader_iram_bulk_gallery_uploader_alias } from '../../../components/admin/BulkGalleryUploader'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { RscEntryLexicalField as RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { LexicalDiffComponent as LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -51,6 +52,8 @@ export const importMap = {
     HeroPlacementPicker_6bc0b253ee3514f653be1f6ee8b1479e,
   '/components/admin/WhatsAppShare#WhatsAppShare': WhatsAppShare_bfbad98fef8efeeb4db9b62b461a1de6,
   '/components/admin/SlugAutofill#SlugAutofill': SlugAutofill_8e7f1338a21329b5e21b5fc0a030788d,
+  '/components/admin/BulkGalleryUploader#BulkGalleryUploader':
+    BulkGalleryUploader_iram_bulk_gallery_uploader_alias,
   '@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell':
     RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
   '@payloadcms/richtext-lexical/rsc#RscEntryLexicalField':
