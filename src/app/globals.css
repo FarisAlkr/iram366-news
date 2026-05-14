@@ -1406,3 +1406,25 @@ body.has-pen-cursor input[type='reset'] {
   pointer-events: none;
   user-select: none;
 }
+
+/* ===== UserWay accessibility widget — hide auto-injected trigger button ===== */
+/* The widget loaded from cdn.userway.org injects its own floating "open"
+   button into the DOM (typically bottom-left at our data-position=8). We
+   surface our own intentional trigger in the footer via AccessibilityButton.tsx
+   which calls window.UserWay.openWidget() — so the auto-injected one is
+   visual duplication.
+   Hide the trigger only. The panel UI itself lives inside the same .uwy
+   wrapper as a SIBLING of the trigger; do NOT hide .uwy or the panel
+   disappears too and the widget becomes useless.
+   Selectors verified by inspecting cdn.userway.org/widgetapp/.../widget_app_base_*.js
+   on 2026-05-14: trigger renders as
+     <div class="uai" id="userwayAccessibilityIcon" role="button">…</div>
+   with a "list/skip-links" variant under id="userwayLstIcon".
+   The .uai class fallback covers both ID-renamed and id-stripped builds in
+   case UserWay updates the static ID under us. */
+#userwayAccessibilityIcon,
+#userwayLstIcon,
+.uwy > .uai {
+  display: none !important;
+  visibility: hidden !important;
+}
