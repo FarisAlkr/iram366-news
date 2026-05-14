@@ -14,19 +14,28 @@ interface SitemapDoc {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const payload = await getPayloadClient()
-
-  const [articles, categories, pages] = await Promise.all([
-    payload.find({
-      collection: 'articles',
-      where: { status: { equals: ArticleStatus.Published } },
-      limit: 1000,
-      sort: '-publishedAt',
-      depth: 0,
-    }),
-    payload.find({ collection: 'categories', limit: 100, depth: 0 }),
-    payload.find({ collection: 'pages', limit: 100, depth: 0 }),
-  ])
+  // Build-safe: if the DB isn't reachable during `next build`, return just
+  // the homepage entry. force-dynamic above means the real sitemap is
+  // regenerated on every request, so the build-time stub is never served.
+  let articles = { docs: [] as Array<unknown> }
+  let categories = { docs: [] as Array<unknown> }
+  let pages = { docs: [] as Array<unknown> }
+  try {
+    const payload = await getPayloadClient()
+    ;[articles, categories, pages] = await Promise.all([
+      payload.find({
+        collection: 'articles',
+        where: { status: { equals: ArticleStatus.Published } },
+        limit: 1000,
+        sort: '-publishedAt',
+        depth: 0,
+      }),
+      payload.find({ collection: 'categories', limit: 100, depth: 0 }),
+      payload.find({ collection: 'pages', limit: 100, depth: 0 }),
+    ])
+  } catch {
+    // fall through with empty arrays
+  }
 
   const entries: MetadataRoute.Sitemap = [
     {

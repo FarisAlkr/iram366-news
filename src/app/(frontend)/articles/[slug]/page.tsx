@@ -1,5 +1,3 @@
-export const dynamic = 'force-dynamic'
-
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -77,6 +75,11 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
 }
 
 export async function generateStaticParams() {
+  // Skip during `next build` — DATABASE_URL is intentionally not in the Docker
+  // build context, so Payload init throws. Returning [] defers all rendering
+  // to runtime, where revalidate=120 turns each requested slug into an ISR
+  // cache entry on first hit.
+  if (process.env.NEXT_PHASE === 'phase-production-build') return []
   try {
     const payload = await getPayloadClient()
     const articles = await payload.find({
@@ -93,25 +96,29 @@ export async function generateStaticParams() {
 }
 
 async function fetchRelated(article: Article): Promise<Article[]> {
-  const payload = await getPayloadClient()
   const categoryRef = article.category
   const categoryId =
     typeof categoryRef === 'object' && categoryRef && 'id' in categoryRef
       ? categoryRef.id
       : (categoryRef as string | number | undefined)
   if (!categoryId) return []
-  const result = await payload.find({
-    collection: 'articles',
-    where: {
-      category: { equals: categoryId },
-      status: { equals: ArticleStatus.Published },
-      slug: { not_equals: article.slug },
-    },
-    limit: 4,
-    sort: '-publishedAt',
-    depth: 1,
-  })
-  return result.docs as unknown as Article[]
+  try {
+    const payload = await getPayloadClient()
+    const result = await payload.find({
+      collection: 'articles',
+      where: {
+        category: { equals: categoryId },
+        status: { equals: ArticleStatus.Published },
+        slug: { not_equals: article.slug },
+      },
+      limit: 4,
+      sort: '-publishedAt',
+      depth: 1,
+    })
+    return result.docs as unknown as Article[]
+  } catch {
+    return []
+  }
 }
 
 export default async function ArticlePage({ params, searchParams }: PageProps) {

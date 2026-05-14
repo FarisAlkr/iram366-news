@@ -48,6 +48,7 @@ jobs:
           build-args: |
             NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}
             NEXT_PUBLIC_CF_ANALYTICS_TOKEN=${{ secrets.NEXT_PUBLIC_CF_ANALYTICS_TOKEN }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
 
       - name: Sync compose file + migration runner to VPS
         # The VPS needs docker-compose.yml + Caddyfile + postgres-init + the

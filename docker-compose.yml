@@ -66,6 +66,9 @@ services:
       # Cloudflare Analytics API (Stats page Section B — pending setup)
       CF_ANALYTICS_API_TOKEN: ${CF_ANALYTICS_API_TOKEN:-}
       CF_ACCOUNT_ID: ${CF_ACCOUNT_ID:-}
+      # Sentry — DSN unset means SDK is a no-op (see docs/sentry-setup.md)
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
     expose:
       - '3000'
     healthcheck:

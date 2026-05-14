@@ -46,12 +46,8 @@ export const ThemeToggle: React.FC<{ children?: React.ReactNode }> = ({ children
             type="button"
             className={`iram-theme-toggle iram-theme-toggle--${theme}`}
             onClick={onToggle}
-            aria-label={
-              theme === 'dark' ? 'التبديل إلى الوضع النهاري' : 'التبديل إلى الوضع الليلي'
-            }
-            title={
-              theme === 'dark' ? 'الوضع النهاري (Light)' : 'الوضع الليلي (Dark)'
-            }
+            aria-label={theme === 'dark' ? 'التبديل إلى الوضع النهاري' : 'التبديل إلى الوضع الليلي'}
+            title={theme === 'dark' ? 'الوضع النهاري (Light)' : 'الوضع الليلي (Dark)'}
           >
             {/* Sun icon — shown in dark mode (= "switch to light") */}
             <svg

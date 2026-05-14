@@ -1,10 +1,4 @@
-// `force-dynamic` because page.tsx queries Postgres at render time. Without
-// it Next.js tries to statically prerender the homepage during `next build`,
-// when the DB is not reachable from inside the Docker build context, and
-// the build crashes with `cannot connect to Postgres`.
-export const dynamic = 'force-dynamic'
-
-import { ArticleStatus, HeroMode } from '@/domain/enums'
+import { HeroMode } from '@/domain/enums'
 import { getPayloadClient } from '@/lib/payload'
 import { getCategories, getSiteSettings, listPublishedArticles } from '@/lib/queries'
 import type { Article, Category } from '@/types/payload'
@@ -78,8 +72,6 @@ async function resolveHero(
 }
 
 export default async function HomePage() {
-  const payload = await getPayloadClient()
-
   const [siteSettings, categories, breakingResult, featuredResult, latestResult, mostReadResult] =
     await Promise.all([
       getSiteSettings(),
@@ -92,24 +84,44 @@ export default async function HomePage() {
 
   const hero = await resolveHero(siteSettings, featuredResult.docs, latestResult.docs)
 
-  // Per-category latest — parallelized.
-  const categoryArticles = await Promise.all(
-    categories.map(async (cat: Category) => {
-      const result = await payload.find({
-        collection: 'articles',
-        where: {
-          category: { equals: cat.id },
-          status: { equals: ArticleStatus.Published },
-        },
-        limit: 4,
-        sort: '-publishedAt',
-        depth: 1,
-      })
-      return { category: cat, articles: result.docs as unknown as Article[] }
-    }),
+  // Per-category latest, now consolidated into a single query (audit F-1.4-2).
+  // The old code ran one `payload.find` per category — six DB roundtrips on
+  // every ISR regeneration. The replacement fetches recent published articles
+  // in one go (limit sized to cover ~CATEGORY_LATEST_PER_CATEGORY × N
+  // categories with generous headroom for an uneven distribution) and groups
+  // them in JS. Categories with no recent content surface empty and are
+  // filtered out by the existing `visibleCats` step in the JSX.
+  const CATEGORY_LATEST_PER_CATEGORY = 4
+  const POOL_LIMIT = Math.max(60, categories.length * CATEGORY_LATEST_PER_CATEGORY * 4)
+  let categoryArticles: Array<{ category: Category; articles: Article[] }> = categories.map(
+    (cat) => ({ category: cat, articles: [] }),
   )
+  if (categories.length > 0) {
+    const pool = await listPublishedArticles({ limit: POOL_LIMIT, depth: 1 })
+    const byCategory = new Map<number | string, Article[]>()
+    for (const article of pool.docs) {
+      const ref = article.category
+      const id =
+        typeof ref === 'object' && ref && 'id' in ref
+          ? ref.id
+          : (ref as number | string | undefined)
+      if (id === undefined) continue
+      const bucket = byCategory.get(id) ?? []
+      if (bucket.length < CATEGORY_LATEST_PER_CATEGORY) {
+        bucket.push(article)
+        byCategory.set(id, bucket)
+      }
+    }
+    categoryArticles = categories.map((cat) => ({
+      category: cat,
+      articles: byCategory.get(cat.id) ?? [],
+    }))
+  }
 
   const siteName = siteSettings.siteName ?? 'إرم 366 الإخبارية'
+  const breaking = breakingResult.docs
+  const latest = latestResult.docs
+  const mostRead = mostReadResult.docs
 
   return (
     <>
@@ -117,7 +129,7 @@ export default async function HomePage() {
         siteName={siteName}
         categories={categories.map((c) => ({ name: c.name, slug: c.slug }))}
         logo={siteSettings.logo}
-        breakingArticles={breakingResult.docs.map((a) => ({
+        breakingArticles={breaking.map((a) => ({
           title: a.title,
           slug: a.slug,
         }))}
@@ -135,7 +147,7 @@ export default async function HomePage() {
             <div>
               <SectionHeading title="آخر الأخبار" />
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {latestResult.docs.map((article) => (
+                {latest.map((article) => (
                   <ArticleCard key={article.id} article={article} />
                 ))}
               </div>
@@ -144,7 +156,7 @@ export default async function HomePage() {
             <div className="hidden space-y-4 lg:block">
               <AdSlot placement="sidebar-top" />
               <Sidebar
-                mostRead={mostReadResult.docs.map((a) => ({
+                mostRead={mostRead.map((a) => ({
                   title: a.title,
                   slug: a.slug,
                   featuredImage: a.featuredImage,

@@ -71,6 +71,12 @@ export const viewport: Viewport = {
 }
 
 const CF_ANALYTICS_TOKEN = process.env.NEXT_PUBLIC_CF_ANALYTICS_TOKEN
+// UserWay accessibility widget — free tier, no cookies. Account ID comes
+// from the client's UserWay dashboard (see "Required from client before
+// launch" in the Phase 2 PR body). Mounting only when the env var is set
+// keeps the widget out of the bundle locally and avoids loading the script
+// in dev where it has no effect.
+const USERWAY_ACCOUNT = process.env.NEXT_PUBLIC_USERWAY_ACCOUNT_ID
 
 // Env flag is the hard kill-switch (build-time). Admin toggle is the runtime
 // control. Both must be enabled for the effect to render. Env defaults to
@@ -96,6 +102,40 @@ export default async function FrontendLayout({ children }: { children: React.Rea
     tiktok: siteSettings.socialLinks?.tiktok ?? null,
   }
 
+  // NewsMediaOrganization JSON-LD for Google News + general SEO. Reads
+  // socialLinks from the same site-settings global the footer uses, so the
+  // sameAs[] list stays in sync with what readers actually see in the UI.
+  // foundingDate matches the project launch year stated to the auditor.
+  const sameAs = [
+    siteSettings.socialLinks?.whatsapp,
+    siteSettings.socialLinks?.facebook,
+    siteSettings.socialLinks?.instagram,
+    siteSettings.socialLinks?.tiktok,
+    siteSettings.socialLinks?.telegram,
+    siteSettings.socialLinks?.youtube,
+  ].filter((u): u is string => Boolean(u))
+  const organizationJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'NewsMediaOrganization',
+    name: 'إرم 366 الإخبارية',
+    alternateName: 'Iram 366 News',
+    url: SITE_URL,
+    logo: `${SITE_URL}/logo.png`,
+    description: 'منصة إخبارية مستقلة برؤية مختلفة — نواكب الأحداث لحظة بلحظة من رهط والنقب',
+    inLanguage: 'ar',
+    foundingDate: '2026',
+    areaServed: { '@type': 'Place', name: 'النقب · Negev, Israel' },
+    ...(siteSettings.socialLinks?.email && {
+      contactPoint: {
+        '@type': 'ContactPoint',
+        contactType: 'editorial',
+        email: siteSettings.socialLinks.email,
+        availableLanguage: ['Arabic', 'Hebrew'],
+      },
+    }),
+    ...(sameAs.length > 0 && { sameAs }),
+  }
+
   return (
     <html
       lang="ar"
@@ -103,6 +143,10 @@ export default async function FrontendLayout({ children }: { children: React.Rea
       className={`${ibmPlex.variable} ${notoKufi.variable} ${amiri.variable}`}
     >
       <body className="bg-cream font-body text-ink antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
         <SplashScreen siteName="إرم 366 الإخبارية" />
         <BackToHomeFallback />
         <ScrollProgress />
@@ -120,6 +164,17 @@ export default async function FrontendLayout({ children }: { children: React.Rea
         )}
         {showCursorInk && <CursorInkMount />}
         {showSocialHub && <SocialHubMount urls={socialUrls} />}
+        {/* UserWay accessibility widget. data-position=8 docks it to the
+            footer instead of floating — the bottom-left and bottom-right
+            corners are already taken by the social hub and the chatbot. */}
+        {USERWAY_ACCOUNT && (
+          <script
+            async
+            data-account={USERWAY_ACCOUNT}
+            data-position="8"
+            src="https://cdn.userway.org/widget.js"
+          />
+        )}
       </body>
     </html>
   )
