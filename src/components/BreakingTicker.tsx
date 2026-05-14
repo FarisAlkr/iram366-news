@@ -28,6 +28,14 @@ export function BreakingTicker({ articles }: BreakingTickerProps) {
         <div className="relative flex-1 overflow-hidden ps-3">
           <div className="animate-ticker whitespace-nowrap py-1 text-base font-semibold">
             <TickerRun articles={articles} />
+            {/* Diamond between the two duplicated copies. Each TickerRun
+                inserts diamonds BETWEEN consecutive articles but not after
+                the last one — without this seam separator the visual rhythm
+                breaks where copy-1-end meets copy-2-start, and the eye
+                reads it as a stutter even though the math is seamless. */}
+            <span aria-hidden className="mx-4 opacity-60">
+              ◆
+            </span>
             <TickerRun articles={articles} aria-hidden />
           </div>
         </div>

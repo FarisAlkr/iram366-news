@@ -135,7 +135,14 @@
 
    Movement direction: rightward (translateX increases over time), so
    visually the text flows left-to-right. This matches the RTL reading
-   experience where new content arrives on the left edge. */
+   experience where new content arrives on the left edge.
+
+   Duration note: with the broken (pre-PR-#44) math the element only
+   moved by ~half-the-parent-width per 10s cycle (~40 px/sec — slow but
+   accidentally readable). The corrected math moves by the full content
+   width, which at 10s yields ~100 px/sec — too fast to track each
+   headline. 30s puts the scan speed back at a comfortable ~30 px/sec
+   for the typical 5-article payload. */
 @keyframes ticker-rtl {
   0% {
     transform: translateX(-50%);
@@ -147,7 +154,7 @@
 
 .animate-ticker {
   width: max-content;
-  animation: ticker-rtl 10s linear infinite;
+  animation: ticker-rtl 30s linear infinite;
 }
 
 /* ===== Skeleton Loader ===== */
