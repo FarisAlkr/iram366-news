@@ -29,7 +29,35 @@ const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
-const previewSecret = process.env.PAYLOAD_PREVIEW_SECRET || 'change-me-preview-secret'
+
+// PAYLOAD_PREVIEW_SECRET is required at runtime. Missing it is a misconfig,
+// not a hint to fall back to a known string baked into source. Throwing on
+// access surfaces the error to the editor (who reports it) instead of
+// silently emitting a forgeable URL.
+function requirePreviewSecret(): string {
+  const v = process.env.PAYLOAD_PREVIEW_SECRET
+  if (!v) {
+    throw new Error('PAYLOAD_PREVIEW_SECRET is required. Set it in /opt/iram366/.env on the VPS.')
+  }
+  return v
+}
+
+// PAYLOAD_SECRET signs every admin JWT. Missing it means forgeable sessions
+// for anyone who reads this source. Build-time evaluation is skipped via the
+// NEXT_PHASE guard so `next build` (which runs without the runtime env in
+// Docker) doesn't crash; the placeholder is obviously unsafe so any code
+// path that touches it at runtime will fail visibly rather than quietly.
+function requirePayloadSecret(): string {
+  const v = process.env.PAYLOAD_SECRET
+  if (v) return v
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return 'BUILD_TIME_PLACEHOLDER_DO_NOT_USE_AT_RUNTIME'
+  }
+  throw new Error(
+    'PAYLOAD_SECRET is required. Set it in /opt/iram366/.env on the VPS ' +
+      '(generate with: openssl rand -hex 32).',
+  )
+}
 
 // Email adapter: SMTP is deferred (see docs/post-launch-backlog.md → "SMTP /
 // password reset"). The stub adapter from src/lib/email-stub.ts swaps in
@@ -84,7 +112,7 @@ export default buildConfig({
         // avoids an admin ↔ iframe postMessage feedback loop that crashed
         // the create page with an infinite render.
         if (collectionConfig?.slug === 'articles' && data?.slug) {
-          return `${siteUrl}/preview/articles/${data.slug}?secret=${previewSecret}`
+          return `${siteUrl}/preview/articles/${data.slug}?secret=${requirePreviewSecret()}`
         }
         return ''
       },
@@ -117,7 +145,7 @@ export default buildConfig({
     fallbackLanguage: 'ar',
     supportedLanguages: { ar, en },
   },
-  secret: process.env.PAYLOAD_SECRET || 'default-secret-change-me',
+  secret: requirePayloadSecret(),
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
