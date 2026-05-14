@@ -8,6 +8,7 @@ import { ar } from '@payloadcms/translations/languages/ar'
 import { en } from '@payloadcms/translations/languages/en'
 import sharp from 'sharp'
 
+import { stubEmailAdapter } from './lib/email-stub.ts'
 import { Users } from './payload/collections/Users.ts'
 import { Articles } from './payload/collections/Articles.ts'
 import { Categories } from './payload/collections/Categories.ts'
@@ -30,13 +31,17 @@ const dirname = path.dirname(filename)
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 const previewSecret = process.env.PAYLOAD_PREVIEW_SECRET || 'change-me-preview-secret'
 
-// Email adapter is intentionally not wired yet. While SMTP env is unset,
-// Payload logs password-reset / notification emails to the server console —
-// safe behavior for the current dev stage. When real SMTP is added, swap
-// this for a synchronously-importable adapter so we keep the config free of
-// top-level await (which the Payload CLI's CJS loader cannot evaluate).
+// Email adapter: SMTP is deferred (see docs/post-launch-backlog.md → "SMTP /
+// password reset"). The stub adapter from src/lib/email-stub.ts swaps in
+// while real SMTP is unwired — it throws a friendly Arabic
+// "feature in development" message instead of letting Payload's default
+// console-log behavior pretend the password-reset email went out.
+// When real SMTP is provisioned, replace `stubEmailAdapter` below with
+// `@payloadcms/email-nodemailer` (or another adapter). The interface match
+// means nothing else has to move.
 
 export default buildConfig({
+  email: stubEmailAdapter,
   admin: {
     user: Users.slug,
     meta: {
