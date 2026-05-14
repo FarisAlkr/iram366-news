@@ -115,13 +115,29 @@ jobs:
             docker compose up -d --no-deps app
             # Ensure autoheal exists (no-op if already running)
             docker compose up -d --no-deps autoheal
-            # Reload Caddy if its config changed. The Caddyfile is bind-mounted
-            # read-only into the container, so the freshly-SCP'd file is already
-            # visible on the container's filesystem — but caddy doesn't watch
-            # for changes; it needs an explicit reload. SIGUSR1 makes caddy
-            # gracefully re-parse the file; if the new config is invalid, caddy
-            # keeps the previous one and the signal is a no-op.
-            docker compose kill -s SIGUSR1 caddy || true
+            # Recreate the Caddy container so it picks up Caddyfile changes.
+            #
+            # The previous version of this step was `docker compose kill -s
+            # SIGUSR1 caddy` — which is the canonical Caddy reload signal and
+            # works correctly *if* the container can see the new file. It
+            # couldn't: Docker bind-mounts the Caddyfile by file PATH, which
+            # pins to the host inode at mount time. `scp` in the prior step
+            # writes the replacement file as a new inode; the container's
+            # mount keeps pointing at the old, now-orphaned inode. SIGUSR1
+            # reloads stale content and the deploy reports success.
+            #
+            # PR #41 (UserWay CSP entries) was the first deploy where a
+            # CSP change actually mattered to a user-visible feature — the
+            # widget JS was outright blocked rather than redundantly covered
+            # by the broad `https:` wildcard. The deploy "succeeded" but the
+            # new CSP never went live; manual `--force-recreate caddy` fixed
+            # it. Documented in docs/infrastructure-contracts.md §3 as a
+            # known failure mode.
+            #
+            # --force-recreate is ~1–2s slower than SIGUSR1 but re-establishes
+            # the bind mount against the new inode. Caddy's startup re-issues
+            # the existing certs from /data, so TLS continuity is preserved.
+            docker compose up -d --no-deps --force-recreate caddy
             # Show health for the run log
             sleep 6
             docker compose ps
