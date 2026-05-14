@@ -2,6 +2,7 @@ import React from 'react'
 import type { AdminViewServerProps } from 'payload'
 
 import { UserRole } from '@/domain/enums'
+import { fetchSiteAnalytics, rollupLastN, type SiteAnalytics } from '@/lib/cloudflare-analytics'
 import {
   getArticleCounts,
   getAuthorLeaderboard,
@@ -24,6 +25,8 @@ import {
   type TopArticle,
 } from '@/lib/stats/queries'
 import './StatsView.scss'
+
+const CF_WINDOW_DAYS = 14
 
 const fmt = (n: number) => n.toLocaleString('en-US')
 
@@ -66,7 +69,11 @@ export default async function StatsView({ initPageResult }: AdminViewServerProps
     )
   }
 
-  const [counts, top, authors, cats, daily, status, views, ttp, dow, tags, quality] =
+  const cf = readCloudflareEnv()
+  const renderedAt = new Date()
+  const cfWindowStart = new Date(renderedAt.getTime() - CF_WINDOW_DAYS * 24 * 60 * 60 * 1000)
+
+  const [counts, top, authors, cats, daily, status, views, ttp, dow, tags, quality, cfAnalytics] =
     await Promise.all([
       getArticleCounts(),
       getTopArticles(10),
@@ -79,10 +86,13 @@ export default async function StatsView({ initPageResult }: AdminViewServerProps
       getDowActivity(12),
       getTagFrequencies(30),
       getDataQuality(),
+      cf.hasToken && cf.hasAccount && cf.hasSiteTag
+        ? fetchSiteAnalytics({
+            since: cfWindowStart.toISOString(),
+            until: renderedAt.toISOString(),
+          })
+        : Promise.resolve(null),
     ])
-
-  const cf = readCloudflareEnv()
-  const renderedAt = new Date()
 
   return (
     <div className="iram-stats" dir="rtl">
@@ -132,8 +142,10 @@ export default async function StatsView({ initPageResult }: AdminViewServerProps
         title="🌍 الجمهور والزيارات (Cloudflare)"
         subtitle="عدد الزوار الفعليين عبر Cloudflare Analytics"
       >
-        {cf.hasToken && cf.hasAccount && cf.hasSiteTag ? (
-          <CloudflareReadyPanel />
+        {cfAnalytics ? (
+          <CloudflareConnectedPanel data={cfAnalytics} />
+        ) : cf.hasToken && cf.hasAccount && cf.hasSiteTag ? (
+          <CloudflareErrorPanel />
         ) : (
           <CloudflarePending env={cf} />
         )}
@@ -622,16 +634,165 @@ function HealthRow({ label, value }: { label: string; value: string }) {
 
 // ---------- Cloudflare audience section (B) ----------
 
-function CloudflareReadyPanel() {
+function CloudflareConnectedPanel({ data }: { data: SiteAnalytics }) {
+  // Pageviews "today" = the most recent bucket in the time series IF that
+  // bucket's date matches today's UTC date. The Cloudflare RUM dataset
+  // groups by UTC date — using the local-time today would shift one day
+  // off for editors in IL (UTC+2/+3). When CF hasn't received any
+  // pageloads yet today the bucket simply won't exist and we surface 0.
+  const todayKey = new Date().toISOString().slice(0, 10)
+  const todayEntry = data.timeSeries.find((point) => point.date.startsWith(todayKey))
+  const todayPageviews = todayEntry?.views ?? 0
+  const todayVisitors = todayEntry?.visitors ?? 0
+  const week = rollupLastN(data.timeSeries, 7)
+
+  const hasAnyData = data.pageviews > 0 || data.timeSeries.length > 0
+
+  if (!hasAnyData) {
+    return (
+      <div className="iram-stats__cf iram-stats__cf--connected">
+        <p>
+          🟢 ربط Cloudflare Analytics مفعّل والإعدادات صحيحة، لكن لا توجد بيانات زوّار حتى الآن خلال
+          آخر {CF_WINDOW_DAYS} يوماً. بعد أن يبدأ القرّاء بزيارة الموقع، ستظهر هنا الأرقام تلقائياً.
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div className="iram-stats__cf iram-stats__cf--connected">
-      <p>
-        🟢 ربط Cloudflare Analytics مفعّل. سيُعرض هنا قريباً: عدد الزوار اليوم، هذا الأسبوع، هذا
-        الشهر، أكثر المقالات زيارة من Cloudflare، وتوزيع الدول والأجهزة.
-      </p>
+      <div className="iram-stats__cf-kpis">
+        <CfKpi emoji="👁️" label="مشاهدات اليوم" value={todayPageviews} />
+        <CfKpi emoji="🧑‍💻" label="زوّار اليوم" value={todayVisitors} />
+        <CfKpi emoji="📅" label="مشاهدات الأسبوع" value={week.views} />
+        <CfKpi emoji="🌐" label="زوّار الأسبوع" value={week.visitors} />
+      </div>
+
+      <div className="iram-stats__cf-grid">
+        <CfTopList
+          title={`أكثر الصفحات زيارة (${CF_WINDOW_DAYS} يوماً)`}
+          items={data.topPaths.map((p) => ({ label: p.path, value: p.views }))}
+          emptyLabel="لا توجد بيانات صفحات بعد."
+        />
+        <CfTopList
+          title={`أبرز المصادر (${CF_WINDOW_DAYS} يوماً)`}
+          items={data.topReferrers.map((r) => ({ label: r.referrer, value: r.views }))}
+          emptyLabel="لا توجد إحالات بعد — معظم الزيارات مباشرة."
+        />
+      </div>
+
+      <CfTrendChart
+        title={`اتجاه الزيارات اليومي (آخر ${CF_WINDOW_DAYS} يوماً)`}
+        series={data.timeSeries}
+      />
+
       <p className="iram-stats__cf-note">
-        تطبيق الاستعلامات الفعلية يحتاج خطوة برمجية أخيرة — أبلغ المطوّر بأنّ المتغيّرات البيئية
-        أصبحت متوفّرة.
+        البيانات من Cloudflare Web Analytics، تُحدَّث كل خمس دقائق (تخزين مؤقت في الخادم).
+      </p>
+    </div>
+  )
+}
+
+function CfKpi({ emoji, label, value }: { emoji: string; label: string; value: number }) {
+  return (
+    <div className="iram-cf-kpi">
+      <span className="iram-cf-kpi__icon" aria-hidden>
+        {emoji}
+      </span>
+      <span className="iram-cf-kpi__label">{label}</span>
+      <span className="iram-cf-kpi__value">{fmt(value)}</span>
+    </div>
+  )
+}
+
+function CfTopList({
+  title,
+  items,
+  emptyLabel,
+}: {
+  title: string
+  items: Array<{ label: string; value: number }>
+  emptyLabel: string
+}) {
+  if (items.length === 0) {
+    return (
+      <div className="iram-cf-toplist">
+        <h4>{title}</h4>
+        <p className="iram-stats__empty">{emptyLabel}</p>
+      </div>
+    )
+  }
+  const max = Math.max(1, ...items.map((i) => i.value))
+  return (
+    <div className="iram-cf-toplist">
+      <h4>{title}</h4>
+      <ol>
+        {items.map((entry, idx) => (
+          <li key={`${entry.label}-${idx}`}>
+            <span className="iram-cf-toplist__label" title={entry.label}>
+              {entry.label}
+            </span>
+            <div className="iram-cf-toplist__track" aria-hidden>
+              <div
+                className="iram-cf-toplist__fill"
+                style={{ width: `${(entry.value / max) * 100}%` }}
+              />
+            </div>
+            <span className="iram-cf-toplist__count">{fmt(entry.value)}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
+function CfTrendChart({ title, series }: { title: string; series: SiteAnalytics['timeSeries'] }) {
+  if (series.length === 0) {
+    return (
+      <div className="iram-cf-trend">
+        <h4>{title}</h4>
+        <p className="iram-stats__empty">لا توجد بيانات يومية بعد.</p>
+      </div>
+    )
+  }
+  const max = Math.max(1, ...series.map((p) => p.views))
+  return (
+    <div className="iram-cf-trend">
+      <h4>{title}</h4>
+      <div className="iram-cf-trend__bars" aria-hidden>
+        {series.map((point) => (
+          <div
+            key={point.date}
+            className="iram-cf-trend__col"
+            title={`${point.date} · ${fmt(point.views)}`}
+          >
+            <span
+              className="iram-cf-trend__bar"
+              style={{ height: `${(point.views / max) * 100}%` }}
+            />
+            <span className="iram-cf-trend__date">{point.date.slice(5)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function CloudflareErrorPanel() {
+  return (
+    <div className="iram-stats__cf">
+      <p>
+        ⚠️ ربط Cloudflare Analytics مفعّل لكن تعذّر جلب البيانات حالياً. قد يكون السبب انقطاعاً
+        مؤقتاً لدى Cloudflare، أو أنّ Token المُدخَل لا يحمل صلاحية &quot;Account Analytics:
+        Read&quot;. راجِع{' '}
+        <a
+          href="https://dash.cloudflare.com/profile/api-tokens"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          إعدادات الـ Tokens
+        </a>{' '}
+        وأعِد تحميل الصفحة بعد دقيقة.
       </p>
     </div>
   )
