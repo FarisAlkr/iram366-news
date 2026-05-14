@@ -1,0 +1,29 @@
+# Logrotate config for /var/log/iram366-backup.log on the VPS.
+# Install at /etc/logrotate.d/iram366-backup with root:root 0644 perms.
+# logrotate is run nightly by Ubuntu's default cron.daily — no extra cron
+# entry needed.
+#
+# Rationale:
+#   - weekly      Rotates once per week, on logrotate's run schedule.
+#   - rotate 4    Keeps 4 historical files (= ~1 month of history).
+#   - compress    gzip's the rotated files so they don't blow up disk.
+#   - missingok   No error if backup script hasn't run in a while.
+#   - notifempty  Don't rotate an empty file.
+#   - copytruncate The cron command appends to the log via >> redirection
+#                 and doesn't reopen the file on SIGHUP. copytruncate
+#                 copies the current file to the rotated name then truncates
+#                 the original in place — the cron's next append continues
+#                 into the same inode without missing entries.
+/var/log/iram366-backup.log {
+    # `su root root` is required because /var/log on this Ubuntu VPS has
+    # writable group/other bits. Without this directive logrotate refuses
+    # to rotate the file with an "insecure permissions" error. The cron
+    # entry runs as root so the rotated files end up owned by root too.
+    su root root
+    weekly
+    rotate 4
+    compress
+    missingok
+    notifempty
+    copytruncate
+}

@@ -54,14 +54,16 @@ jobs:
       - name: Sync compose file + migration runner to VPS
         # The VPS needs docker-compose.yml + Caddyfile + postgres-init + the
         # SQL migration runner (`scripts/apply-migrations.sh` plus any pending
-        # files under `src/payload/migrations/sql/`). Code itself lives inside
-        # the image; only these orchestration / migration artifacts ride along.
+        # files under `src/payload/migrations/sql/`) + the cron-driven
+        # backup script and its logrotate config. Code itself lives inside
+        # the image; only these orchestration / migration / cron artifacts
+        # ride along.
         uses: appleboy/scp-action@v1.0.0
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: 'docker-compose.yml,Caddyfile,deploy/postgres-init/*,scripts/apply-migrations.sh,src/payload/migrations/sql/*'
+          source: 'docker-compose.yml,Caddyfile,deploy/postgres-init/*,deploy/iram366-backup.logrotate,scripts/apply-migrations.sh,scripts/backup-postgres.sh,src/payload/migrations/sql/*'
           target: '/opt/iram366/'
           overwrite: true
 
