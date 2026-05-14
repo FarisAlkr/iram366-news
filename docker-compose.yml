@@ -69,6 +69,13 @@ services:
       # Sentry — DSN unset means SDK is a no-op (see docs/sentry-setup.md)
       SENTRY_DSN: ${SENTRY_DSN:-}
       NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+      # UserWay accessibility widget — account ID unset means the in-footer
+      # button degrades to a plain link to /accessibility-statement.
+      # Forwarded here even though Next.js inlines the value at BUILD time
+      # (Rule 1) — defensive runtime coverage so a future server-side reader
+      # of this var also sees it, and to keep the compose file an honest
+      # inventory of every env the app consumes.
+      NEXT_PUBLIC_USERWAY_ACCOUNT_ID: ${NEXT_PUBLIC_USERWAY_ACCOUNT_ID:-}
     expose:
       - '3000'
     healthcheck:

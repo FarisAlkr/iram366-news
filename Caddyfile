@@ -31,13 +31,20 @@
 		#   - script-src: Cloudflare Web Analytics beacon at static.cloudflareinsights.com
 		#     (without this the <script src="..."> in (frontend)/layout.tsx was being
 		#     CSP-blocked and CF Analytics reported 0 page views indefinitely).
+		#     cdn.userway.org serves the accessibility widget loaded conditionally
+		#     in (frontend)/layout.tsx when NEXT_PUBLIC_USERWAY_ACCOUNT_ID is set
+		#     — required (script-src has no `https:` wildcard).
+		#   - style-src and font-src also allow cdn.userway.org because the
+		#     widget injects its own stylesheet and an icon font for the
+		#     accessibility menu glyphs. Without these the widget renders
+		#     unstyled (visually broken) even if the script loads.
 		#   - connect-src: cloudflareinsights.com is where the beacon POSTs telemetry.
 		#     *.ingest.de.sentry.io is where the @sentry/nextjs browser SDK
 		#     POSTs captured errors + traces (EU region per our DSN). The
-		#     `https:` wildcard already permits both, but explicit entries
-		#     document intent so a future tightening that drops the wildcard
-		#     doesn't silently break monitoring.
-		Content-Security-Policy "default-src 'self'; img-src 'self' data: https: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https: https://cloudflareinsights.com https://*.ingest.de.sentry.io; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+		#     `https:` wildcard already permits both (and UserWay's API calls),
+		#     but explicit entries document intent so a future tightening that
+		#     drops the wildcard doesn't silently break monitoring.
+		Content-Security-Policy "default-src 'self'; img-src 'self' data: https: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.userway.org; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://cdn.userway.org; font-src 'self' https://fonts.gstatic.com https://cdn.userway.org data:; connect-src 'self' https: https://cloudflareinsights.com https://*.ingest.de.sentry.io; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
 		-Server
 		-X-Powered-By
 	}
