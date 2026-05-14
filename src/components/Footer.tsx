@@ -59,12 +59,16 @@ export function Footer({
 
           <div>
             <h4 className="mb-4 font-display text-sm font-bold text-accent-gold">الأقسام</h4>
-            <nav className="flex flex-col gap-2">
+            {/* Pills instead of a vertical stack — six categories stacked
+                vertically read as a tall, sparse list; wrapped pills fill
+                the column horizontally and read as a compact chip cluster
+                that matches the social-icon row in the next column. */}
+            <nav className="flex flex-wrap gap-2" aria-label="أقسام الموقع">
               {categories.map((cat) => (
                 <Link
                   key={cat.slug}
                   href={`/category/${cat.slug}`}
-                  className="text-sm text-white/60 transition-colors duration-150 hover:text-white"
+                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-white/75 transition-colors duration-150 hover:border-accent-gold hover:bg-accent-gold hover:text-navy"
                 >
                   {cat.name}
                 </Link>
