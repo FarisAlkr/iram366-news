@@ -102,6 +102,40 @@ export default async function FrontendLayout({ children }: { children: React.Rea
     tiktok: siteSettings.socialLinks?.tiktok ?? null,
   }
 
+  // NewsMediaOrganization JSON-LD for Google News + general SEO. Reads
+  // socialLinks from the same site-settings global the footer uses, so the
+  // sameAs[] list stays in sync with what readers actually see in the UI.
+  // foundingDate matches the project launch year stated to the auditor.
+  const sameAs = [
+    siteSettings.socialLinks?.whatsapp,
+    siteSettings.socialLinks?.facebook,
+    siteSettings.socialLinks?.instagram,
+    siteSettings.socialLinks?.tiktok,
+    siteSettings.socialLinks?.telegram,
+    siteSettings.socialLinks?.youtube,
+  ].filter((u): u is string => Boolean(u))
+  const organizationJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'NewsMediaOrganization',
+    name: 'إرم 366 الإخبارية',
+    alternateName: 'Iram 366 News',
+    url: SITE_URL,
+    logo: `${SITE_URL}/logo.png`,
+    description: 'منصة إخبارية مستقلة برؤية مختلفة — نواكب الأحداث لحظة بلحظة من رهط والنقب',
+    inLanguage: 'ar',
+    foundingDate: '2026',
+    areaServed: { '@type': 'Place', name: 'النقب · Negev, Israel' },
+    ...(siteSettings.socialLinks?.email && {
+      contactPoint: {
+        '@type': 'ContactPoint',
+        contactType: 'editorial',
+        email: siteSettings.socialLinks.email,
+        availableLanguage: ['Arabic', 'Hebrew'],
+      },
+    }),
+    ...(sameAs.length > 0 && { sameAs }),
+  }
+
   return (
     <html
       lang="ar"
@@ -109,6 +143,10 @@ export default async function FrontendLayout({ children }: { children: React.Rea
       className={`${ibmPlex.variable} ${notoKufi.variable} ${amiri.variable}`}
     >
       <body className="bg-cream font-body text-ink antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
         <SplashScreen siteName="إرم 366 الإخبارية" />
         <BackToHomeFallback />
         <ScrollProgress />
