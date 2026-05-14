@@ -32,7 +32,12 @@
 		#     (without this the <script src="..."> in (frontend)/layout.tsx was being
 		#     CSP-blocked and CF Analytics reported 0 page views indefinitely).
 		#   - connect-src: cloudflareinsights.com is where the beacon POSTs telemetry.
-		Content-Security-Policy "default-src 'self'; img-src 'self' data: https: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https: https://cloudflareinsights.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+		#     *.ingest.de.sentry.io is where the @sentry/nextjs browser SDK
+		#     POSTs captured errors + traces (EU region per our DSN). The
+		#     `https:` wildcard already permits both, but explicit entries
+		#     document intent so a future tightening that drops the wildcard
+		#     doesn't silently break monitoring.
+		Content-Security-Policy "default-src 'self'; img-src 'self' data: https: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https: https://cloudflareinsights.com https://*.ingest.de.sentry.io; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
 		-Server
 		-X-Powered-By
 	}
