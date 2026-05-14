@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import type { Category, SiteSettings } from '@/types/payload'
+import { AccessibilityButton } from './AccessibilityButton'
 import FooterCamelMount from './FooterCamelMount'
 import { SocialIcon } from './SocialIcon'
 
@@ -104,7 +105,32 @@ export function Footer({
           </div>
         </div>
 
-        <div className="mt-8 space-y-1 border-t border-white/10 pt-6 text-center text-xs text-white/40">
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 border-t border-white/10 pt-6 text-center text-xs text-white/60">
+          <Link href="/about" className="transition-colors duration-150 hover:text-white">
+            من نحن
+          </Link>
+          <Link href="/contact" className="transition-colors duration-150 hover:text-white">
+            تواصل معنا
+          </Link>
+          <Link href="/privacy" className="transition-colors duration-150 hover:text-white">
+            سياسة الخصوصية
+          </Link>
+          <Link href="/terms" className="transition-colors duration-150 hover:text-white">
+            شروط الاستخدام
+          </Link>
+          <Link
+            href="/accessibility-statement"
+            className="transition-colors duration-150 hover:text-white"
+          >
+            הצהرت נגישות · بيان إمكانية الوصول
+          </Link>
+        </div>
+
+        <div className="mt-4 flex justify-center">
+          <AccessibilityButton />
+        </div>
+
+        <div className="mt-6 space-y-1 border-t border-white/10 pt-6 text-center text-xs text-white/40">
           <div>
             {footerText ||
               `جميع الحقوق محفوظة © ${new Date().getFullYear()} لشركة إرم 366 الإخبارية م.ض`}

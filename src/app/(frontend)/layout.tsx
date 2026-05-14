@@ -71,6 +71,12 @@ export const viewport: Viewport = {
 }
 
 const CF_ANALYTICS_TOKEN = process.env.NEXT_PUBLIC_CF_ANALYTICS_TOKEN
+// UserWay accessibility widget — free tier, no cookies. Account ID comes
+// from the client's UserWay dashboard (see "Required from client before
+// launch" in the Phase 2 PR body). Mounting only when the env var is set
+// keeps the widget out of the bundle locally and avoids loading the script
+// in dev where it has no effect.
+const USERWAY_ACCOUNT = process.env.NEXT_PUBLIC_USERWAY_ACCOUNT_ID
 
 // Env flag is the hard kill-switch (build-time). Admin toggle is the runtime
 // control. Both must be enabled for the effect to render. Env defaults to
@@ -120,6 +126,17 @@ export default async function FrontendLayout({ children }: { children: React.Rea
         )}
         {showCursorInk && <CursorInkMount />}
         {showSocialHub && <SocialHubMount urls={socialUrls} />}
+        {/* UserWay accessibility widget. data-position=8 docks it to the
+            footer instead of floating — the bottom-left and bottom-right
+            corners are already taken by the social hub and the chatbot. */}
+        {USERWAY_ACCOUNT && (
+          <script
+            async
+            data-account={USERWAY_ACCOUNT}
+            data-position="8"
+            src="https://cdn.userway.org/widget.js"
+          />
+        )}
       </body>
     </html>
   )
