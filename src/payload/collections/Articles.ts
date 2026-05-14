@@ -608,6 +608,16 @@ export const Articles: CollectionConfig = {
         if (!req.user) {
           return Response.json({ error: 'Unauthorized' }, { status: 401 })
         }
+        // Without this role check, an Author could duplicate an editor's
+        // unpublished draft into their own list and read its full body.
+        // Per the collection's read access (line 580 onward), Authors only
+        // see their own drafts + everyone's published articles — but the
+        // duplicate endpoint short-circuits Payload's row-level access by
+        // calling findByID without restricting it. Restrict at the
+        // endpoint boundary so this stays consistent with the read rule.
+        if (req.user.role !== UserRole.Admin && req.user.role !== UserRole.Editor) {
+          return Response.json({ error: 'Forbidden' }, { status: 403 })
+        }
 
         try {
           const original = await payload.findByID({
