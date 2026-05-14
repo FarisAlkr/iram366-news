@@ -24,30 +24,20 @@ import { ViewCounter } from '@/components/ViewCounter'
 
 export const revalidate = 120
 
+// Draft previews live at `/preview/articles/[slug]?secret=…` (force-dynamic,
+// own renderer). This route is published-only so it can be ISR-cached. Mixing
+// `revalidate` with `searchParams` reading here threw DYNAMIC_SERVER_USAGE on
+// every hit (PR aftermath of the audit-driven `force-dynamic` removal).
 interface PageProps {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ preview?: string }>
 }
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
-function isPreviewRequest(previewParam: string | undefined): boolean {
-  const secret = process.env.PAYLOAD_PREVIEW_SECRET
-  return Boolean(secret && previewParam === secret)
-}
-
-export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
-  const { preview } = await searchParams
-  const isPreview = isPreviewRequest(preview)
-  const article = await getArticleBySlug(slug, { allowDraft: isPreview })
+  const article = await getArticleBySlug(slug)
   if (!article) return { title: 'مقال غير موجود' }
-  if (isPreview) {
-    return {
-      title: `معاينة: ${article.title}`,
-      robots: { index: false, follow: false },
-    }
-  }
 
   const image = resolveRef<Media>(article.featuredImage ?? null)
   const author = resolveRef<User>(article.author ?? null)
@@ -121,12 +111,10 @@ async function fetchRelated(article: Article): Promise<Article[]> {
   }
 }
 
-export default async function ArticlePage({ params, searchParams }: PageProps) {
+export default async function ArticlePage({ params }: PageProps) {
   const { slug } = await params
-  const { preview } = await searchParams
-  const isPreview = isPreviewRequest(preview)
 
-  const article = await getArticleBySlug(slug, { allowDraft: isPreview })
+  const article = await getArticleBySlug(slug)
   if (!article) notFound()
 
   const [siteSettings, categories, related] = await Promise.all([
@@ -163,13 +151,7 @@ export default async function ArticlePage({ params, searchParams }: PageProps) {
         logo={siteSettings.logo}
       />
 
-      {isPreview ? (
-        <div className="sticky top-0 z-50 bg-accent-gold px-4 py-2 text-center text-sm font-bold text-navy">
-          وضع المعاينة — هذه مسودة وقد تحتوي على تغييرات غير منشورة
-        </div>
-      ) : (
-        <ViewCounter slug={slug} />
-      )}
+      <ViewCounter slug={slug} />
 
       <script
         type="application/ld+json"
