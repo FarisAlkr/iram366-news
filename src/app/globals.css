@@ -125,6 +125,14 @@
    width — so the loop is seamless (when it snaps back, the second copy
    is in the position the first copy was in).
 
+   The `width: max-content` below is load-bearing: without it the track is
+   a block-level <div> whose width defaults to its parent's visible width
+   (the flex item it's inside, clipped by overflow-hidden). In that case
+   translateX(-50%) is half the PARENT'S width, not half the content's,
+   and the loop's snap is visible as the headlines appearing to "bounce
+   back" each cycle. With max-content the element sizes to its content
+   (two stacked copies), and -50% maps to exactly one copy's width again.
+
    Movement direction: rightward (translateX increases over time), so
    visually the text flows left-to-right. This matches the RTL reading
    experience where new content arrives on the left edge. */
@@ -138,6 +146,7 @@
 }
 
 .animate-ticker {
+  width: max-content;
   animation: ticker-rtl 10s linear infinite;
 }
 
