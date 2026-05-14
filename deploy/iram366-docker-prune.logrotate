@@ -1,0 +1,18 @@
+# Logrotate config for /var/log/iram366-docker-prune.log on the VPS.
+# Install at /etc/logrotate.d/iram366-docker-prune with root:root 0644 perms.
+# logrotate is run nightly by Ubuntu's default cron.daily — no extra cron
+# entry needed.
+#
+# Mirrors the iram366-backup logrotate config (deploy/iram366-backup.logrotate)
+# but applies to the weekly docker prune log instead. Same `su root root`
+# requirement because /var/log on this Ubuntu VPS has writable group/other
+# bits — without it logrotate refuses with an "insecure permissions" error.
+/var/log/iram366-docker-prune.log {
+    su root root
+    weekly
+    rotate 4
+    compress
+    missingok
+    notifempty
+    copytruncate
+}
