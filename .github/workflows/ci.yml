@@ -70,9 +70,15 @@ jobs:
             exit 0
           fi
 
+          # Accept either a TypeScript migration at the migrations root
+          # (the historical convention — only one such file exists today,
+          # the hand-written baseline) OR a SQL migration under sql/ —
+          # the format the runner actually applies on deploy since PR #10.
+          # The `index.ts` registry update is not itself a migration; new
+          # `.ts` migrations are added next to it, not as it.
           NEW_MIGRATIONS=$(git diff --name-only --diff-filter=A \
             "origin/$BASE_REF"...HEAD \
-            | grep -E '^src/payload/migrations/.*\.ts$' \
+            | grep -E '^src/payload/migrations/(sql/.*\.sql|[^/]*\.ts)$' \
             | grep -v -E '^src/payload/migrations/index\.ts$' \
             || true)
 
