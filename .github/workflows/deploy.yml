@@ -23,19 +23,19 @@ jobs:
       packages: write # to push to GHCR
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
       - name: Log in to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build & push runner image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
@@ -55,7 +55,7 @@ jobs:
         # SQL migration runner (`scripts/apply-migrations.sh` plus any pending
         # files under `src/payload/migrations/sql/`). Code itself lives inside
         # the image; only these orchestration / migration artifacts ride along.
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@v1.0.0
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
@@ -65,7 +65,7 @@ jobs:
           overwrite: true
 
       - name: Pull new app image on VPS
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
@@ -89,7 +89,7 @@ jobs:
         # --single-transaction + ON_ERROR_STOP=1, so a failure leaves the
         # database untouched (no half-applied migration, no spurious tracking
         # row).
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
@@ -103,7 +103,7 @@ jobs:
             ./scripts/apply-migrations.sh
 
       - name: Restart app & reload Caddy on VPS
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
