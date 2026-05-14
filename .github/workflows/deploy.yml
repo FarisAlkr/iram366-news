@@ -63,7 +63,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: 'docker-compose.yml,Caddyfile,deploy/postgres-init/*,deploy/iram366-backup.logrotate,scripts/apply-migrations.sh,scripts/backup-postgres.sh,src/payload/migrations/sql/*'
+          source: 'docker-compose.yml,Caddyfile,deploy/postgres-init/*,deploy/iram366-backup.logrotate,deploy/iram366-docker-prune.logrotate,scripts/apply-migrations.sh,scripts/backup-postgres.sh,src/payload/migrations/sql/*'
           target: '/opt/iram366/'
           overwrite: true
 
