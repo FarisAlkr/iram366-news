@@ -7,10 +7,13 @@ import * as Sentry from '@sentry/nextjs'
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-  // Lower than the server sample — the browser SDK adds bytes and the free
-  // tier's 5K-event budget is shared. 5% catches frequent breakage without
-  // blowing the quota the first weekend of real traffic.
-  tracesSampleRate: 0.05,
+  // Sized for the free Developer tier post-trial (~2026-05-28). 0.5%
+  // client sampling matches the 1% server rate scaled down for the
+  // higher request volume browsers generate (every interaction +
+  // navigation, not just request handlers). Errors are still captured
+  // at 100% — only perf traces are sampled. Bump back to 5% if quota
+  // headroom shows up after a few weeks of real traffic.
+  tracesSampleRate: 0.005,
   // Session replay only on errors, free-tier-friendly. Set to 0/0 if you
   // want to turn it off entirely later.
   replaysSessionSampleRate: 0,
