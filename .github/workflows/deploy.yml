@@ -50,6 +50,7 @@ jobs:
             NEXT_PUBLIC_CF_ANALYTICS_TOKEN=${{ secrets.NEXT_PUBLIC_CF_ANALYTICS_TOKEN }}
             NEXT_PUBLIC_SENTRY_DSN=${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
             NEXT_PUBLIC_USERWAY_ACCOUNT_ID=${{ secrets.NEXT_PUBLIC_USERWAY_ACCOUNT_ID }}
+            BUILD_SHA=${{ github.sha }}
 
       - name: Sync compose file + migration runner to VPS
         # The VPS needs docker-compose.yml + Caddyfile + postgres-init + the
@@ -147,12 +148,27 @@ jobs:
             docker image prune -f --filter "label=org.opencontainers.image.source=https://github.com/${{ github.repository }}" || true
 
       - name: Smoke test
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
         run: |
+          # Two-part check:
+          #   (a) homepage returns 200
+          #   (b) /api/health reports a `sha` field that matches the
+          #       commit this workflow just built. A failed image pull
+          #       on the VPS leaves the previous image serving — under
+          #       the old single-check, that "200 OK" reported deploy
+          #       success on a stale build. The SHA assertion turns
+          #       that silent failure mode into a visible CI red.
           for i in 1 2 3 4 5; do
             code=$(curl -s -o /dev/null -w "%{http_code}" https://iram366news.com --max-time 15 || echo 000)
-            echo "attempt $i → HTTP $code"
-            [ "$code" = "200" ] && exit 0
+            sha=$(curl -s --max-time 15 https://iram366news.com/api/health | grep -oE '"sha":"[a-f0-9]+"' | head -1 | cut -d'"' -f4 || echo "")
+            echo "attempt $i → HTTP $code, served sha=${sha:-<empty>}, expected=$EXPECTED_SHA"
+            if [ "$code" = "200" ] && [ "$sha" = "$EXPECTED_SHA" ]; then
+              echo "smoke test passed — site is live on the expected commit"
+              exit 0
+            fi
             sleep 6
           done
-          echo "site did not return 200 within 30s after deploy"
+          echo "smoke test failed — either HTTP != 200 or served sha doesn't match $EXPECTED_SHA"
+          echo "this usually means the image pull failed and the previous image is still serving"
           exit 1

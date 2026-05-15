@@ -13,10 +13,20 @@ export const runtime = 'nodejs'
  * answer "is this process responsive at the HTTP layer", not "is
  * every dependency healthy".
  *
- * If you want a deeper "readiness" check (DB reachable, R2 reachable,
- * etc.), add a separate `/api/ready` endpoint and only wire it up
- * to load-balancer routing decisions, never to autoheal.
+ * For a dependency-aware readiness probe (DB + R2), see /api/ready.
+ * That endpoint is deliberately NOT wired to autoheal — a transient
+ * DB blip shouldn't restart the app under traffic.
+ *
+ * `sha` is the GitHub commit hash that produced this image (baked at
+ * build time via the BUILD_SHA Dockerfile ARG). Surfaced so the deploy
+ * workflow's smoke test can assert the running container's SHA matches
+ * the SHA it just built — without this, a failed image pull would
+ * silently keep serving the previous image while the smoke test passes.
  */
 export function GET() {
-  return NextResponse.json({ status: 'ok', ts: Date.now() })
+  return NextResponse.json({
+    status: 'ok',
+    ts: Date.now(),
+    sha: process.env.BUILD_SHA ?? 'unknown',
+  })
 }
