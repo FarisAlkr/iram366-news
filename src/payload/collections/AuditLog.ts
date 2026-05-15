@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { AuditAction } from '../../domain/enums.ts'
-import { denied, isAdmin, isPublic } from '../access/index.ts'
+import { denied, isAdmin } from '../access/index.ts'
 
 const ACTION_OPTIONS: Array<{ label: string; value: AuditAction }> = [
   { label: 'إنشاء', value: AuditAction.Create },
@@ -65,7 +65,14 @@ export const AuditLog: CollectionConfig = {
   ],
   access: {
     read: isAdmin,
-    create: isPublic, // Hooks bypass via overrideAccess; this allows the audit hook itself.
+    // create: denied at the access layer. The audit hook writes via
+    // payload.create({ overrideAccess: true }) so it bypasses this rule;
+    // every other caller (including raw POST /api/audit-log from the
+    // internet) is rejected. Previously this was `isPublic` with a
+    // comment claiming the hook used overrideAccess — but the hook
+    // didn't, so the public-create surface was real. Both changed in
+    // the same commit so the audit pipeline stays unbroken.
+    create: denied,
     update: denied,
     delete: isAdmin,
   },
