@@ -7,9 +7,12 @@ let pool: Pool | null = null
  * from Payload's adapter pool so the raw pgvector SQL doesn't have to
  * negotiate Payload's drizzle layer.
  *
- * Same production tuning as the Payload pool — explicit max + idle and
- * statement timeouts so a stuck embedding write can't tie up a connection
- * forever.
+ * Pool sized smaller than Payload's (5 vs 15) — chatbot embedding
+ * queries are infrequent compared to the read-side pages, and the
+ * combined max (20) keeps both pools well under Postgres's default 100
+ * max_connections even during a deploy with old + new app
+ * side-by-side. Same idle + statement timeouts so a stuck embedding
+ * write can't tie up a connection forever.
  */
 export function getChatbotPool(): Pool {
   if (!pool) {
@@ -17,7 +20,7 @@ export function getChatbotPool(): Pool {
     if (!url) throw new Error('DATABASE_URL is required')
     pool = new Pool({
       connectionString: url,
-      max: 15,
+      max: 5,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 10_000,
       statement_timeout: 30_000,
