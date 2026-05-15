@@ -8,6 +8,10 @@ import { isAdmin, isAuthenticated, isOwnerOrAdminEditor } from '../access/index.
 import { auditAfterChange, auditAfterDelete } from '../hooks/audit.ts'
 import { notifyOnArticleStatusChange } from '../hooks/notify.ts'
 import { embedArticleAfterChange, embedArticleAfterDelete } from '../hooks/embed-article.ts'
+import {
+  revalidateArticlesAfterChange,
+  revalidateArticlesAfterDelete,
+} from '../hooks/revalidate.ts'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 const previewSecret = process.env.PAYLOAD_PREVIEW_SECRET || 'change-me-preview-secret'
@@ -561,8 +565,13 @@ export const Articles: CollectionConfig = {
         return data
       },
     ],
-    afterChange: [auditAfterChange, notifyOnArticleStatusChange, embedArticleAfterChange],
-    afterDelete: [auditAfterDelete, embedArticleAfterDelete],
+    afterChange: [
+      auditAfterChange,
+      notifyOnArticleStatusChange,
+      embedArticleAfterChange,
+      revalidateArticlesAfterChange,
+    ],
+    afterDelete: [auditAfterDelete, embedArticleAfterDelete, revalidateArticlesAfterDelete],
   },
   access: {
     read: ({ req }) => {
