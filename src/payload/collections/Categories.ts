@@ -2,6 +2,10 @@ import type { CollectionConfig } from 'payload'
 
 import { isAdminOrEditor, isPublic } from '../access/index.ts'
 import { auditAfterChange, auditAfterDelete } from '../hooks/audit.ts'
+import {
+  revalidateCategoriesAfterChange,
+  revalidateCategoriesAfterDelete,
+} from '../hooks/revalidate.ts'
 
 export const Categories: CollectionConfig = {
   slug: 'categories',
@@ -86,7 +90,7 @@ export const Categories: CollectionConfig = {
     delete: isAdminOrEditor,
   },
   hooks: {
-    afterChange: [auditAfterChange],
-    afterDelete: [auditAfterDelete],
+    afterChange: [auditAfterChange, revalidateCategoriesAfterChange],
+    afterDelete: [auditAfterDelete, revalidateCategoriesAfterDelete],
   },
 }

@@ -6,24 +6,34 @@ services:
     # is fully compatible (same major version, same on-disk format).
     image: pgvector/pgvector:pg16
     restart: unless-stopped
+    # No `:-postgres` fallbacks: missing env on a fresh VPS used to silently
+    # bring the stack up with `postgres:postgres` superuser creds. Fail
+    # loudly instead — Compose refuses to start when a required value is
+    # undeclared, surfacing the misconfig before it can ship.
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-iram366}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./deploy/postgres-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres}']
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER"']
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
+    # 1 vCPU / 3.8 GiB VPS. Memory ceilings keep one service's spike from
+    # OOM-killing another (the kernel picks the biggest victim, which on
+    # this stack is usually `db`). pgvector indexing peaks around 800 MB
+    # under real load; 1 GiB leaves a comfortable buffer.
+    mem_limit: 1g
+    mem_reservation: 256m
     logging:
       driver: json-file
       options:
         max-size: '10m'
-        max-file: '3'
+        max-file: '5'
 
   app:
     # Prebuilt image from GitHub Container Registry. Built and pushed by
@@ -45,7 +55,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-iram366}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       PAYLOAD_SECRET: ${PAYLOAD_SECRET}
       PAYLOAD_PREVIEW_SECRET: ${PAYLOAD_PREVIEW_SECRET}
       R2_BUCKET: ${R2_BUCKET}
@@ -82,11 +92,24 @@ services:
       # /api/health is a DB-free liveness probe. Using /api/users (which
       # hits Postgres) caused the healthcheck to hang along with the rest
       # of the app when the pool was exhausted — see deploy/RUNBOOK.md.
+      # /api/ready (DB+R2 readiness) exists separately; deliberately NOT
+      # wired here so a transient DB blip doesn't autoheal-restart the
+      # app under traffic.
       test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:3000/api/health']
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      # 90s gives Payload + Next a comfortable cold-boot window on the
+      # 1-vCPU box. The previous 60s tripped autoheal during legitimate
+      # post-deploy warmups under bursty traffic.
+      start_period: 90s
+    # 1 vCPU, 3.8 GiB total. Next + Payload can peak at ~1.5 GiB during
+    # ISR rebuilds + Sharp image processing; 2 GiB ceiling leaves room.
+    # mem_reservation = soft floor for the scheduler to keep memory
+    # available; mem_limit = hard cap. Together they bound an app OOM
+    # to "just app restarts" instead of "db dies too".
+    mem_limit: 2g
+    mem_reservation: 512m
     logging:
       driver: json-file
       options:
@@ -110,6 +133,18 @@ services:
     environment:
       DOMAIN: ${DOMAIN:-localhost}
       ACME_EMAIL: ${ACME_EMAIL:-iramnews366@gmail.com}
+    # Caddy's admin API on :2019 returns 200 when the loaded config is
+    # parseable and the proxy is up. Without this healthcheck autoheal
+    # ignored Caddy entirely — silent failure on the only public entry
+    # point. wget is in the alpine base.
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:2019/config/']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    mem_limit: 128m
+    mem_reservation: 32m
     logging:
       driver: json-file
       options:
@@ -129,6 +164,8 @@ services:
       AUTOHEAL_START_PERIOD: 60
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    mem_limit: 64m
+    mem_reservation: 16m
     logging:
       driver: json-file
       options:

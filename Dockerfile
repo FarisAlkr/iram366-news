@@ -45,6 +45,14 @@ ENV NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN}
 ARG NEXT_PUBLIC_USERWAY_ACCOUNT_ID
 ENV NEXT_PUBLIC_USERWAY_ACCOUNT_ID=${NEXT_PUBLIC_USERWAY_ACCOUNT_ID}
 
+# Build SHA — the GitHub commit hash that produced this image. Surfaced
+# via /api/health for the deploy smoke test to confirm the new image
+# actually loaded and is serving traffic. Without this, the smoke test
+# only proves "site returns 200" — a failed image pull would still pass
+# because the previous image keeps serving.
+ARG BUILD_SHA=unknown
+ENV BUILD_SHA=${BUILD_SHA}
+
 RUN npm run build
 
 # ---- runner stage ------------------------------------------------------------
@@ -59,6 +67,11 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
+
+# Re-declare BUILD_SHA in the runner stage so the runtime process can
+# read it (ENVs from earlier stages don't carry across FROM lines).
+ARG BUILD_SHA=unknown
+ENV BUILD_SHA=${BUILD_SHA}
 
 # Copy the standalone server (includes a slimmed node_modules) and static
 # assets. The `public/` folder is not auto-copied by next.
