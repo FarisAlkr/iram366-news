@@ -30,7 +30,7 @@ interface ArticleLite {
  *      racing against an article delete. We now guard with a WHERE EXISTS
  *      so a deleted article silently no-ops instead of throwing 23503.
  */
-export const embedArticleAfterChange: CollectionAfterChangeHook = async ({ doc }) => {
+export const embedArticleAfterChange: CollectionAfterChangeHook = async ({ doc, previousDoc }) => {
   if (!isChatbotEnabled()) return doc
   const a = doc as ArticleLite
 
@@ -45,6 +45,29 @@ export const embedArticleAfterChange: CollectionAfterChangeHook = async ({ doc }
       // Embedding table may not exist yet (setup not run) — ignore
     }
     return doc
+  }
+
+  // Skip re-embedding if none of the embedded fields actually changed.
+  // The hook fires on every Payload save — including views-counter
+  // updates, isBreaking toggles, hero-placement changes, and other
+  // metadata edits that don't affect the embedded text. Each skipped
+  // call avoids a paid OpenAI/Voyage API roundtrip + a DB write. Only
+  // skip on `update`, not `create` — a new article has no previousDoc
+  // and must always be embedded.
+  if (previousDoc) {
+    const prev = previousDoc as ArticleLite
+    const sameTitle = (a.title ?? '') === (prev.title ?? '')
+    const sameExcerpt = (a.excerpt ?? '') === (prev.excerpt ?? '')
+    // Body is rich-text JSON; cheapest reliable comparison is JSON.stringify.
+    // Lexical's serializer produces deterministic output for the same content
+    // so this is a sound equality check, not just a heuristic.
+    const sameBody = JSON.stringify(a.body ?? null) === JSON.stringify(prev.body ?? null)
+    const wasPublished = prev.status === 'published' && !prev.deletedAt
+    // If text fields are unchanged AND the article was already published
+    // (so an embedding row already exists), there's nothing to do.
+    if (sameTitle && sameExcerpt && sameBody && wasPublished) {
+      return doc
+    }
   }
 
   // Schedule the embedding generation off the request path.
