@@ -63,6 +63,12 @@ async function writeLog(
         userName: req.user?.name || req.user?.email || 'النظام',
         summary,
       },
+      // overrideAccess so the AuditLog collection can stay `create: denied`,
+      // closing the public-write surface that previously let anyone POST
+      // forged rows to /api/audit-log (e.g. to mask real malicious activity
+      // by burying it under noise — and audit rows can't be cleaned up
+      // selectively without admin intervention since update is denied).
+      overrideAccess: true,
     })
   } catch (err) {
     // Auditing must not break user actions — but we want failures to be

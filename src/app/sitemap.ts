@@ -1,9 +1,14 @@
-export const dynamic = 'force-dynamic'
-
 import type { MetadataRoute } from 'next'
 
 import { ArticleStatus } from '@/domain/enums'
 import { getPayloadClient } from '@/lib/payload'
+
+// ISR — regenerate at most once per hour. Bots (Googlebot, Bingbot,
+// Yandex) refetch sitemaps frequently; the previous `force-dynamic`
+// setting fanned out a 1000-row Postgres query on every bot hit. One
+// hour of staleness is well within crawler tolerance and keeps the
+// public DB pool free for reader traffic.
+export const revalidate = 3600
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
@@ -15,8 +20,8 @@ interface SitemapDoc {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Build-safe: if the DB isn't reachable during `next build`, return just
-  // the homepage entry. force-dynamic above means the real sitemap is
-  // regenerated on every request, so the build-time stub is never served.
+  // the homepage entry. The first post-deploy request regenerates with
+  // real data and ISR keeps it fresh on the 1-hour revalidate cadence.
   let articles = { docs: [] as Array<unknown> }
   let categories = { docs: [] as Array<unknown> }
   let pages = { docs: [] as Array<unknown> }

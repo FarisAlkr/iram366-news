@@ -162,14 +162,22 @@ export default buildConfig({
     // Production pool tuning: pg defaults to max=10, no timeouts. Under
     // sustained load — or when one slow query holds a connection — that
     // exhausts in seconds and the entire app blocks. Explicit values:
-    //   max: 30                    — headroom for concurrent requests
+    //   max: 15                    — sized for the 1 vCPU VPS where roughly
+    //                                10–12 connections can do real work
+    //                                concurrently; the rest just queue at
+    //                                the OS layer. Earlier max=30 added the
+    //                                chatbot's separate pool to total 45
+    //                                connections — half of Postgres's
+    //                                default 100 cap, leaving no headroom
+    //                                for a deploy that briefly runs the old
+    //                                and new app container side-by-side.
     //   idleTimeoutMillis: 30s     — release idle conns so the pool self-heals
     //   connectionTimeoutMillis    — fail fast when the pool is saturated
     //   statement_timeout: 30s     — kill runaway queries instead of letting
     //                                them tie up a connection forever
     pool: {
       connectionString: process.env.DATABASE_URL || '',
-      max: 30,
+      max: 15,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 10_000,
       statement_timeout: 30_000,
