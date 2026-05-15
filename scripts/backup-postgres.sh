@@ -105,11 +105,23 @@ aws_cli_with_volume() {
 log "backup start db=${POSTGRES_DB} timestamp=${NOW_UTC}"
 
 # ---- 1. Dump (in-container pg_dump avoids host/server version skew) ---------
+# `set -o pipefail` is on, but it only catches failures that bubble up to
+# the LAST command in the pipeline. A pg_dump that crashes mid-stream
+# after writing some bytes still produces a "valid" gzip of a truncated
+# dump — gzip exits 0, the size check passes, and the corrupted file
+# uploads, eventually displacing the last known-good copy in the 7-day
+# rolling window. PIPESTATUS catches the pg_dump exit code explicitly.
 docker compose exec -T db pg_dump \
   --username="$POSTGRES_USER" \
   --no-owner --no-privileges --clean --if-exists \
   --dbname="$POSTGRES_DB" \
   | gzip -9 >"$TMPFILE"
+PG_DUMP_RC="${PIPESTATUS[0]}"
+GZIP_RC="${PIPESTATUS[1]}"
+if [[ "$PG_DUMP_RC" != "0" || "$GZIP_RC" != "0" ]]; then
+  log "ERROR: dump pipeline failed pg_dump_rc=${PG_DUMP_RC} gzip_rc=${GZIP_RC}; aborting" >&2
+  exit 1
+fi
 
 LOCAL_SIZE="$(stat -c%s "$TMPFILE" 2>/dev/null || stat -f%z "$TMPFILE")"
 log "dump complete local_bytes=${LOCAL_SIZE} file=${FNAME}"
@@ -117,6 +129,16 @@ if [[ "$LOCAL_SIZE" -lt 1024 ]]; then
   log "ERROR: dump suspiciously small (<1KB); aborting before upload" >&2
   exit 1
 fi
+
+# Gzip integrity check before upload. `gzip -t` verifies the CRC and that
+# the file decompresses cleanly without actually writing the output. This
+# catches truncation inside the gzip layer that PIPESTATUS missed (e.g.
+# disk full halfway through, kernel OOM-killing one of the pipe halves).
+if ! gzip -t "$TMPFILE" 2>/dev/null; then
+  log "ERROR: dump fails gzip integrity check; aborting before upload" >&2
+  exit 1
+fi
+log "gzip integrity verified"
 
 # ---- 2. Upload to daily/ ----------------------------------------------------
 aws_cli_with_volume "$TMPDIR" s3 cp "/work/${FNAME}" "s3://${R2_BUCKET}/${DAILY_KEY}" \
