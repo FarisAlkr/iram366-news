@@ -41,6 +41,24 @@ export async function GET(req: NextRequest, { params }: RouteCtx) {
       return NextResponse.json({ error: 'not found' }, { status: 404 })
     }
 
+    // Defense in depth: the Ads.targetUrl field validator now rejects
+    // non-https URLs at write time, but legacy rows from before that
+    // landed could still carry a stale value, and a future migration bug
+    // could re-introduce them. Re-checking the protocol at the redirect
+    // boundary means this endpoint can never become an open redirect to
+    // javascript:, data:, http:, or any other scheme regardless of DB state.
+    let target: URL
+    try {
+      target = new URL(adData.targetUrl)
+    } catch {
+      logger.warn('ads.click.invalid_url', { adId: id, targetUrl: adData.targetUrl })
+      return NextResponse.json({ error: 'invalid target' }, { status: 400 })
+    }
+    if (target.protocol !== 'https:') {
+      logger.warn('ads.click.non_https_target', { adId: id, protocol: target.protocol })
+      return NextResponse.json({ error: 'invalid target' }, { status: 400 })
+    }
+
     // Don't count clicks on inactive ads
     if (adData.status === 'active') {
       payload
@@ -53,7 +71,7 @@ export async function GET(req: NextRequest, { params }: RouteCtx) {
         .catch((err) => logger.error('ads.click.update_failed', { err, adId: id }))
     }
 
-    return NextResponse.redirect(adData.targetUrl, 302)
+    return NextResponse.redirect(target.toString(), 302)
   } catch (err) {
     logger.error('ads.click.failed', { err, adId: id })
     return NextResponse.json({ error: 'internal' }, { status: 500 })

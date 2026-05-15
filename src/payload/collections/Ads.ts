@@ -208,6 +208,26 @@ export const Ads: CollectionConfig = {
               type: 'text',
               required: true,
               label: 'رابط الإعلان (الوجهة)',
+              // /api/ads/[id]/click 302-redirects users to this URL. Without
+              // a protocol allow-list it would happily forward to javascript:,
+              // data:, or arbitrary http: destinations — turning the news
+              // domain into a brand-laundered open redirect for phishing.
+              // Editors are trusted, but the validator catches typos and
+              // limits blast radius if an editor account is ever compromised.
+              validate: ((val: unknown) => {
+                if (typeof val !== 'string' || val.trim() === '') {
+                  return 'الرابط مطلوب'
+                }
+                try {
+                  const u = new URL(val.trim())
+                  if (u.protocol !== 'https:') {
+                    return 'يجب أن يبدأ الرابط بـ https:// (لأسباب أمنية)'
+                  }
+                  return true
+                } catch {
+                  return 'الرابط غير صالح. مثال: https://example.com'
+                }
+              }) as never,
               admin: {
                 description:
                   'إلى أين ينتقل القارئ عند الضغط على الإعلان. ابدأ بـ https://. سيُفتح في نافذة جديدة.',

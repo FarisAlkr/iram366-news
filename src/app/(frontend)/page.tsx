@@ -1,4 +1,5 @@
 import { HeroMode } from '@/domain/enums'
+import { getAdsForPlacements } from '@/lib/ads'
 import { getPayloadClient } from '@/lib/payload'
 import { getCategories, getSiteSettings, listPublishedArticles } from '@/lib/queries'
 import type { Article, Category } from '@/types/payload'
@@ -71,16 +72,36 @@ async function resolveHero(
   return { main, secondary: [...secondaryHydrated, ...backfill] }
 }
 
+// Every ad placement the homepage renders. Sentry flagged this as N+1
+// JAVASCRIPT-NEXTJS-4: each AdSlot was independently fetching
+// /api/ads/active, and the duplicate sidebar-top/sidebar-bottom slots
+// (desktop column + mobile fallback) fetched twice. Server-prefetching
+// once collapses 6 sequential client requests into 1 Postgres query.
+const HOMEPAGE_AD_PLACEMENTS = [
+  'between-articles',
+  'sidebar-top',
+  'sidebar-bottom',
+  'footer',
+] as const
+
 export default async function HomePage() {
-  const [siteSettings, categories, breakingResult, featuredResult, latestResult, mostReadResult] =
-    await Promise.all([
-      getSiteSettings(),
-      getCategories(),
-      listPublishedArticles({ isBreaking: true, limit: 5, depth: 0 }),
-      listPublishedArticles({ isFeatured: true, limit: 4 }),
-      listPublishedArticles({ limit: 12 }),
-      listPublishedArticles({ limit: 5, sort: '-views', depth: 1 }),
-    ])
+  const [
+    siteSettings,
+    categories,
+    breakingResult,
+    featuredResult,
+    latestResult,
+    mostReadResult,
+    homepageAds,
+  ] = await Promise.all([
+    getSiteSettings(),
+    getCategories(),
+    listPublishedArticles({ isBreaking: true, limit: 5, depth: 0 }),
+    listPublishedArticles({ isFeatured: true, limit: 4 }),
+    listPublishedArticles({ limit: 12 }),
+    listPublishedArticles({ limit: 5, sort: '-views', depth: 1 }),
+    getAdsForPlacements(HOMEPAGE_AD_PLACEMENTS),
+  ])
 
   const hero = await resolveHero(siteSettings, featuredResult.docs, latestResult.docs)
 
@@ -139,7 +160,7 @@ export default async function HomePage() {
         {hero.main && <HeroSection main={hero.main} secondary={hero.secondary} />}
 
         <div className="container-news py-2">
-          <AdSlot placement="between-articles" />
+          <AdSlot placement="between-articles" ad={homepageAds.get('between-articles')} />
         </div>
 
         <div className="container-news py-8">
@@ -154,7 +175,7 @@ export default async function HomePage() {
             </div>
 
             <div className="hidden space-y-4 lg:block">
-              <AdSlot placement="sidebar-top" />
+              <AdSlot placement="sidebar-top" ad={homepageAds.get('sidebar-top')} />
               <Sidebar
                 mostRead={mostRead.map((a) => ({
                   title: a.title,
@@ -164,7 +185,7 @@ export default async function HomePage() {
                 }))}
                 socialLinks={siteSettings.socialLinks}
               />
-              <AdSlot placement="sidebar-bottom" />
+              <AdSlot placement="sidebar-bottom" ad={homepageAds.get('sidebar-bottom')} />
             </div>
           </div>
 
@@ -174,7 +195,7 @@ export default async function HomePage() {
               phone readers; this puts one ad in the natural mobile
               flow without dragging in the social/most-read sidebar. */}
           <div className="mt-6 lg:hidden">
-            <AdSlot placement="sidebar-top" />
+            <AdSlot placement="sidebar-top" ad={homepageAds.get('sidebar-top')} />
           </div>
         </div>
 
@@ -204,7 +225,7 @@ export default async function HomePage() {
             if (idx === midIndex && visibleCats.length > 1) {
               items.push(
                 <div key={`ad-mid-${idx}`} className="container-news py-4 lg:hidden">
-                  <AdSlot placement="sidebar-bottom" />
+                  <AdSlot placement="sidebar-bottom" ad={homepageAds.get('sidebar-bottom')} />
                 </div>,
               )
             }
@@ -213,7 +234,7 @@ export default async function HomePage() {
         })()}
 
         <div className="container-news py-4">
-          <AdSlot placement="footer" />
+          <AdSlot placement="footer" ad={homepageAds.get('footer')} />
         </div>
       </main>
 
