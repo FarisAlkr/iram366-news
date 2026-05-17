@@ -545,6 +545,30 @@ table {
   gap: 12px;
 }
 
+// Section header that introduces a KPI band (e.g. "اليوم" vs "آخر 30 يوماً").
+// Sits between sections; lightweight typography so it doesn't compete with
+// the hero header.
+.iram-dash__section-head {
+  margin: 24px 0 8px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.iram-dash__section-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--iram-ink);
+  margin: 0;
+}
+
+.iram-dash__section-subtitle {
+  font-size: 13px;
+  color: var(--iram-ink-muted);
+  margin: 0;
+}
+
 .iram-kpi {
   background: var(--iram-surface);
   border: 1px solid var(--iram-border);
