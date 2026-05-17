@@ -2,6 +2,7 @@ import React from 'react'
 import { getPayload } from 'payload'
 
 import config from '@payload-config'
+import { fetchSiteAnalytics } from '@/lib/cloudflare-analytics'
 
 // ==========================================================================
 // Types
@@ -68,6 +69,8 @@ async function getStats(currentUser: UserRow | null) {
   const periodStart = new Date(today.getTime() - 29 * DAY_MS)
   const previousStart = new Date(today.getTime() - 59 * DAY_MS)
   const previousEnd = periodStart
+  const todayISO = today.toISOString()
+  const nowISO = now.toISOString()
 
   const [
     publishedCount,
@@ -85,6 +88,9 @@ async function getStats(currentUser: UserRow | null) {
     breakingCount,
     featuredCount,
     allArticlesForBars,
+    // Today-only data: small, scoped, fast queries.
+    todayArticleReads,
+    todayCfAnalytics,
   ] = await Promise.all([
     payload.count({ collection: 'articles', where: { status: { equals: 'published' } } }),
     payload.count({ collection: 'articles', where: { status: { equals: 'draft' } } }),
@@ -173,6 +179,24 @@ async function getStats(currentUser: UserRow | null) {
       limit: 200,
       depth: 1,
     }),
+
+    // Today's article reads (internal page_views since 00:00 local) —
+    // counts ONLY /articles/<slug> hits where ViewCounter fired. Used
+    // for the per-article "top read today" list and the engagement card.
+    // depth: 1 pulls the article relationship so we can show titles/slugs.
+    payload.find({
+      collection: 'page-views',
+      where: { date: { greater_than_equal: todayISO } },
+      limit: 10000,
+      depth: 1,
+      sort: '-date',
+    }),
+
+    // Today's site-wide pageviews + visitors from Cloudflare Web Analytics.
+    // Counts EVERY page hit (homepage, category, article, search, …), not
+    // just article reads. fetchSiteAnalytics returns null when CF creds
+    // aren't wired or the call fails — the render handles null gracefully.
+    fetchSiteAnalytics({ since: todayISO, until: nowISO }),
   ])
 
   // ------ Aggregate page views into daily + by-category ------
@@ -277,6 +301,60 @@ async function getStats(currentUser: UserRow | null) {
   const peakHour = viewsByHour.indexOf(Math.max(...viewsByHour))
   const peakHourStr = `${peakHour.toString().padStart(2, '0')}:00`
 
+  // ------ Today's metrics ------
+  // Internal article-read count (post hits to /api/articles/[slug]/view).
+  const todayInternalReads = todayArticleReads.totalDocs
+  // Top articles read today: group today's page_views by article_id, take
+  // the top 5. Each row carries the populated article ref via depth: 1.
+  type ArticleRefShape = {
+    id: number | string
+    title?: string
+    slug?: string
+    category?: { id: number | string; name?: string; color?: string } | number | string | null
+    featuredImage?:
+      | { url?: string; sizes?: { thumbnail?: { url?: string } } }
+      | number
+      | string
+      | null
+  }
+  type TodayViewRow = PageViewRow & { article?: ArticleRefShape | number | string | null }
+  const todayReadsByArticle = new Map<string, { article: ArticleRefShape; count: number }>()
+  for (const v of todayArticleReads.docs as unknown as TodayViewRow[]) {
+    const art = v.article
+    if (!art || typeof art !== 'object' || !('id' in art)) continue
+    const id = String(art.id)
+    const existing = todayReadsByArticle.get(id)
+    if (existing) existing.count++
+    else todayReadsByArticle.set(id, { article: art, count: 1 })
+  }
+  const topToday = Array.from(todayReadsByArticle.values())
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+    .map((entry, i) => {
+      const fi =
+        typeof entry.article.featuredImage === 'object' ? entry.article.featuredImage : null
+      const cat = typeof entry.article.category === 'object' ? entry.article.category : null
+      return {
+        rank: i + 1,
+        id: entry.article.id,
+        title: entry.article.title ?? '—',
+        slug: entry.article.slug ?? '',
+        count: entry.count,
+        imageUrl: fi?.sizes?.thumbnail?.url || fi?.url || null,
+        categoryName: cat?.name,
+        categoryColor: cat?.color || '#c8a84e',
+      }
+    })
+
+  // Cloudflare site-wide totals — null when CF creds aren't wired or the
+  // GraphQL call failed. Render handles null by showing a "—" placeholder.
+  const cfPageviewsToday = todayCfAnalytics?.pageviews ?? null
+  const cfVisitorsToday = todayCfAnalytics?.uniqueVisitors ?? null
+  const cfAvgPerVisitor =
+    cfPageviewsToday !== null && cfVisitorsToday !== null && cfVisitorsToday > 0
+      ? Math.round((cfPageviewsToday / cfVisitorsToday) * 10) / 10
+      : null
+
   return {
     user: currentUser,
     now,
@@ -300,6 +378,21 @@ async function getStats(currentUser: UserRow | null) {
         value: peakHourStr,
       },
     },
+    today: {
+      // Site-wide pageviews from Cloudflare. The headline "how many
+      // visits today" number — counts every page (homepage, articles,
+      // categories, search), not just article reads.
+      sitePageviews: cfPageviewsToday,
+      // Cloudflare's deduplicated visit count (30-min idle window).
+      uniqueVisitors: cfVisitorsToday,
+      // pageviews / visitors — engagement signal. 1.0 means every visitor
+      // only loaded one page; higher = browsing deeper.
+      avgPagesPerVisitor: cfAvgPerVisitor,
+      // Internal article reads — narrower than CF pageviews; counts only
+      // /articles/<slug> hits where the ViewCounter fired.
+      articleReads: todayInternalReads,
+    },
+    topToday,
     pipeline: {
       draft: draftCount.totalDocs,
       published: publishedCount.totalDocs,
@@ -782,7 +875,97 @@ export const AnalyticsWidget: React.FC = async () => {
         </div>
       </header>
 
-      {/* KPI CARDS */}
+      {/* TODAY KPIs — added per the client-facing dashboard request. Shows
+          today's snapshot alongside the existing 30-day overview below.
+          Three CF-sourced cards (site visits, unique visitors, avg pages /
+          visitor) + one internal card (articles read today). The CF cards
+          gracefully degrade to "—" when CF creds aren't wired or the API
+          call fails. */}
+      <div className="iram-dash__section-head">
+        <h2 className="iram-dash__section-title">اليوم</h2>
+        <p className="iram-dash__section-subtitle">نشاط الموقع منذ منتصف الليل (بتوقيت الخادم)</p>
+      </div>
+      <div className="iram-dash__kpis">
+        <div className="iram-kpi">
+          <div className="iram-kpi__head">
+            <span className="iram-kpi__icon iram-kpi__icon--info">
+              <I.World />
+            </span>
+            <span className="iram-kpi__label">زيارات الموقع اليوم</span>
+          </div>
+          <div className="iram-kpi__row">
+            <span className="iram-kpi__value">
+              {stats.today.sitePageviews === null ? '—' : formatNum(stats.today.sitePageviews)}
+            </span>
+          </div>
+          <div className="iram-kpi__hint">
+            {stats.today.sitePageviews === null
+              ? 'تحليلات Cloudflare غير متاحة الآن'
+              : 'جميع الصفحات: الرئيسية + المقالات + التصنيفات'}
+          </div>
+        </div>
+
+        <div className="iram-kpi">
+          <div className="iram-kpi__head">
+            <span className="iram-kpi__icon iram-kpi__icon--success">
+              <I.Eye />
+            </span>
+            <span className="iram-kpi__label">زوار مختلفون اليوم</span>
+          </div>
+          <div className="iram-kpi__row">
+            <span className="iram-kpi__value">
+              {stats.today.uniqueVisitors === null ? '—' : formatNum(stats.today.uniqueVisitors)}
+            </span>
+          </div>
+          <div className="iram-kpi__hint">
+            {stats.today.uniqueVisitors === null
+              ? 'تحليلات Cloudflare غير متاحة الآن'
+              : 'أشخاص مختلفون زاروا الموقع'}
+          </div>
+        </div>
+
+        <div className="iram-kpi">
+          <div className="iram-kpi__head">
+            <span className="iram-kpi__icon iram-kpi__icon--gold">
+              <I.Avg />
+            </span>
+            <span className="iram-kpi__label">متوسط الصفحات / زائر</span>
+          </div>
+          <div className="iram-kpi__row">
+            <span className="iram-kpi__value iram-kpi__value--sm">
+              {stats.today.avgPagesPerVisitor === null
+                ? '—'
+                : stats.today.avgPagesPerVisitor.toLocaleString('en-US', {
+                    minimumFractionDigits: 1,
+                    maximumFractionDigits: 1,
+                  })}
+            </span>
+          </div>
+          <div className="iram-kpi__hint">
+            {stats.today.avgPagesPerVisitor === null
+              ? 'تحليلات Cloudflare غير متاحة الآن'
+              : 'كلما زاد الرقم، زاد عمق التصفح'}
+          </div>
+        </div>
+
+        <div className="iram-kpi">
+          <div className="iram-kpi__head">
+            <span className="iram-kpi__icon iram-kpi__icon--warning">
+              <I.Flame />
+            </span>
+            <span className="iram-kpi__label">مقالات قُرئت اليوم</span>
+          </div>
+          <div className="iram-kpi__row">
+            <span className="iram-kpi__value">{formatNum(stats.today.articleReads)}</span>
+          </div>
+          <div className="iram-kpi__hint">عدد مرات فتح صفحات المقالات منذ منتصف الليل</div>
+        </div>
+      </div>
+
+      {/* KPI CARDS — existing 30-day overview */}
+      <div className="iram-dash__section-head">
+        <h2 className="iram-dash__section-title">آخر 30 يوماً</h2>
+      </div>
       <div className="iram-dash__kpis">
         <div className="iram-kpi">
           <div className="iram-kpi__head">
@@ -923,13 +1106,64 @@ export const AnalyticsWidget: React.FC = async () => {
         </div>
       </div>
 
+      {/* TOP ARTICLES TODAY — small list above the all-time top. Empty
+          state means no article got read yet today (early morning, or
+          quiet day). */}
+      {stats.topToday.length > 0 && (
+        <div className="iram-panel">
+          <div className="iram-panel__head">
+            <div>
+              <h3 className="iram-panel__title">
+                <I.Flame /> الأكثر قراءة اليوم
+              </h3>
+              <p className="iram-panel__subtitle">أفضل المقالات منذ منتصف الليل</p>
+            </div>
+          </div>
+          <div className="iram-top-list">
+            {stats.topToday.map((a) => (
+              <a key={a.id} href={`/admin/collections/articles/${a.id}`} className="iram-top-row">
+                <span
+                  className={`iram-top-row__rank${a.rank <= 3 ? 'iram-top-row__rank--gold' : ''}`}
+                >
+                  {a.rank}
+                </span>
+                {a.imageUrl ? (
+                  <img src={a.imageUrl} alt="" className="iram-top-row__thumb" />
+                ) : (
+                  <div className="iram-top-row__thumb iram-top-row__thumb--empty">
+                    <I.Image />
+                  </div>
+                )}
+                <div className="iram-top-row__body">
+                  <div className="iram-top-row__title">{a.title}</div>
+                  <div className="iram-top-row__meta">
+                    {a.categoryName && (
+                      <span
+                        className="iram-cat-pill"
+                        style={{ background: `${a.categoryColor}20`, color: a.categoryColor }}
+                      >
+                        {a.categoryName}
+                      </span>
+                    )}
+                    <span className="iram-top-row__views">
+                      <I.Eye />
+                      <span>{formatNum(a.count)}</span>
+                    </span>
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* TOP ARTICLES + CATEGORY BARS */}
       <div className="iram-dash__row iram-dash__row--2-1">
         <div className="iram-panel">
           <div className="iram-panel__head">
             <div>
               <h3 className="iram-panel__title">
-                <I.Flame /> الأكثر قراءة
+                <I.Flame /> الأكثر قراءة — كل الوقت
               </h3>
               <p className="iram-panel__subtitle">أفضل 5 مقالات حسب إجمالي المشاهدات</p>
             </div>
