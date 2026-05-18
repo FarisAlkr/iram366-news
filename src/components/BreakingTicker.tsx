@@ -27,15 +27,11 @@ export function BreakingTicker({ articles }: BreakingTickerProps) {
         <span aria-hidden className="w-[2px] flex-shrink-0 self-stretch bg-white/40" />
         <div className="relative flex-1 overflow-hidden ps-3">
           <div className="animate-ticker whitespace-nowrap py-1 text-base font-semibold">
+            {/* Two identical copies back-to-back. Each Run ends with a
+                trailing diamond so the two copies have equal width and
+                translateX(-50%) lines up Run2's start exactly where
+                Run1's start was — a true seamless loop. */}
             <TickerRun articles={articles} />
-            {/* Diamond between the two duplicated copies. Each TickerRun
-                inserts diamonds BETWEEN consecutive articles but not after
-                the last one — without this seam separator the visual rhythm
-                breaks where copy-1-end meets copy-2-start, and the eye
-                reads it as a stutter even though the math is seamless. */}
-            <span aria-hidden className="mx-4 opacity-60">
-              ◆
-            </span>
             <TickerRun articles={articles} aria-hidden />
           </div>
         </div>
@@ -58,7 +54,9 @@ function TickerRun({
           <Link href={`/articles/${article.slug}`} className="underline-offset-2 hover:underline">
             {article.title}
           </Link>
-          {i < articles.length - 1 && <span className="mx-4 opacity-60">◆</span>}
+          <span aria-hidden className="mx-4 opacity-60">
+            ◆
+          </span>
         </span>
       ))}
     </span>
