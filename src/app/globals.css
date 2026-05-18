@@ -139,17 +139,18 @@
    (the flex item it's inside, clipped by overflow-hidden), and 50% of
    that is half the PARENT'S width, not half the content's.
 
-   Movement direction: leftward (translateX decreases over time), so
-   visually the text flows right-to-left — matches Arabic reading order.
+   Movement direction: rightward (translateX increases over time), so
+   visually the text flows left-to-right — new headlines enter from the
+   left edge and exit on the right.
 
    Duration note: 30s ≈ 30 px/sec for the typical 5-article payload, slow
    enough to scan each headline. */
 @keyframes ticker-rtl {
   0% {
-    transform: translateX(50%);
+    transform: translateX(0%);
   }
   100% {
-    transform: translateX(0%);
+    transform: translateX(50%);
   }
 }
 
