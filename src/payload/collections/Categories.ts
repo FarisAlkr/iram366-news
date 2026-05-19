@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload'
+import { APIError, type CollectionConfig } from 'payload'
 
 import { isAdminOrEditor, isPublic } from '../access/index.ts'
 import { auditAfterChange, auditAfterDelete } from '../hooks/audit.ts'
@@ -90,6 +90,26 @@ export const Categories: CollectionConfig = {
     delete: isAdminOrEditor,
   },
   hooks: {
+    // Without this guard, deleting a category with articles assigned to it
+    // hits a Postgres NOT-NULL violation on articles.category_id (the FK is
+    // SET NULL but the column is NOT NULL — incompatible) and surfaces as
+    // an opaque 500 in the admin. Block the delete with a friendly Arabic
+    // message instead, telling the editor to rename the category rather
+    // than delete it.
+    beforeDelete: [
+      async ({ id, req }) => {
+        const { totalDocs } = await req.payload.count({
+          collection: 'articles',
+          where: { category: { equals: id } },
+        })
+        if (totalDocs > 0) {
+          throw new APIError(
+            'هذا التصنيف يحتوي على مقالات ولا يمكن حذفه. حاول تغيير اسمه بدلاً من ذلك.',
+            400,
+          )
+        }
+      },
+    ],
     afterChange: [auditAfterChange, revalidateCategoriesAfterChange],
     afterDelete: [auditAfterDelete, revalidateCategoriesAfterDelete],
   },
