@@ -283,6 +283,16 @@ export const SiteSettings: GlobalConfig = {
             description: 'يمكن إيقافه مؤقتاً في فترات الأحداث الجسيمة أو الحداد.',
           },
         },
+        {
+          name: 'enableEidSheep',
+          type: 'checkbox',
+          defaultValue: false,
+          label: 'إظهار خراف العيد المتساقطة',
+          admin: {
+            description:
+              'تأثير موسمي بمناسبة عيد الأضحى — خراف صغيرة تتساقط في الخلفية على جميع الصفحات. ابقِه مُطفأ خارج موسم العيد.',
+          },
+        },
       ],
     },
     {

@@ -6,6 +6,7 @@ import '../globals.css'
 import { BackToHomeFallback } from '@/components/BackToHomeFallback'
 import { Chatbot } from '@/components/Chatbot'
 import CursorInkMount from '@/components/CursorInkMount'
+import FallingSheepMount from '@/components/FallingSheepMount'
 import { ScrollProgress } from '@/components/ScrollProgress'
 import SocialHubMount from '@/components/SocialHubMount'
 import { SplashScreen } from '@/components/SplashScreen'
@@ -90,6 +91,9 @@ export default async function FrontendLayout({ children }: { children: React.Rea
   const showCursorInk = cursorInkEnvOn && cursorInkAdminOn
   const socialHubAdminOn = siteSettings.socialHub?.enabled !== false
   const showSocialHub = socialHubEnvOn && socialHubAdminOn
+  // Eid al-Adha falling-sheep overlay. Default is off (seasonal); the admin
+  // flips it on for the Eid window and back off afterward.
+  const showEidSheep = siteSettings.signatureUi?.enableEidSheep === true
   // Pass only the platforms the hub surfaces. YouTube and email stay
   // in the CMS — YouTube is intentionally hidden from this hub (the
   // footer link list handles it); email is a different channel
@@ -164,6 +168,7 @@ export default async function FrontendLayout({ children }: { children: React.Rea
         )}
         {showCursorInk && <CursorInkMount />}
         {showSocialHub && <SocialHubMount urls={socialUrls} />}
+        {showEidSheep && <FallingSheepMount />}
         {/* UserWay accessibility widget. data-position=8 docks it to the
             footer instead of floating — the bottom-left and bottom-right
             corners are already taken by the social hub and the chatbot. */}
