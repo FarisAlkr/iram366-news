@@ -1425,6 +1425,56 @@ body.has-pen-cursor input[type='reset'] {
   user-select: none;
 }
 
+/* ===== Eid al-Adha falling-sheep overlay =====
+   Seasonal effect. The layer is a fixed full-viewport stage; sheep are
+   absolutely positioned inside it, each animated by two keyframes running
+   in parallel: a vertical fall (top → bottom) and a horizontal sway. The
+   keyframes use translate3d so the compositor handles them off the main
+   thread. pointer-events: none means the layer never blocks UI clicks.
+   z-index sits above page content but below modals, chatbot, and the
+   social hub. */
+.iram-eid-sheep-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 30;
+}
+.iram-eid-sheep {
+  position: absolute;
+  top: -8vh;
+  display: block;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.18));
+  will-change: transform;
+  animation-name: iram-sheep-fall, iram-sheep-sway;
+  animation-timing-function: linear, ease-in-out;
+  animation-iteration-count: infinite, infinite;
+  animation-direction: normal, alternate;
+}
+@keyframes iram-sheep-fall {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 115vh, 0);
+  }
+}
+@keyframes iram-sheep-sway {
+  from {
+    margin-left: calc(var(--iram-sway, 16px) * -1);
+  }
+  to {
+    margin-left: var(--iram-sway, 16px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* The component already short-circuits under reduced motion, but this
+     keeps things safe if it ever renders (e.g. SSR fallback). */
+  .iram-eid-sheep-layer {
+    display: none;
+  }
+}
+
 /* ===== UserWay accessibility widget — hide auto-injected trigger button ===== */
 /* The widget loaded from cdn.userway.org injects its own floating "open"
    button into the DOM (typically bottom-left at our data-position=8). We

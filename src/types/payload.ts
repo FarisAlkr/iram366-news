@@ -166,6 +166,7 @@ export interface SiteSettings {
   signatureUi?: {
     enableCursorInk?: boolean
     enableFooterCamel?: boolean
+    enableEidSheep?: boolean
   } | null
   socialHub?: {
     enabled?: boolean
