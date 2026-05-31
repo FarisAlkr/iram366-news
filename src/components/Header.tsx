@@ -4,7 +4,7 @@ import type { Category, Media } from '@/types/payload'
 import { getWeatherTowns } from '@/lib/queries'
 import { AdSlot } from './AdSlot'
 import { BreakingTicker } from './BreakingTicker'
-import { SearchToggle } from './SearchToggle'
+import { CategoriesNav } from './CategoriesNav'
 import { WeatherDateBar } from './WeatherDateBar'
 
 interface HeaderProps {
@@ -14,7 +14,7 @@ interface HeaderProps {
   categories: Pick<Category, 'name' | 'slug'>[]
   /** Kept for compatibility with existing callers; no longer rendered. */
   logo?: Media | string | number | null
-  breakingArticles?: Array<{ title: string; slug: string }>
+  breakingArticles?: Array<{ title: string; slug: string; publishedAt?: string | null }>
 }
 
 /**
@@ -81,40 +81,19 @@ export async function Header({ siteName, categories, breakingArticles = [] }: He
         </Link>
       </div>
 
-      {/* STICKY band — categories + breaking ticker. Stays visible on scroll. */}
+      {/* STICKY band — categories only. CategoriesNav swaps the full strip
+          for a hamburger button once the reader has scrolled past the top
+          chrome, keeping the sticky bar short while still giving access to
+          every section via a dropdown. */}
       <header className="sticky top-0 z-50 bg-navy text-white shadow-[var(--shadow-nav)]">
-        {/* Categories on the right (RTL start), search on the left */}
-        <div className="container-news">
-          <div className="flex items-center gap-2 py-1.5 md:py-2">
-            <nav
-              className="scrollbar-hide -mx-2 flex flex-1 items-center gap-1 overflow-x-auto px-2 md:justify-center md:gap-2"
-              aria-label="التنقل الرئيسي"
-            >
-              <CategoryLink href="/" label="الرئيسية" />
-              {categories.map((cat) => (
-                <CategoryLink key={cat.slug} href={`/category/${cat.slug}`} label={cat.name} />
-              ))}
-            </nav>
-            <div className="flex-shrink-0">
-              <SearchToggle />
-            </div>
-          </div>
-        </div>
-
-        {/* Breaking ticker (only when there are breaking items) */}
-        {breakingArticles.length > 0 && <BreakingTicker articles={breakingArticles} />}
+        <CategoriesNav categories={categories} />
       </header>
-    </>
-  )
-}
 
-function CategoryLink({ href, label }: { href: string; label: string }) {
-  return (
-    <Link
-      href={href}
-      className="flex-shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 font-display text-sm font-medium transition-colors duration-150 hover:bg-white/10 md:px-4 md:text-base"
-    >
-      {label}
-    </Link>
+      {/* Breaking ticker — a redesigned, multi-row block (heading + playback
+          controls + horizontal item track), so it lives in the regular page
+          flow directly under the sticky bar instead of inside it. Renders
+          only when at least one breaking article exists. */}
+      {breakingArticles.length > 0 && <BreakingTicker articles={breakingArticles} />}
+    </>
   )
 }

@@ -153,6 +153,7 @@ export default async function HomePage() {
         breakingArticles={breaking.map((a) => ({
           title: a.title,
           slug: a.slug,
+          publishedAt: a.publishedAt ?? null,
         }))}
       />
 
