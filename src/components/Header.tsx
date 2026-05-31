@@ -18,15 +18,15 @@ interface HeaderProps {
 }
 
 /**
- * Site header — single sticky bar:
- *   Row 0 — weather + live date/time, with the site name (and a tiny logo
- *           icon next to it) centered between weather and the clock.
- *   Row 1 — categories nav + search button
- *   Row 2 — breaking-news ticker (only when there are breaking items)
+ * Site header — one sticky bar that holds three rows:
+ *   Row 0 — WeatherDateBar (live town + clock at the very top)
+ *   Row 1 — Three-part RTL brand wordmark (Arabic + logo + English)
+ *   Row 2 — CategoriesNav (full strip; collapses to a hamburger button +
+ *           dropdown once the reader has scrolled past 120px)
  *
- * The previous big brand banner (logo + name + tagline below the sticky)
- * was removed; the site name now lives inside the weather bar so the
- * top of the page is much tighter.
+ * Everything in this <header> stays pinned on scroll so the brand and the
+ * weather/time strip remain visible while reading. The breaking ticker is
+ * a sibling below the sticky and scrolls away with the page content.
  */
 export async function Header({ siteName, categories, breakingArticles = [] }: HeaderProps) {
   const towns = await getWeatherTowns()
@@ -39,17 +39,7 @@ export async function Header({ siteName, categories, breakingArticles = [] }: He
         <AdSlot placement="header-banner" />
       </div>
 
-      {/* Top, NON-sticky band — scrolls away on read.
-          Stack order top→bottom:
-            1. WeatherDateBar (live town + clock — informational, takes the
-               very top)
-            2. Three-part RTL wordmark (Arabic + logo + English) — brand
-               identity directly below the weather strip
-          Then the STICKY band (categories nav + breaking ticker) follows
-          as a sibling below. The wordmark used to sit above WeatherDateBar
-          but the editor preferred weather/clock at the very top so the
-          logo lands right above the navigation it brands. */}
-      <div className="bg-navy text-white">
+      <header className="sticky top-0 z-50 bg-navy text-white shadow-[var(--shadow-nav)]">
         <WeatherDateBar towns={towns} />
         {/* DOM order is Arabic → logo → English; flex on an RTL page lays
             them out right-to-left so the visual result is:
@@ -79,13 +69,6 @@ export async function Header({ siteName, categories, breakingArticles = [] }: He
             Iram 366 News
           </span>
         </Link>
-      </div>
-
-      {/* STICKY band — categories only. CategoriesNav swaps the full strip
-          for a hamburger button once the reader has scrolled past the top
-          chrome, keeping the sticky bar short while still giving access to
-          every section via a dropdown. */}
-      <header className="sticky top-0 z-50 bg-navy text-white shadow-[var(--shadow-nav)]">
         <CategoriesNav categories={categories} />
       </header>
 
