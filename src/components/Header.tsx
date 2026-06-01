@@ -56,35 +56,23 @@ export async function Header({ siteName, categories, breakingArticles = [] }: He
       <header className="sticky top-0 z-50 bg-navy text-white shadow-[var(--shadow-nav)]">
         {/* Brand row — three flex regions distributed with justify-between:
             menu button at the RTL start, brand wordmark Link in the middle,
-            theme + search buttons at the RTL end. The wordmark is two text
-            spans (Arabic + English); the previous logo image was removed at
-            client request, so the typography is the brand. RTL bidi places
-            the Arabic span at the start (right) and the LTR English span at
-            the end (left). The aria-label still uses `siteName` so the
-            accessible name reflects whatever the CMS records as the formal
-            site name, even if the displayed wordmark diverges. */}
+            theme + search buttons at the RTL end. The wordmark is the
+            Arabic site name; the English transliteration and the logo
+            image were both removed at client request, so the Arabic
+            typography is the entire brand. The aria-label still uses
+            `siteName` so the accessible name reflects whatever the CMS
+            records as the formal site name. */}
         <div className="container-news">
-          <div className="flex items-center justify-between gap-2 py-2 md:py-3">
+          <div className="flex items-center justify-between gap-2 py-3 md:py-4">
             <CategoryMenu categories={categories} />
 
             <Link
               href="/"
               aria-label={`${siteName} — الصفحة الرئيسية`}
-              className="flex min-w-0 items-center gap-2 transition-opacity hover:opacity-80 sm:gap-3"
+              className="flex min-w-0 items-center transition-opacity hover:opacity-80"
             >
-              {/* Arabic font-size is intentionally one Tailwind step
-                  below the English span: Kufi Arabic glyphs are visually
-                  larger than Latin glyphs at the same point size, so
-                  matching the CSS font-size leaves the Arabic looking
-                  bigger. Dropping one step gives equal optical size. */}
-              <span className="min-w-0 whitespace-nowrap font-display text-sm font-extrabold tracking-tight text-white sm:text-base md:text-lg">
+              <span className="min-w-0 whitespace-nowrap font-display text-lg font-extrabold tracking-tight text-white sm:text-xl md:text-2xl">
                 إرم الإخبارية
-              </span>
-              <span
-                dir="ltr"
-                className="min-w-0 whitespace-nowrap font-display text-base font-bold tracking-tight text-white/85 sm:text-lg md:text-xl"
-              >
-                iram news 366
               </span>
             </Link>
 
