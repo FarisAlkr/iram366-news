@@ -209,9 +209,9 @@ export function WeatherDateBar({ towns: customTowns }: WeatherDateBarProps = {})
   const formatted = now ? formatNow(now) : null
 
   return (
-    <div className="relative z-[60] border-b border-white/10 bg-navy-dark/70 text-base text-white/85 md:text-lg">
+    <div className="relative z-[60] border-b border-white/10 bg-navy-dark/70 text-xs text-white/85 md:text-sm">
       <div className="container-news">
-        <div className="relative flex h-16 items-center justify-between">
+        <div className="relative flex h-10 items-center justify-between md:h-12">
           {/* Brand display moved to the three-part wordmark in Header.tsx;
               this bar is now weather + town picker (right side, RTL start)
               and live date/time (left side, RTL end) only. */}
