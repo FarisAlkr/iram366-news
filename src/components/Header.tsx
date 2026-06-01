@@ -20,17 +20,23 @@ interface HeaderProps {
 }
 
 /**
- * Site header — one sticky bar that holds two rows:
- *   Row 0 — WeatherDateBar (live town + clock at the very top)
- *   Row 1 — Combined chrome: hamburger menu (RTL start), brand wordmark
- *           centered, theme + search buttons (RTL end). The dedicated
- *           category-strip row was removed; the hamburger is now the
- *           sole entry point for section navigation, opening a dropdown
- *           that lists every category.
+ * Site header — split into two pieces:
  *
- * Everything in this <header> stays pinned on scroll so the brand and the
- * weather/time strip remain visible while reading. The breaking ticker is
- * a sibling below the sticky and scrolls away with the page content.
+ *   • WeatherDateBar (live town + clock) sits in NORMAL FLOW at the very
+ *     top of the page. It scrolls away naturally as the reader moves
+ *     down, freeing ~64px of viewport. A previous version animated it
+ *     inside the sticky <header>, but shrinking a sticky element's box
+ *     while pinned causes scroll-anchoring jumps ("the page takes me
+ *     up") and reflows the row below on every animation frame ("upper
+ *     bars lag"). Returning the bar to flow eliminates both.
+ *
+ *   • Sticky <header> below contains the single combined chrome row:
+ *     hamburger menu (RTL start), brand wordmark Link (centered),
+ *     theme + search buttons (RTL end). The hamburger opens a dropdown
+ *     listing every section — sole entry point for category navigation.
+ *
+ * The breaking ticker stays as a sibling below the sticky and scrolls
+ * away with the page content.
  */
 export async function Header({ siteName, categories, breakingArticles = [] }: HeaderProps) {
   const towns = await getWeatherTowns()
@@ -43,19 +49,20 @@ export async function Header({ siteName, categories, breakingArticles = [] }: He
         <AdSlot placement="header-banner" />
       </div>
 
-      <header className="sticky top-0 z-50 bg-navy text-white shadow-[var(--shadow-nav)]">
-        <WeatherDateBar towns={towns} />
+      {/* Non-sticky weather/date strip — scrolls away naturally so the
+          sticky bar below stays a constant height (no reflow jank). */}
+      <WeatherDateBar towns={towns} />
 
+      <header className="sticky top-0 z-50 bg-navy text-white shadow-[var(--shadow-nav)]">
         {/* Brand row — three flex regions distributed with justify-between:
             menu button at the RTL start, brand wordmark Link in the middle,
-            theme + search buttons at the RTL end. The wordmark used to wrap
-            the whole row in one <Link>; that's no longer possible now that
-            the row contains real buttons (hamburger, theme, search), so the
-            Link is scoped to just the name+logo cluster.
-            DOM order inside the Link is Arabic → logo → English; RTL flex
-            lays them out as: ┌ Arabic ┬ logo ┬ English ┐ (Arabic at the
-            RTL start). The English name is hidden below `sm` so the row
-            breathes alongside the action buttons on phones. */}
+            theme + search buttons at the RTL end. The wordmark is two text
+            spans (Arabic + English); the previous logo image was removed at
+            client request, so the typography is the brand. RTL bidi places
+            the Arabic span at the start (right) and the LTR English span at
+            the end (left). The aria-label still uses `siteName` so the
+            accessible name reflects whatever the CMS records as the formal
+            site name, even if the displayed wordmark diverges. */}
         <div className="container-news">
           <div className="flex items-center justify-between gap-2 py-2 md:py-3">
             <CategoryMenu categories={categories} />
@@ -63,23 +70,16 @@ export async function Header({ siteName, categories, breakingArticles = [] }: He
             <Link
               href="/"
               aria-label={`${siteName} — الصفحة الرئيسية`}
-              className="flex min-w-0 items-center gap-2 transition-opacity hover:opacity-80 sm:gap-3 md:gap-4"
+              className="flex min-w-0 items-center gap-2 transition-opacity hover:opacity-80 sm:gap-3"
             >
-              <span className="iram-bar-brand__arabic min-w-0 whitespace-nowrap font-display text-sm font-extrabold tracking-tight text-white sm:text-lg md:text-2xl">
-                {siteName}
+              <span className="min-w-0 whitespace-nowrap font-display text-base font-extrabold tracking-tight text-white sm:text-xl md:text-2xl">
+                إرم الإخبارية
               </span>
-              {/* eslint-disable-next-line @next/next/no-img-element -- needs CSS mask, Next/Image strips style */}
-              <img
-                src="/splash-logo.jpeg"
-                alt=""
-                aria-hidden
-                className="iram-bar-brand__icon h-8 w-auto flex-shrink-0 sm:h-12 md:h-16"
-              />
               <span
                 dir="ltr"
-                className="iram-bar-brand__english hidden min-w-0 whitespace-nowrap font-display font-extrabold tracking-tight text-white sm:inline-block sm:text-lg md:text-2xl"
+                className="min-w-0 whitespace-nowrap font-display text-sm font-bold tracking-tight text-white/85 sm:text-lg md:text-xl"
               >
-                Iram 366 News
+                iram news 366
               </span>
             </Link>
 

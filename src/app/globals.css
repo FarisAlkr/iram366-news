@@ -1209,13 +1209,6 @@
   }
 }
 
-/* Tiny logo icon next to the site name in the weather/date bar — soft
-   radial mask so the JPEG's teal background blends into the navy bar. */
-.iram-bar-brand__icon {
-  -webkit-mask-image: radial-gradient(ellipse at center, black 55%, transparent 92%);
-  mask-image: radial-gradient(ellipse at center, black 55%, transparent 92%);
-}
-
 /* ===== Developer credit — gentle gold shimmer ===== */
 .iram-credit-shine {
   font-weight: 600;
