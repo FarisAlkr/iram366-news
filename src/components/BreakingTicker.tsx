@@ -55,6 +55,7 @@ function BreakingTickerInner({
   const [index, setIndex] = useState(0)
   const [playing, setPlaying] = useState(true)
   const itemRefs = useRef<Array<HTMLAnchorElement | null>>([])
+  const trackRef = useRef<HTMLDivElement>(null)
 
   const goTo = useCallback(
     (next: number) => {
@@ -82,18 +83,32 @@ function BreakingTickerInner({
     return () => window.clearInterval(id)
   }, [playing, intervalMs, articles.length])
 
-  // Smoothly bring the active item into the viewport. `inline: 'center'`
-  // works in both writing directions — the browser handles RTL math.
-  // `behavior: 'smooth'` is automatically downgraded to 'auto' under
-  // `prefers-reduced-motion`, so explicit motion-reduce branching here
-  // would be redundant.
+  // Center the active item inside the horizontal track WITHOUT touching
+  // window scroll. `Element.scrollIntoView` was tempting here but walks
+  // every scrollable ancestor (including the document) — `block: 'nearest'`
+  // doesn't opt out, it just minimizes the vertical jump. The net effect
+  // was that every 5-second auto-advance dragged a reader who'd scrolled
+  // past the ticker back up to it. Doing the math manually and calling
+  // `track.scrollTo({ left })` keeps the scroll strictly local.
   useEffect(() => {
+    const track = trackRef.current
     const node = itemRefs.current[index]
-    if (!node) return
-    node.scrollIntoView({
-      behavior: 'smooth',
-      inline: 'center',
-      block: 'nearest',
+    if (!track || !node) return
+
+    const trackBox = track.getBoundingClientRect()
+    const nodeBox = node.getBoundingClientRect()
+    // Horizontal position of the node inside the track's scrollable
+    // content (works correctly under both ltr and rtl, since we're using
+    // bounding-rect deltas rather than relying on `offsetLeft` semantics).
+    const nodeStartInTrack = nodeBox.left - trackBox.left + track.scrollLeft
+    const target = nodeStartInTrack + nodeBox.width / 2 - track.clientWidth / 2
+
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
+    track.scrollTo({
+      left: target,
+      behavior: reduce ? 'auto' : 'smooth',
     })
   }, [index])
 
@@ -128,7 +143,10 @@ function BreakingTickerInner({
       </div>
 
       <div className="mt-5 overflow-hidden">
-        <div className="scrollbar-hide flex gap-4 overflow-x-auto scroll-smooth motion-reduce:scroll-auto">
+        <div
+          ref={trackRef}
+          className="scrollbar-hide flex gap-4 overflow-x-auto scroll-smooth motion-reduce:scroll-auto"
+        >
           {articles.map((article, i) => {
             const isActive = i === index
             const stamp = formatClock(article.publishedAt)
