@@ -62,7 +62,7 @@ export function Sidebar({ mostRead, socialLinks }: SidebarProps) {
   return (
     <aside className="space-y-8">
       {socialEntries.length > 0 && (
-        <div className="rounded-lg bg-white p-5 shadow-[var(--shadow-card)]">
+        <div className="rounded-lg bg-surface p-5 shadow-[var(--shadow-card)]">
           <h3 className="mb-4 flex items-center gap-2 font-display text-base font-bold">
             <span className="inline-block h-5 w-1 rounded-full bg-accent-gold" />
             تابعنا
@@ -89,7 +89,7 @@ export function Sidebar({ mostRead, socialLinks }: SidebarProps) {
       )}
 
       {mostRead.length > 0 && (
-        <div className="rounded-lg bg-white p-5 shadow-[var(--shadow-card)]">
+        <div className="rounded-lg bg-surface p-5 shadow-[var(--shadow-card)]">
           <h3 className="mb-4 flex items-center gap-2 font-display text-base font-bold">
             <span className="inline-block h-5 w-1 rounded-full bg-accent-red" />
             الأكثر قراءة

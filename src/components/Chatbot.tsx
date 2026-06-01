@@ -139,7 +139,7 @@ export function Chatbot() {
       {open && (
         <div
           dir="rtl"
-          className="fixed bottom-24 start-5 z-[60] flex max-h-[70vh] w-[min(92vw,380px)] flex-col overflow-hidden rounded-xl border border-ink/10 bg-white text-ink shadow-2xl"
+          className="fixed bottom-24 start-5 z-[60] flex max-h-[70vh] w-[min(92vw,380px)] flex-col overflow-hidden rounded-xl border border-ink/10 bg-surface text-ink shadow-2xl"
         >
           <div className="flex-shrink-0 bg-navy px-4 py-3 text-white">
             <h3 className="font-display text-base font-bold">مساعد إرم 366</h3>
@@ -222,7 +222,7 @@ export function Chatbot() {
                 onKeyDown={(e) => e.key === 'Enter' && ask()}
                 disabled={loading}
                 placeholder="مثال: من طوّر هذا الموقع؟"
-                className="min-w-0 flex-1 rounded-full border border-ink/20 px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-gold disabled:opacity-50"
+                className="min-w-0 flex-1 rounded-full border border-ink/20 bg-surface px-3.5 py-2 text-sm text-ink placeholder:text-[var(--color-ink-muted)] focus:outline-none focus:ring-2 focus:ring-accent-gold disabled:opacity-50"
               />
               <button
                 type="button"

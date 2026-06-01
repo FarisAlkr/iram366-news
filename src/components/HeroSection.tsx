@@ -19,7 +19,7 @@ export function HeroSection({ main, secondary }: HeroProps) {
     <section className="container-news py-6">
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Link href={`/articles/${main.slug}`} className="group relative block lg:col-span-2">
-          <article className="relative overflow-hidden rounded-lg bg-white shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)] lg:bg-transparent lg:shadow-none lg:hover:translate-y-0 lg:hover:shadow-none">
+          <article className="relative overflow-hidden rounded-lg bg-surface shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)] lg:bg-transparent lg:shadow-none lg:hover:translate-y-0 lg:hover:shadow-none">
             <div className="relative aspect-[16/9] overflow-hidden lg:aspect-[2/1]">
               {mainImage && (
                 <Image
@@ -87,7 +87,7 @@ function SecondaryHeroCard({ article }: { article: Article }) {
 
   return (
     <Link href={`/articles/${article.slug}`} className="group relative block flex-1">
-      <article className="relative h-full overflow-hidden rounded-lg bg-white shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)] lg:min-h-[180px] lg:bg-transparent lg:shadow-none lg:hover:translate-y-0 lg:hover:shadow-none">
+      <article className="relative h-full overflow-hidden rounded-lg bg-surface shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)] lg:min-h-[180px] lg:bg-transparent lg:shadow-none lg:hover:translate-y-0 lg:hover:shadow-none">
         <div className="relative aspect-[16/9] overflow-hidden lg:absolute lg:inset-0 lg:aspect-auto">
           {image && (
             <Image

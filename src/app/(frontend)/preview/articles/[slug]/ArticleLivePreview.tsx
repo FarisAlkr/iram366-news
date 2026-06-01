@@ -113,7 +113,7 @@ export const ArticleLivePreview: React.FC<Props> = ({ initialData, categories, s
             </div>
           )}
 
-          <div className="prose prose-lg mb-8 max-w-none">
+          <div className="prose prose-lg mb-8 max-w-none dark:prose-invert">
             {article.body ? (
               <RichText content={article.body} />
             ) : (

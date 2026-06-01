@@ -35,7 +35,7 @@ export default async function AboutPage() {
             </p>
           </header>
 
-          <section dir="rtl" className="prose prose-lg max-w-none">
+          <section dir="rtl" className="prose prose-lg max-w-none dark:prose-invert">
             <h2>رسالتنا</h2>
             <p>
               تأسّست <strong>إرم 366 الإخبارية</strong> في عام 2026 لتكون منصةً إخبارية مستقلة تخدم

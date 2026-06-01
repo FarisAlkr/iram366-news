@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import type { Category } from '@/types/payload'
 import { SearchToggle } from './SearchToggle'
+import { ThemeToggle } from './ThemeToggle'
 
 interface Props {
   categories: Pick<Category, 'name' | 'slug'>[]
@@ -98,7 +99,8 @@ export function CategoriesNav({ categories }: Props) {
               ))}
             </nav>
           )}
-          <div className="ms-auto flex-shrink-0">
+          <div className="ms-auto flex flex-shrink-0 items-center gap-1">
+            <ThemeToggle />
             <SearchToggle />
           </div>
         </div>

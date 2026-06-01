@@ -49,7 +49,7 @@ export default async function AccessibilityStatementPage() {
           </header>
 
           {/* ARABIC --------------------------------------------------------- */}
-          <section dir="rtl" lang="ar" className="prose prose-lg max-w-none">
+          <section dir="rtl" lang="ar" className="prose prose-lg max-w-none dark:prose-invert">
             <h2>التزامنا بإمكانية الوصول</h2>
             <p>
               يلتزم موقع <strong>إرم 366 الإخبارية</strong> بتوفير محتوى رقمي يمكن لكل الناس الوصول
@@ -145,7 +145,7 @@ export default async function AccessibilityStatementPage() {
           <section
             dir="ltr"
             lang="he"
-            className="prose prose-lg mt-12 max-w-none border-t border-[var(--color-border)] pt-10"
+            className="prose prose-lg mt-12 max-w-none border-t border-[var(--color-border)] pt-10 dark:prose-invert"
           >
             <h2>הצהרת נגישות</h2>
             <p>

@@ -84,7 +84,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
               defaultValue={trimmedQuery}
               maxLength={MAX_QUERY_LEN}
               placeholder="ابحث في الأخبار..."
-              className="w-full rounded-lg border border-[var(--color-border)] bg-white px-5 py-3 font-body text-lg outline-none transition-colors duration-150 focus:border-accent-red"
+              className="w-full rounded-lg border border-[var(--color-border)] bg-surface px-5 py-3 font-body text-lg outline-none transition-colors duration-150 focus:border-accent-red"
               dir="rtl"
               aria-label="بحث"
             />
@@ -137,7 +137,7 @@ function EmptyState({
           <Link
             key={cat.slug}
             href={`/category/${cat.slug}`}
-            className="rounded-full bg-white px-4 py-2 text-sm font-medium shadow-[var(--shadow-card)] transition-all duration-150 hover:shadow-[var(--shadow-card-hover)]"
+            className="rounded-full bg-surface px-4 py-2 text-sm font-medium shadow-[var(--shadow-card)] transition-all duration-150 hover:shadow-[var(--shadow-card-hover)]"
           >
             {cat.name}
           </Link>

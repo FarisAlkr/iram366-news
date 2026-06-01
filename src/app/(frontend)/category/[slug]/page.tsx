@@ -132,7 +132,7 @@ function Pagination({
             className={`flex h-10 w-10 items-center justify-center rounded text-sm font-medium transition-colors duration-150 ${
               isCurrent
                 ? 'bg-accent-red text-white'
-                : 'bg-white text-ink shadow-[var(--shadow-card)] hover:bg-cream-dark'
+                : 'bg-surface text-ink shadow-[var(--shadow-card)] hover:bg-cream-dark'
             }`}
           >
             {page.toLocaleString('ar-EG')}

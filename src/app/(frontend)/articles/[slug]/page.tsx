@@ -256,7 +256,7 @@ export default async function ArticlePage({ params }: PageProps) {
               while reading, on both desktop and mobile. */}
           <ZoomControls />
 
-          <div className="prose-zoomable prose prose-lg mb-8 max-w-none">
+          <div className="prose-zoomable prose prose-lg mb-8 max-w-none dark:prose-invert">
             <RichText content={article.body} />
           </div>
 

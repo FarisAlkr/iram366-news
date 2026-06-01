@@ -30,7 +30,7 @@ export default async function PrivacyPolicyPage() {
       />
 
       <main className="container-news py-10">
-        <article className="prose prose-lg mx-auto max-w-[var(--content-width)]" dir="rtl">
+        <article className="prose prose-lg mx-auto max-w-[var(--content-width)] dark:prose-invert" dir="rtl">
           <header className="mb-6 border-b border-[var(--color-border)] pb-6">
             <h1 className="mb-2 font-display font-extrabold text-[var(--font-size-h1)]">
               سياسة الخصوصية

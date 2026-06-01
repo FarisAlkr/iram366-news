@@ -41,7 +41,7 @@ export default async function ContactPage() {
             </p>
           </header>
 
-          <section className="prose prose-lg max-w-none">
+          <section className="prose prose-lg max-w-none dark:prose-invert">
             <h2>القنوات الرسمية</h2>
 
             <h3>📧 البريد الإلكتروني للتحرير</h3>

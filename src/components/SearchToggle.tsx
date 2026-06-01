@@ -86,12 +86,12 @@ export function SearchToggle() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="ابحث في الأخبار..."
-                className="w-full rounded-lg bg-white px-6 py-4 font-body text-xl text-ink shadow-2xl outline-none placeholder:text-[var(--color-ink-muted)] md:text-2xl"
+                className="w-full rounded-lg bg-surface px-6 py-4 font-body text-xl text-ink shadow-2xl outline-none placeholder:text-[var(--color-ink-muted)] md:text-2xl"
                 dir="rtl"
               />
             </form>
             {suggestions.length > 0 && (
-              <div className="mt-2 overflow-hidden rounded-lg bg-white shadow-2xl">
+              <div className="mt-2 overflow-hidden rounded-lg bg-surface shadow-2xl">
                 {suggestions.map((s) => (
                   <a
                     key={s.slug}

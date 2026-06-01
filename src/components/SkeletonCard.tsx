@@ -1,6 +1,6 @@
 export function SkeletonCard() {
   return (
-    <div className="overflow-hidden rounded-lg bg-white shadow-[var(--shadow-card)]">
+    <div className="overflow-hidden rounded-lg bg-surface shadow-[var(--shadow-card)]">
       <div className="skeleton aspect-[16/9]" />
       <div className="space-y-3 p-4">
         <div className="skeleton h-3 w-16" />

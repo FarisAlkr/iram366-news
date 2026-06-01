@@ -10,6 +10,7 @@ import FallingSheepMount from '@/components/FallingSheepMount'
 import { ScrollProgress } from '@/components/ScrollProgress'
 import SocialHubMount from '@/components/SocialHubMount'
 import { SplashScreen } from '@/components/SplashScreen'
+import { ThemeScript } from '@/components/ThemeScript'
 import { getSiteSettings } from '@/lib/queries'
 
 const ibmPlex = IBM_Plex_Sans_Arabic({
@@ -145,7 +146,14 @@ export default async function FrontendLayout({ children }: { children: React.Rea
       lang="ar"
       dir="rtl"
       className={`${ibmPlex.variable} ${notoKufi.variable} ${amiri.variable}`}
+      suppressHydrationWarning
     >
+      <head>
+        {/* MUST be the first script in <head> so it executes before the
+            body paints — sets `.dark` on <html> from localStorage / system
+            preference and prevents a flash of the wrong theme. */}
+        <ThemeScript />
+      </head>
       <body className="bg-cream font-body text-ink antialiased">
         <script
           type="application/ld+json"

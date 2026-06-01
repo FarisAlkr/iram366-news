@@ -62,7 +62,7 @@ export function ArticleCard({ article, category, variant = 'default' }: ArticleC
   if (variant === 'compact') {
     return (
       <Link href={href} className="iram-card-in group block">
-        <article className="duration-250 overflow-hidden rounded bg-white shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]">
+        <article className="duration-250 overflow-hidden rounded bg-surface shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]">
           <div className="relative aspect-[3/2] overflow-hidden">
             {image && (
               <Image
@@ -92,7 +92,7 @@ export function ArticleCard({ article, category, variant = 'default' }: ArticleC
 
   return (
     <Link href={href} className="group block">
-      <article className="duration-250 overflow-hidden rounded-lg bg-white shadow-[var(--shadow-card)] transition-all hover:-translate-y-1 hover:shadow-[var(--shadow-card-hover)]">
+      <article className="duration-250 overflow-hidden rounded-lg bg-surface shadow-[var(--shadow-card)] transition-all hover:-translate-y-1 hover:shadow-[var(--shadow-card-hover)]">
         <div className="relative aspect-[16/9] overflow-hidden">
           {image && (
             <Image

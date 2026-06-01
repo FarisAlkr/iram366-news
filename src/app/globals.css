@@ -4,17 +4,32 @@
 
 /* ===== Design System CSS Variables ===== */
 :root {
-  /* Colors — Brand */
+  /* Colors — Brand (fixed in both themes) */
   --color-navy: #0a2a2f;
   --color-navy-light: #133a40;
   --color-navy-dark: #071e22;
-  --color-cream: #fafaf9;
-  --color-cream-dark: #f5f5f0;
   --color-accent-red: #c8a84e;
   --color-accent-red-dark: #b0923e;
   --color-accent-gold: #c8a84e;
   --color-accent-gold-dark: #b0923e;
+
+  /* Theme-aware tokens. The values below are the LIGHT theme; .dark
+     overrides them further down. Everything that should respect the
+     user's theme choice reads through these vars (directly via
+     var(--color-X) or transitively via the cream/ink/surface Tailwind
+     aliases that point at them). */
+  --color-bg: #fafaf9; /* page background */
+  --color-surface: #ffffff; /* cards, elevated content */
+  --color-surface-2: #ffffff; /* dropdowns, modal panels */
+  --color-surface-overlay: rgba(255, 255, 255, 0.95); /* translucent floating pills */
+  --color-hover-overlay: rgba(255, 255, 255, 0.6); /* hover wash inside translucent pills */
+  --color-cream: #fafaf9; /* legacy alias of --color-bg, kept for direct usages */
+  --color-cream-dark: #f5f5f0; /* hover state of cream surfaces */
   --color-ink: #1a1a1a;
+  /* Parallel RGB-triplet form of --color-ink so Tailwind's opacity
+     modifiers (bg-ink/5, text-ink/60, etc.) keep working — they need a
+     channel-space placeholder and `var(...)` would otherwise break. */
+  --color-ink-rgb: 26 26 26;
   --color-ink-light: #4a4a4a;
   --color-ink-muted: #6b7280;
   --color-border: #e5e5e0;
@@ -53,6 +68,40 @@
   --max-width: 1280px;
   --content-width: 720px;
   --sidebar-width: 320px;
+}
+
+/* ===== Dark theme overrides =====
+   Activated by `class="dark"` on <html>; ThemeProvider applies/removes
+   the class based on the user's persisted choice + system preference,
+   while ThemeScript runs an inline snippet before hydration so the
+   page never paints in the wrong theme. */
+.dark {
+  /* Page surfaces — a warm, slightly cool-tinted near-black that
+     harmonises with the navy header without matching it exactly. */
+  --color-bg: #0b1418;
+  --color-surface: #131c20;
+  --color-surface-2: #1c262b;
+  --color-surface-overlay: rgba(19, 28, 32, 0.95);
+  --color-hover-overlay: rgba(255, 255, 255, 0.08);
+  --color-cream: #131c20;
+  --color-cream-dark: #1c262b;
+
+  /* Type — warm off-white that matches the brand cream; muted variants
+     keep their relative weight so existing hierarchy reads correctly. */
+  --color-ink: #f0eee8;
+  --color-ink-rgb: 240 238 232;
+  --color-ink-light: #c5c5be;
+  --color-ink-muted: #8e9296;
+
+  /* Borders — darker, lower-contrast lines so cards still separate
+     without ringing the eye. */
+  --color-border: #26323a;
+  --color-border-dark: #3a4751;
+
+  /* Shadows are deeper on dark surfaces — the same alpha looks washed
+     out against a near-black background. */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 10px 25px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.35);
 }
 
 /* ===== Base Styles ===== */
@@ -200,7 +249,7 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--color-surface);
   border: 2px solid var(--color-border-dark);
   transform: translate(-50%, -50%);
   cursor: pointer;
@@ -315,7 +364,7 @@
 
 .ad-slot__body {
   padding: 12px 14px;
-  background: #fff;
+  background: var(--color-surface);
   border-top: 1px solid var(--color-border);
 }
 
@@ -529,7 +578,7 @@
   align-items: center;
   gap: 4px;
   padding: 4px;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--color-surface-overlay);
   backdrop-filter: blur(8px);
   border: 1px solid var(--color-border);
   border-radius: 999px;
@@ -561,7 +610,7 @@
   &__btn {
     appearance: none;
     border: none;
-    background: #fff;
+    background: var(--color-surface);
     color: var(--color-ink);
     cursor: pointer;
     height: 32px;
@@ -625,7 +674,7 @@
     transition: background 0.12s ease;
 
     &:hover:not(:disabled) {
-      background: rgba(255, 255, 255, 0.6);
+      background: var(--color-hover-overlay);
     }
 
     &:disabled {
@@ -709,7 +758,7 @@
 
   &__caption {
     padding: 8px 12px;
-    background: #fff;
+    background: var(--color-surface);
     font-size: 0.8125rem;
     color: var(--color-ink-light);
     border-top: 1px solid var(--color-border);
