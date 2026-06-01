@@ -72,12 +72,12 @@ export async function Header({ siteName, categories, breakingArticles = [] }: He
               aria-label={`${siteName} — الصفحة الرئيسية`}
               className="flex min-w-0 items-center gap-2 transition-opacity hover:opacity-80 sm:gap-3"
             >
-              <span className="min-w-0 whitespace-nowrap font-display text-base font-extrabold tracking-tight text-white sm:text-xl md:text-2xl">
+              <span className="min-w-0 whitespace-nowrap font-display text-base font-extrabold tracking-tight text-white sm:text-lg md:text-xl">
                 إرم الإخبارية
               </span>
               <span
                 dir="ltr"
-                className="min-w-0 whitespace-nowrap font-display text-sm font-bold tracking-tight text-white/85 sm:text-lg md:text-xl"
+                className="min-w-0 whitespace-nowrap font-display text-base font-bold tracking-tight text-white/85 sm:text-lg md:text-xl"
               >
                 iram news 366
               </span>
