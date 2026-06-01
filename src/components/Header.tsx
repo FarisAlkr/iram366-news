@@ -72,7 +72,7 @@ export async function Header({ siteName, categories, breakingArticles = [] }: He
               className="flex min-w-0 items-center transition-opacity hover:opacity-80"
             >
               <span className="min-w-0 whitespace-nowrap font-display text-lg font-extrabold tracking-tight text-white sm:text-xl md:text-2xl">
-                إرم الإخبارية
+                إرم الإخبارية 366
               </span>
             </Link>
 
