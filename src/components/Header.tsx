@@ -72,7 +72,12 @@ export async function Header({ siteName, categories, breakingArticles = [] }: He
               aria-label={`${siteName} — الصفحة الرئيسية`}
               className="flex min-w-0 items-center gap-2 transition-opacity hover:opacity-80 sm:gap-3"
             >
-              <span className="min-w-0 whitespace-nowrap font-display text-base font-extrabold tracking-tight text-white sm:text-lg md:text-xl">
+              {/* Arabic font-size is intentionally one Tailwind step
+                  below the English span: Kufi Arabic glyphs are visually
+                  larger than Latin glyphs at the same point size, so
+                  matching the CSS font-size leaves the Arabic looking
+                  bigger. Dropping one step gives equal optical size. */}
+              <span className="min-w-0 whitespace-nowrap font-display text-sm font-extrabold tracking-tight text-white sm:text-base md:text-lg">
                 إرم الإخبارية
               </span>
               <span
