@@ -3,28 +3,29 @@
  * in the wrong theme.
  *
  * Selection order (first match wins):
- *   1. `localStorage["iram366:theme"]` if it's `"dark"` or `"light"`
- *   2. `matchMedia('(prefers-color-scheme: dark)').matches` → dark
- *   3. light (default)
+ *   1. `localStorage["iram366:theme"] === "light"` → light (the only way
+ *      to land in light mode is an explicit, persisted user choice)
+ *   2. dark (brand default for every other case — fresh visitors, system
+ *      preference, missing localStorage, broken matchMedia, all land here)
  *
- * The script is wrapped in a try/catch because some browsers (Safari
- * private mode historically, plus certain WebViews) throw on localStorage
- * access — we'd rather fall through to system preference than break the
- * whole page. The same string keys are used by ThemeProvider so the two
- * stay in lockstep.
+ * Wrapped in try/catch because some browsers (Safari private mode
+ * historically, sandboxed WebViews) throw on localStorage access — we'd
+ * rather fall through to the dark default than break the whole page.
+ * The same string keys are used by useTheme so the two stay in lockstep.
  */
 
 const THEME_INIT = `(function() {
   try {
     var stored = localStorage.getItem('iram366:theme');
-    var theme = stored === 'dark' || stored === 'light'
-      ? stored
-      : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    var theme = stored === 'light' ? 'light' : 'dark';
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
     }
     document.documentElement.style.colorScheme = theme;
-  } catch (e) {}
+  } catch (e) {
+    document.documentElement.classList.add('dark');
+    document.documentElement.style.colorScheme = 'dark';
+  }
 })();`
 
 export function ThemeScript() {
