@@ -2,6 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+// Reader scrolls past this distance → the weather/date strip collapses
+// out of view, leaving just the brand row pinned at the top. Tuned so
+// the bar stays visible while the brand wordmark is still being scrolled
+// past, then hides once the reader is clearly committed to the article.
+const HIDE_AT_SCROLL_Y = 80
+
 export interface Town {
   name: string
   lat: number
@@ -131,6 +137,7 @@ export function WeatherDateBar({ towns: customTowns }: WeatherDateBarProps = {})
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [townName, setTownName] = useState<string>(fallbackTown.name)
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [hidden, setHidden] = useState(false)
   const pickerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -176,6 +183,35 @@ export function WeatherDateBar({ towns: customTowns }: WeatherDateBarProps = {})
     return () => clearInterval(tick)
   }, [])
 
+  // Hide the weather/date strip once the reader has scrolled — the brand
+  // row above (in the sticky <header>) stays pinned, and dropping this row
+  // reclaims ~64px of vertical space for content. rAF-throttled passive
+  // listener; one frame queued at most. Initial sync covers the case
+  // where the browser restores a scrolled position after reload.
+  useEffect(() => {
+    let raf = 0
+    const sync = () => {
+      raf = 0
+      setHidden(window.scrollY > HIDE_AT_SCROLL_Y)
+    }
+    const onScroll = () => {
+      if (raf) return
+      raf = requestAnimationFrame(sync)
+    }
+    sync()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (raf) cancelAnimationFrame(raf)
+    }
+  }, [])
+
+  // Close the town picker as soon as the bar starts collapsing — leaving
+  // the dropdown open above a hidden parent looks broken.
+  useEffect(() => {
+    if (hidden && pickerOpen) setPickerOpen(false)
+  }, [hidden, pickerOpen])
+
   const town: Town = towns.find((t) => t.name === townName) ?? fallbackTown
 
   useEffect(() => {
@@ -209,7 +245,14 @@ export function WeatherDateBar({ towns: customTowns }: WeatherDateBarProps = {})
   const formatted = now ? formatNow(now) : null
 
   return (
-    <div className="relative z-[60] border-b border-white/10 bg-navy-dark/70 text-base text-white/85 md:text-lg">
+    <div
+      aria-hidden={hidden}
+      className={`relative z-[60] overflow-hidden bg-navy-dark/70 text-base text-white/85 transition-all duration-300 motion-reduce:transition-none md:text-lg ${
+        hidden
+          ? 'pointer-events-none max-h-0 border-b-0 opacity-0'
+          : 'max-h-24 border-b border-white/10 opacity-100'
+      }`}
+    >
       <div className="container-news">
         <div className="relative flex h-16 items-center justify-between">
           {/* Brand display moved to the three-part wordmark in Header.tsx;
