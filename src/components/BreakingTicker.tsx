@@ -162,7 +162,12 @@ function BreakingTickerInner({
                   isActive ? 'opacity-100' : 'opacity-70 hover:opacity-100'
                 }`}
               >
-                <div className="flex min-w-0 flex-1 flex-col text-end">
+                {/* text-start = writing-direction start, which is the
+                    right edge in RTL. Arabic headlines then read top-down
+                    flush-right, and wrapped lines begin at the right
+                    margin like the rest of the body copy. (Earlier code
+                    used text-end, which is the LEFT edge in RTL.) */}
+                <div className="flex min-w-0 flex-1 flex-col text-start">
                   {stamp && (
                     <time
                       dateTime={article.publishedAt ?? undefined}
