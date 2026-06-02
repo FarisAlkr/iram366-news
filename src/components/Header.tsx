@@ -63,16 +63,22 @@ export async function Header({ siteName, categories, breakingArticles = [] }: He
             `siteName` so the accessible name reflects whatever the CMS
             records as the formal site name. */}
         <div className="container-news">
-          <div className="flex items-center justify-between gap-2 py-3 md:py-4">
+          {/* `relative` parent + the Link absolutely positioned at left:50%
+              with -translate-x-1/2 centers the wordmark to the row's true
+              horizontal midpoint. justify-between alone leaves it drifting
+              toward whichever side group has the narrower content, since
+              the hamburger (~36px) and theme+search (~76px) groups have
+              unequal widths. */}
+          <div className="relative flex items-center justify-between gap-2 py-3 md:py-4">
             <CategoryMenu categories={categories} />
 
             <Link
               href="/"
               aria-label={`${siteName} — الصفحة الرئيسية`}
-              className="flex min-w-0 items-center transition-opacity hover:opacity-80"
+              className="pointer-events-auto absolute left-1/2 -translate-x-1/2 transition-opacity hover:opacity-80"
             >
-              <span className="min-w-0 whitespace-nowrap font-display text-lg font-extrabold tracking-tight text-white sm:text-xl md:text-2xl">
-                إرم الإخبارية 366
+              <span className="whitespace-nowrap font-display text-lg font-extrabold tracking-tight text-white sm:text-xl md:text-2xl">
+                إرم 366 الإخبارية
               </span>
             </Link>
 
