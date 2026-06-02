@@ -119,7 +119,7 @@ function BreakingTickerInner({
       aria-live="polite"
       className="container-news py-6 md:py-8"
     >
-      <h2 className="text-end font-display text-xl font-extrabold text-ink md:text-2xl">
+      <h2 className="text-start font-display text-xl font-extrabold text-ink md:text-2xl">
         الشريط الإخباري
       </h2>
 
