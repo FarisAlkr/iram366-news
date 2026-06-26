@@ -12,6 +12,7 @@ import {
   revalidateArticlesAfterChange,
   revalidateArticlesAfterDelete,
 } from '../hooks/revalidate.ts'
+import { cleanupArticleRefsBeforeDelete } from '../hooks/article-delete-cleanup.ts'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
@@ -580,6 +581,7 @@ export const Articles: CollectionConfig = {
       embedArticleAfterChange,
       revalidateArticlesAfterChange,
     ],
+    beforeDelete: [cleanupArticleRefsBeforeDelete],
     afterDelete: [auditAfterDelete, embedArticleAfterDelete, revalidateArticlesAfterDelete],
   },
   access: {
