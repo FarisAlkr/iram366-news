@@ -3,6 +3,7 @@ import Link from 'next/link'
 import type { Category, SiteSettings } from '@/types/payload'
 import { AccessibilityButton } from './AccessibilityButton'
 import FooterCamelMount from './FooterCamelMount'
+import { NotificationToggle } from './NotificationToggle'
 import { SocialIcon } from './SocialIcon'
 
 const camelEnvOn = process.env.NEXT_PUBLIC_FEATURE_FOOTER_CAMEL !== 'false'
@@ -106,6 +107,13 @@ export function Footer({
                 <span>{email}</span>
               </a>
             )}
+
+            {/* Persistent push-notification control. Self-hiding when the
+                feature is off/unsupported, so the footer is unchanged until
+                NEXT_PUBLIC_PUSH_ENABLED is set. */}
+            <div>
+              <NotificationToggle />
+            </div>
           </div>
         </div>
 

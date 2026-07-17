@@ -45,6 +45,16 @@ ENV NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN}
 ARG NEXT_PUBLIC_USERWAY_ACCOUNT_ID
 ENV NEXT_PUBLIC_USERWAY_ACCOUNT_ID=${NEXT_PUBLIC_USERWAY_ACCOUNT_ID}
 
+# Web Push (PWA). Both are read in client code, so Next inlines them at BUILD
+# time — they must be present here, not just at runtime. The public key is
+# safe to expose (it's the VAPID public half); the private key stays runtime-
+# only (docker-compose app.env), never a build arg.
+ARG NEXT_PUBLIC_PUSH_ENABLED
+ENV NEXT_PUBLIC_PUSH_ENABLED=${NEXT_PUBLIC_PUSH_ENABLED}
+
+ARG NEXT_PUBLIC_VAPID_PUBLIC_KEY
+ENV NEXT_PUBLIC_VAPID_PUBLIC_KEY=${NEXT_PUBLIC_VAPID_PUBLIC_KEY}
+
 # Build SHA — the GitHub commit hash that produced this image. Surfaced
 # via /api/health for the deploy smoke test to confirm the new image
 # actually loaded and is serving traffic. Without this, the smoke test

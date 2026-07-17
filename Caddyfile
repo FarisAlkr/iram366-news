@@ -44,7 +44,7 @@
 		#     `https:` wildcard already permits both (and UserWay's API calls),
 		#     but explicit entries document intent so a future tightening that
 		#     drops the wildcard doesn't silently break monitoring.
-		Content-Security-Policy "default-src 'self'; img-src 'self' data: https: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.userway.org; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://cdn.userway.org; font-src 'self' https://fonts.gstatic.com https://cdn.userway.org data:; connect-src 'self' https: https://cloudflareinsights.com https://*.ingest.de.sentry.io; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+		Content-Security-Policy "default-src 'self'; img-src 'self' data: https: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.userway.org; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://cdn.userway.org; font-src 'self' https://fonts.gstatic.com https://cdn.userway.org data:; connect-src 'self' https: https://cloudflareinsights.com https://*.ingest.de.sentry.io; worker-src 'self'; manifest-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
 		-Server
 		-X-Powered-By
 	}
@@ -60,6 +60,12 @@
 	# Don't cache the admin panel.
 	@admin path /admin* /api/*
 	header @admin Cache-Control "no-store"
+
+	# The push service worker must revalidate every load so new SW versions
+	# ship promptly. Browsers cap SW HTTP caching at 24h regardless, but
+	# no-cache makes an updated /sw.js take effect on the next navigation.
+	@sw path /sw.js
+	header @sw Cache-Control "no-cache"
 
 	log {
 		output stdout

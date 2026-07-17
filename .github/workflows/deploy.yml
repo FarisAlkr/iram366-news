@@ -50,6 +50,8 @@ jobs:
             NEXT_PUBLIC_CF_ANALYTICS_TOKEN=${{ secrets.NEXT_PUBLIC_CF_ANALYTICS_TOKEN }}
             NEXT_PUBLIC_SENTRY_DSN=${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
             NEXT_PUBLIC_USERWAY_ACCOUNT_ID=${{ secrets.NEXT_PUBLIC_USERWAY_ACCOUNT_ID }}
+            NEXT_PUBLIC_PUSH_ENABLED=${{ secrets.NEXT_PUBLIC_PUSH_ENABLED }}
+            NEXT_PUBLIC_VAPID_PUBLIC_KEY=${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
             BUILD_SHA=${{ github.sha }}
 
       - name: Sync compose file + migration runner to VPS

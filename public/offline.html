@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>غير متصل · إرم 366 الإخبارية</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      body {
+        min-height: 100dvh;
+        display: grid;
+        place-content: center;
+        gap: 1.25rem;
+        padding: 2rem;
+        text-align: center;
+        font-family: system-ui, 'Segoe UI', Tahoma, sans-serif;
+        background: #fafaf9;
+        color: #0a2a2f;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #0a2a2f;
+          color: #fafaf9;
+        }
+      }
+      img {
+        width: 96px;
+        height: 96px;
+        margin-inline: auto;
+        border-radius: 20px;
+      }
+      h1 {
+        font-size: 1.5rem;
+      }
+      p {
+        max-width: 34ch;
+        margin-inline: auto;
+        line-height: 1.7;
+        opacity: 0.8;
+      }
+      button {
+        justify-self: center;
+        padding: 0.6rem 1.5rem;
+        font: inherit;
+        font-weight: 600;
+        color: #fafaf9;
+        background: #0a2a2f;
+        border: 0;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+      @media (prefers-color-scheme: dark) {
+        button {
+          color: #0a2a2f;
+          background: #fafaf9;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <img src="/icon-192.png" alt="إرم 366" />
+    <h1>لا يوجد اتصال بالإنترنت</h1>
+    <p>يبدو أنك غير متصل حالياً. تحقق من اتصالك ثم حاول تحديث الصفحة لمتابعة آخر الأخبار.</p>
+    <button onclick="location.reload()">إعادة المحاولة</button>
+  </body>
+</html>

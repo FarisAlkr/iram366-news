@@ -7,6 +7,8 @@ import { BackToHomeFallback } from '@/components/BackToHomeFallback'
 import { Chatbot } from '@/components/Chatbot'
 import CursorInkMount from '@/components/CursorInkMount'
 import FallingSheepMount from '@/components/FallingSheepMount'
+import { NotificationOptIn } from '@/components/NotificationOptIn'
+import { PushRegistrar } from '@/components/PushRegistrar'
 import { ScrollProgress } from '@/components/ScrollProgress'
 import SocialHubMount from '@/components/SocialHubMount'
 import { SplashScreen } from '@/components/SplashScreen'
@@ -163,6 +165,10 @@ export default async function FrontendLayout({ children }: { children: React.Rea
         <BackToHomeFallback />
         <ScrollProgress />
         {children}
+        {/* PWA push: registers the service worker + shows the opt-in prompt.
+            Both no-op unless NEXT_PUBLIC_PUSH_ENABLED=true with a VAPID key. */}
+        <PushRegistrar />
+        <NotificationOptIn />
         <Chatbot />
         {/* Cloudflare Web Analytics — privacy-first, no cookies, no banner.
             The beacon is public per CF design (token is visible in page HTML
