@@ -21,6 +21,7 @@ import { Notifications } from './payload/collections/Notifications.ts'
 import { ArticleReviews } from './payload/collections/ArticleReviews.ts'
 import { Ads } from './payload/collections/Ads.ts'
 import { PageViews } from './payload/collections/PageViews.ts'
+import { PushSubscriptions } from './payload/collections/PushSubscriptions.ts'
 import { AuditLog } from './payload/collections/AuditLog.ts'
 import { SiteSettings } from './payload/globals/SiteSettings.ts'
 import { WeatherTowns } from './payload/globals/WeatherTowns.ts'
@@ -137,6 +138,7 @@ export default buildConfig({
     ArticleReviews,
     Ads,
     PageViews,
+    PushSubscriptions,
     AuditLog,
   ],
   globals: [SiteSettings, WeatherTowns],

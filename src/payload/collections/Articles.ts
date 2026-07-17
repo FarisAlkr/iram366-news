@@ -8,6 +8,7 @@ import { isAdmin, isAuthenticated, isOwnerOrAdminEditor } from '../access/index.
 import { auditAfterChange, auditAfterDelete } from '../hooks/audit.ts'
 import { notifyOnArticleStatusChange } from '../hooks/notify.ts'
 import { embedArticleAfterChange, embedArticleAfterDelete } from '../hooks/embed-article.ts'
+import { pushOnArticlePublish } from '../hooks/push-notify.ts'
 import {
   revalidateArticlesAfterChange,
   revalidateArticlesAfterDelete,
@@ -197,6 +198,20 @@ export const Articles: CollectionConfig = {
         date: { pickerAppearance: 'dayAndTime' },
         description:
           'إذا ضُبطت قيمة هنا يصبح المقال في "سلة المحذوفات" — مخفي من الموقع لكن محفوظ. اتركها فارغة للمقال النشط.',
+      },
+    },
+    {
+      // Set once, by the push-notify hook, the first time this article is
+      // published — the send-once guard. Written via raw SQL (not Payload) so
+      // it never re-fires the afterChange fanout; see push-notify.ts.
+      name: 'pushSentAt',
+      type: 'date',
+      label: 'وقت إرسال الإشعار',
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+        date: { pickerAppearance: 'dayAndTime' },
+        description: 'يُضبط تلقائياً عند إرسال إشعار الدفع لأول نشر — لا تحرّر يدوياً.',
       },
     },
 
@@ -579,6 +594,7 @@ export const Articles: CollectionConfig = {
       auditAfterChange,
       notifyOnArticleStatusChange,
       embedArticleAfterChange,
+      pushOnArticlePublish,
       revalidateArticlesAfterChange,
     ],
     beforeDelete: [cleanupArticleRefsBeforeDelete],

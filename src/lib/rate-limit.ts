@@ -121,4 +121,7 @@ export const RateLimits = {
   // 5 attempts per 15-minute window — refill = 5/900s ≈ 0.00556 tokens/sec.
   // Bucket starts full, so a fresh attacker gets 5 quick tries, then 1 every 3 min.
   login: { prefix: 'login', capacity: 5, refillPerSec: 5 / 900 } satisfies RateLimitConfig,
+  // Push subscribe/unsubscribe: a device registers rarely, but a form could
+  // retry. Burst of 10, then 1 every 5s — generous for humans, tight on abuse.
+  push: { prefix: 'push', capacity: 10, refillPerSec: 0.2 } satisfies RateLimitConfig,
 }
