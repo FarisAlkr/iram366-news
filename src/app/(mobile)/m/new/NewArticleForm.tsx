@@ -29,6 +29,7 @@ interface GalleryItem {
 export function NewArticleForm({ categories }: Props) {
   const [state, action, pending] = useActionState(createArticleAction, {})
   const [status, setStatus] = useState<'draft' | 'published'>('draft')
+  const [isBreaking, setIsBreaking] = useState(false)
   const [placement, setPlacement] = useState<Placement>('none')
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [imageInfo, setImageInfo] = useState<{ name: string; size: number } | null>(null)
@@ -253,6 +254,31 @@ export function NewArticleForm({ categories }: Props) {
             </button>
           </div>
           <input type="hidden" name="status" value={status} />
+        </Field>
+
+        <Field
+          label="خبر عاجل"
+          help="يظهر عنوان المقال في الشريط الأحمر المتحرك أعلى الموقع بعد نشره."
+        >
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isBreaking}
+            aria-label="خبر عاجل"
+            onClick={() => setIsBreaking((v) => !v)}
+            className={`m-switch ${isBreaking ? 'm-switch--on' : ''}`}
+          >
+            <span className="m-switch__emoji" aria-hidden>
+              🔴
+            </span>
+            <span className="m-switch__label">
+              {isBreaking ? 'مُفعّل — سيظهر في شريط العاجل' : 'غير مُفعّل'}
+            </span>
+            <span className="m-switch__track" aria-hidden>
+              <span className="m-switch__thumb" />
+            </span>
+          </button>
+          <input type="hidden" name="isBreaking" value={isBreaking ? 'true' : 'false'} />
         </Field>
 
         <Field

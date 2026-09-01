@@ -89,6 +89,7 @@ export async function createArticleAction(
   const bodyText = String(formData.get('body') ?? '').trim()
   const categoryId = String(formData.get('category') ?? '')
   const status = String(formData.get('status') ?? 'draft')
+  const isBreaking = String(formData.get('isBreaking') ?? '') === 'true'
   const placement = String(formData.get('placement') ?? 'none') as Placement
   const image = formData.get('image')
 
@@ -177,6 +178,7 @@ export async function createArticleAction(
         category: Number(categoryId) || categoryId,
         author: auth.user.id,
         status,
+        isBreaking,
         ...(mediaId ? { featuredImage: mediaId } : {}),
         ...(galleryItems.length > 0 ? { gallery: galleryItems } : {}),
         ...(status === ArticleStatus.Published ? { publishedAt: new Date().toISOString() } : {}),

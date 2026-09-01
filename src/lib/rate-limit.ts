@@ -121,4 +121,12 @@ export const RateLimits = {
   // 5 attempts per 15-minute window — refill = 5/900s ≈ 0.00556 tokens/sec.
   // Bucket starts full, so a fresh attacker gets 5 quick tries, then 1 every 3 min.
   login: { prefix: 'login', capacity: 5, refillPerSec: 5 / 900 } satisfies RateLimitConfig,
+  // Mobile admin one-tap mutations (عاجل toggle). Server Actions bypass the
+  // /api/* handlers, so the throttle has to be applied inside the action. An
+  // editor sweeping a list taps several in a row: burst of 20, then 1/sec.
+  mobileToggle: {
+    prefix: 'mobile-toggle',
+    capacity: 20,
+    refillPerSec: 1,
+  } satisfies RateLimitConfig,
 }

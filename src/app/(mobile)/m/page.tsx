@@ -9,6 +9,7 @@ import { relativeTime } from '@/lib/date'
 import type { Media } from '@/types/payload'
 import { resolveRef, pickMediaUrl } from '@/types/payload'
 import { getMobileUser } from './auth'
+import { BreakingToggle } from './BreakingToggle'
 
 let totalViewsPool: Pool | null = null
 function getViewsPool(): Pool {
@@ -140,33 +141,39 @@ export default async function MobileDashboardPage() {
             )
             const thumb = image ? pickMediaUrl(image, 'thumbnail') : null
             return (
-              <Link key={a.id} href={`/admin/collections/articles/${a.id}`} className="m-list-item">
-                <div className="m-list-item__thumb" aria-hidden>
-                  {thumb ? (
-                    <Image src={thumb} alt="" width={56} height={56} className="m-list-item__img" />
-                  ) : (
-                    <span className="m-list-item__thumb-fallback">📰</span>
-                  )}
-                </div>
-                <div className="m-list-item__body">
-                  <h3 className="m-list-item__title">{a.title as string}</h3>
-                  <div className="m-list-item__meta">
-                    <span
-                      className={STATUS_CLASS[a.status as string] ?? 'm-status m-status--draft'}
-                    >
-                      {STATUS_LABEL[a.status as string] ?? (a.status as string)}
-                    </span>
-                    {a.updatedAt && (
-                      <time className="m-list-item__time">
-                        {relativeTime(a.updatedAt as string)}
-                      </time>
+              <div key={a.id} className="m-list-item">
+                <Link href={`/admin/collections/articles/${a.id}`} className="m-list-item__link">
+                  <div className="m-list-item__thumb" aria-hidden>
+                    {thumb ? (
+                      <Image
+                        src={thumb}
+                        alt=""
+                        width={56}
+                        height={56}
+                        className="m-list-item__img"
+                      />
+                    ) : (
+                      <span className="m-list-item__thumb-fallback">📰</span>
                     )}
                   </div>
-                </div>
-                <span className="m-list-item__chevron" aria-hidden>
-                  ‹
-                </span>
-              </Link>
+                  <div className="m-list-item__body">
+                    <h3 className="m-list-item__title">{a.title as string}</h3>
+                    <div className="m-list-item__meta">
+                      <span
+                        className={STATUS_CLASS[a.status as string] ?? 'm-status m-status--draft'}
+                      >
+                        {STATUS_LABEL[a.status as string] ?? (a.status as string)}
+                      </span>
+                      {a.updatedAt && (
+                        <time className="m-list-item__time">
+                          {relativeTime(a.updatedAt as string)}
+                        </time>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+                <BreakingToggle id={a.id} initial={Boolean(a.isBreaking)} />
+              </div>
             )
           })}
         </div>
