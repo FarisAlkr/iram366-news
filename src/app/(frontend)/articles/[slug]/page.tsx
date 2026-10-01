@@ -3,10 +3,14 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
-import { ArticleStatus } from '@/domain/enums'
 import { formatDate } from '@/lib/date'
 import { getPayloadClient } from '@/lib/payload'
-import { getArticleBySlug, getCategories, getSiteSettings } from '@/lib/queries'
+import {
+  getArticleBySlug,
+  getCategories,
+  getSiteSettings,
+  publiclyVisibleWhere,
+} from '@/lib/queries'
 import type { Article, Category, Media, User } from '@/types/payload'
 import { pickMediaUrl, resolveRef } from '@/types/payload'
 
@@ -74,7 +78,7 @@ export async function generateStaticParams() {
     const payload = await getPayloadClient()
     const articles = await payload.find({
       collection: 'articles',
-      where: { status: { equals: ArticleStatus.Published } },
+      where: publiclyVisibleWhere(),
       limit: 50,
       sort: '-publishedAt',
       depth: 0,
@@ -97,8 +101,8 @@ async function fetchRelated(article: Article): Promise<Article[]> {
     const result = await payload.find({
       collection: 'articles',
       where: {
+        ...publiclyVisibleWhere(),
         category: { equals: categoryId },
-        status: { equals: ArticleStatus.Published },
         slug: { not_equals: article.slug },
       },
       limit: 4,

@@ -1,9 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
-import { ArticleStatus } from '@/domain/enums'
 import { getPayloadClient } from '@/lib/payload'
-import { getCategories, getSiteSettings } from '@/lib/queries'
+import { getCategories, getSiteSettings, publiclyVisibleWhere } from '@/lib/queries'
 import { normalizeArabic } from '@/lib/slug'
 import type { Article } from '@/types/payload'
 
@@ -38,7 +37,7 @@ async function searchArticles(query: string): Promise<Article[]> {
     collection: 'articles',
     where: {
       and: [
-        { status: { equals: ArticleStatus.Published } },
+        publiclyVisibleWhere(),
         {
           or: [
             ...variants.map((v) => ({ title: { contains: v } })),

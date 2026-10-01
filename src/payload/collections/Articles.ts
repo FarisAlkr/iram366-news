@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, FieldAccess } from 'payload'
 
 import { ArticleStatus, UserRole } from '../../domain/enums.ts'
 import { computeStats } from '../../lib/article-stats.ts'
@@ -26,6 +26,10 @@ function requirePreviewSecret(): string {
   }
   return v
 }
+
+// Field-level read gate: without it the public REST API (/api/articles)
+// returns editorial-only fields on every published article.
+const staffOnly: FieldAccess = ({ req }) => Boolean(req.user)
 
 const STATUS_OPTIONS: Array<{ label: string; value: ArticleStatus }> = [
   { label: 'مسودة', value: ArticleStatus.Draft },
@@ -478,6 +482,7 @@ export const Articles: CollectionConfig = {
               name: 'originalSource',
               type: 'group',
               label: 'المصدر الأصلي (للمحتوى المنقول)',
+              access: { read: staffOnly },
               admin: {
                 description:
                   'املأ هذه الحقول فقط إذا كان المقال منقولاً من مصدر آخر (وكالة أنباء، صحيفة شريكة).',
@@ -522,6 +527,7 @@ export const Articles: CollectionConfig = {
               name: 'internalNotes',
               type: 'textarea',
               label: 'ملاحظات داخلية (لا تظهر للقارئ)',
+              access: { read: staffOnly },
               admin: {
                 description:
                   '📝 ملاحظات للفريق التحريري — ملاحظات للمحرر، نقاط للتحقق، روابط مرجعية. مرئية فقط لطاقم العمل، لا للقراء.',
