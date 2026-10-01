@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { splitParagraphOnNewlines } from '@/lib/lexical-paragraphs'
+
 // Simplified Lexical rich text renderer for Payload CMS
 // Renders the serialized Lexical editor state to HTML
 
@@ -27,6 +29,9 @@ interface RichTextProps {
 // the reader's origin on click — stored XSS that bypasses CSP because the
 // `javascript:` scheme runs inline.
 const ALLOWED_LINK_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:'])
+
+// `tag` comes from stored JSON; never hand an arbitrary string to createElement.
+const HEADING_TAGS = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
 
 function safeHref(raw: string | undefined | null): string {
   if (!raw) return '#'
@@ -56,6 +61,21 @@ function renderNode(node: LexicalNode, index: number): React.ReactNode {
   // Linebreak
   if (node.type === 'linebreak') return <br key={index} />
 
+  // Articles published from the mobile composer before the CRLF fix store
+  // the whole body as one paragraph with raw line breaks in the text.
+  if (node.type === 'paragraph') {
+    const parts = splitParagraphOnNewlines(node)
+    if (parts.length !== 1 || parts[0] !== node) {
+      return (
+        <React.Fragment key={index}>
+          {parts.map((part, i) => (
+            <p key={i}>{part.children?.map((child, j) => renderNode(child, j))}</p>
+          ))}
+        </React.Fragment>
+      )
+    }
+  }
+
   const children = node.children?.map((child, i) => renderNode(child, i))
 
   switch (node.type) {
@@ -63,7 +83,7 @@ function renderNode(node: LexicalNode, index: number): React.ReactNode {
       return <p key={index}>{children}</p>
 
     case 'heading': {
-      const tag = node.tag || 'h2'
+      const tag = node.tag && HEADING_TAGS.has(node.tag) ? node.tag : 'h2'
       return React.createElement(tag, { key: index }, children)
     }
 

@@ -122,7 +122,7 @@ export const Users: CollectionConfig = {
   ],
   hooks: {
     beforeValidate: [
-      async ({ data, operation, req }) => {
+      async ({ data, operation, originalDoc, req }) => {
         if (!data || data.role !== UserRole.Admin) return data
 
         // Single-admin enforcement. Note: this is best-effort at the
@@ -139,9 +139,12 @@ export const Users: CollectionConfig = {
           throw new Error('يوجد مدير واحد بالفعل — لا يمكن إنشاء مدير آخر')
         }
 
+        // On update `data` is the request body, which usually has no `id` —
+        // the document being edited is `originalDoc`.
         if (operation === 'update' && existing.totalDocs > 0) {
           const existingAdmin = existing.docs[0]
-          if (existingAdmin && existingAdmin.id !== data.id) {
+          const editingId = originalDoc?.id ?? data.id
+          if (existingAdmin && String(existingAdmin.id) !== String(editingId)) {
             throw new Error('يوجد مدير واحد بالفعل — لا يمكن تعيين مدير آخر')
           }
         }

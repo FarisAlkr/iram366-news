@@ -141,6 +141,19 @@ export const getCategoryBySlug = cache(async (slug: string): Promise<Category | 
 // Articles
 // --------------------------------------------------------------------------
 
+/**
+ * Where-clause for articles readers may see. Scheduled publishing: an
+ * article with status=published but a future `publishedAt` is held back
+ * until that time — editors see it in admin, readers don't. Every public
+ * listing (pages, search, RSS, sitemap) must use this, not a bare status check.
+ */
+export function publiclyVisibleWhere() {
+  return {
+    status: { equals: ArticleStatus.Published },
+    publishedAt: { less_than_equal: new Date().toISOString() },
+  }
+}
+
 interface ListArticlesOptions {
   limit?: number
   page?: number
@@ -157,14 +170,7 @@ export async function listPublishedArticles(
   if (IS_BUILD) return SAFE_EMPTY_LIST
   try {
     const payload = await getPayloadClient()
-    // Scheduled publishing: an article with status=published but a future
-    // `publishedAt` is treated as scheduled — held back from public listings
-    // until that time. The editor sees it in admin; readers don't.
-    const now = new Date().toISOString()
-    const where: Record<string, unknown> = {
-      status: { equals: ArticleStatus.Published },
-      publishedAt: { less_than_equal: now },
-    }
+    const where: Record<string, unknown> = publiclyVisibleWhere()
     // Soft-delete is a planned feature; no articles are soft-deleted yet.
     // Adding a `deletedAt` filter via Payload's `exists: false` produced
     // empty result sets (article pages 404'd even when DB rows existed).
@@ -197,10 +203,9 @@ export const getArticleBySlug = cache(
     if (IS_BUILD) return undefined
     try {
       const payload = await getPayloadClient()
-      const where: Record<string, unknown> = { slug: { equals: slug } }
-      if (!opts.allowDraft) {
-        where.status = { equals: ArticleStatus.Published }
-        where.publishedAt = { less_than_equal: new Date().toISOString() }
+      const where: Record<string, unknown> = {
+        slug: { equals: slug },
+        ...(opts.allowDraft ? {} : publiclyVisibleWhere()),
       }
       const result = await payload.find({
         collection: 'articles',

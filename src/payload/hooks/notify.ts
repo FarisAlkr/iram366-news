@@ -48,10 +48,6 @@ export const notifyOnArticleStatusChange: CollectionAfterChangeHook = async ({
   const authorId = refId(after.author)
   if (!authorId) return doc
 
-  // Don't notify the user about their own action
-  const actorId = req.user?.id
-  if (actorId && actorId === authorId) return doc
-
   const transitions: Array<{
     from: string
     to: string
@@ -107,6 +103,12 @@ export const notifyOnArticleStatusChange: CollectionAfterChangeHook = async ({
   }
 
   if (!recipientId) return doc
+
+  // Don't notify users about their own action. Compared against the
+  // recipient, not the author: draft → in-review is almost always done by
+  // the author, and the recipient there is an editor.
+  const actorId = req.user?.id
+  if (actorId != null && String(actorId) === String(recipientId)) return doc
 
   try {
     await req.payload.create({

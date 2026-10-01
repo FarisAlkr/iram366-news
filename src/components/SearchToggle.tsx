@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -93,7 +94,7 @@ export function SearchToggle() {
             {suggestions.length > 0 && (
               <div className="mt-2 overflow-hidden rounded-lg bg-surface shadow-2xl">
                 {suggestions.map((s) => (
-                  <a
+                  <Link
                     key={s.slug}
                     href={`/articles/${s.slug}`}
                     className="block border-b border-[var(--color-border)] px-6 py-3 text-base font-medium text-ink transition-colors duration-150 last:border-0 hover:bg-cream-dark"
@@ -104,7 +105,7 @@ export function SearchToggle() {
                     }}
                   >
                     {s.title}
-                  </a>
+                  </Link>
                 ))}
               </div>
             )}

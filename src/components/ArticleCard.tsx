@@ -75,7 +75,7 @@ export function ArticleCard({ article, category, variant = 'default' }: ArticleC
             )}
             {cat && (
               <div className="absolute start-3 top-3">
-                <CategoryBadge name={cat.name} slug={cat.slug} color={cat.color} />
+                <CategoryBadge asLink={false} name={cat.name} slug={cat.slug} color={cat.color} />
               </div>
             )}
             {hasVideo && <PlayBadge />}
@@ -105,7 +105,7 @@ export function ArticleCard({ article, category, variant = 'default' }: ArticleC
           )}
           {cat && (
             <div className="absolute start-3 top-3">
-              <CategoryBadge name={cat.name} slug={cat.slug} color={cat.color} />
+              <CategoryBadge asLink={false} name={cat.name} slug={cat.slug} color={cat.color} />
             </div>
           )}
           {hasVideo && <PlayBadge />}

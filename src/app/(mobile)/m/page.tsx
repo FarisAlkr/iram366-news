@@ -1,9 +1,9 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { redirect } from 'next/navigation'
-import { Pool } from 'pg'
-
 import { ArticleStatus } from '@/domain/enums'
+import { getChatbotPool } from '@/lib/chatbot/db'
+import { logger } from '@/lib/logger'
 import { getPayloadClient } from '@/lib/payload'
 import { relativeTime } from '@/lib/date'
 import type { Media } from '@/types/payload'
@@ -11,23 +11,18 @@ import { resolveRef, pickMediaUrl } from '@/types/payload'
 import { getMobileUser } from './auth'
 import { BreakingToggle } from './BreakingToggle'
 
-let totalViewsPool: Pool | null = null
-function getViewsPool(): Pool {
-  if (!totalViewsPool) {
-    totalViewsPool = new Pool({ connectionString: process.env.DATABASE_URL, max: 2 })
-  }
-  return totalViewsPool
-}
-
+// Raw SQL for the SUM — Payload's local API has no aggregates. Shares the
+// small raw-SQL pool (timeouts set) instead of opening a dedicated one.
 async function fetchTotalPublishedViews(): Promise<number> {
   try {
-    const res = await getViewsPool().query<{ sum: string | null }>(
+    const res = await getChatbotPool().query<{ sum: string | null }>(
       `SELECT COALESCE(SUM(views), 0)::text AS sum
        FROM articles
        WHERE status = 'published' AND deleted_at IS NULL`,
     )
     return Number(res.rows[0]?.sum ?? 0) || 0
-  } catch {
+  } catch (err) {
+    logger.warn('mobile.dashboard.total_views_failed', { err })
     return 0
   }
 }

@@ -15,6 +15,9 @@ const MAX_WIDTH_BY_ASPECT: Record<string, string> = {
 export function VideoEmbed({ url, title, className }: VideoEmbedProps) {
   const parsed = parseVideoUrl(url)
   if (!parsed) {
+    // Unrecognized platform: fall back to a plain link, but only for
+    // http(s) — the URL is editor-supplied.
+    if (!/^https?:\/\//i.test(url.trim())) return null
     return (
       <a
         href={url}

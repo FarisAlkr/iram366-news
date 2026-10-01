@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 
-import { ArticleStatus } from '@/domain/enums'
 import { getPayloadClient } from '@/lib/payload'
+import { publiclyVisibleWhere } from '@/lib/queries'
 
 // ISR — regenerate at most once per hour. Bots (Googlebot, Bingbot,
 // Yandex) refetch sitemaps frequently; the previous `force-dynamic`
@@ -30,7 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ;[articles, categories, pages] = await Promise.all([
       payload.find({
         collection: 'articles',
-        where: { status: { equals: ArticleStatus.Published } },
+        where: publiclyVisibleWhere(),
         limit: 1000,
         sort: '-publishedAt',
         depth: 0,

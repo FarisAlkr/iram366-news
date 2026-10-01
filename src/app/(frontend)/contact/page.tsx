@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 
 import { getCategories, getSiteSettings } from '@/lib/queries'
 
@@ -118,16 +119,16 @@ export default async function ContactPage() {
             <h3>إمكانية الوصول (Accessibility)</h3>
             <p>
               للإبلاغ عن مشاكل في إمكانية الوصول إلى الموقع، أو لطلب محتوى بصيغة بديلة: راجع{' '}
-              <a href="/accessibility-statement">بيان إمكانية الوصول</a> أو تواصل مع منسّق إمكانية
-              الوصول عبر <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
+              <Link href="/accessibility-statement">بيان إمكانية الوصول</Link> أو تواصل مع منسّق
+              إمكانية الوصول عبر <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
             </p>
 
             <h3>الخصوصية وحماية البيانات</h3>
             <p>
               لممارسة حقوقك بموجب قانون حماية الخصوصية الإسرائيلي (1981) أو لائحة GDPR، أو للإبلاغ
-              عن مخاوف تتعلّق ببيانات الزوار: راجع <a href="/privacy">سياسة الخصوصية</a> أو راسلنا
-              على <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> مع وضع &quot;خصوصية&quot;
-              في عنوان الرسالة.
+              عن مخاوف تتعلّق ببيانات الزوار: راجع <Link href="/privacy">سياسة الخصوصية</Link> أو
+              راسلنا على <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> مع وضع
+              &quot;خصوصية&quot; في عنوان الرسالة.
             </p>
 
             <h3>الإعلان</h3>

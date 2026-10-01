@@ -20,6 +20,11 @@ import { logger } from '../../lib/logger.ts'
  * the mutation itself.
  */
 
+// Paginated archive (/page/2, /page/3, …). Pattern revalidation matches
+// Next's implicit tags, which are derived from the app-directory path —
+// route group included — so the `(frontend)` segment is required here.
+const ARCHIVE_PAGES = '/(frontend)/page/[pageNumber]'
+
 function safeRevalidate(fn: () => void, ctx: Record<string, unknown>): void {
   try {
     fn()
@@ -95,6 +100,11 @@ export const revalidateArticlesAfterChange: CollectionAfterChangeHook = ({
     operation,
     docId: docTyped.id,
   })
+  // Archive pages /page/2… — any publish or unpublish shifts every page.
+  safeRevalidate(() => revalidatePath(ARCHIVE_PAGES, 'page'), {
+    hook: 'articles.afterChange',
+    path: ARCHIVE_PAGES,
+  })
 
   if (docTyped.slug) {
     safeRevalidate(() => revalidatePath(`/articles/${docTyped.slug}`), {
@@ -139,6 +149,10 @@ export const revalidateArticlesAfterDelete: CollectionAfterDeleteHook = ({ doc }
   safeRevalidate(() => revalidatePath('/'), {
     hook: 'articles.afterDelete',
     path: '/',
+  })
+  safeRevalidate(() => revalidatePath(ARCHIVE_PAGES, 'page'), {
+    hook: 'articles.afterDelete',
+    path: ARCHIVE_PAGES,
   })
   if (docTyped?.slug) {
     safeRevalidate(() => revalidatePath(`/articles/${docTyped.slug}`), {

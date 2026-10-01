@@ -82,8 +82,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 USER nextjs
 EXPOSE 3000
 
-# Healthcheck the API root — Payload mounts /api/users which 200s when alive.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD wget -q -O /dev/null http://127.0.0.1:3000/api/users || exit 1
+# DB-free liveness probe (see src/app/api/health/route.ts). docker-compose.yml
+# overrides this with the same endpoint; kept in sync for standalone `docker run`.
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
+  CMD wget -q -O /dev/null http://127.0.0.1:3000/api/health || exit 1
 
 CMD ["node", "server.js"]

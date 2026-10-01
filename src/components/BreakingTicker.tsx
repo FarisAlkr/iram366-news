@@ -195,10 +195,7 @@ function BreakingTickerInner({
   )
 }
 
-function ControlButton({
-  children,
-  ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+function ControlButton({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
       type="button"
@@ -228,13 +225,7 @@ function ControlButton({
 
 function SkipBackIcon() {
   return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden
-    >
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M6 5h2v14H6V5zm4 7l11 7V5l-11 7z" />
     </svg>
   )
@@ -242,13 +233,7 @@ function SkipBackIcon() {
 
 function SkipForwardIcon() {
   return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden
-    >
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M16 5h2v14h-2V5zM3 19l11-7L3 5v14z" />
     </svg>
   )
@@ -256,13 +241,7 @@ function SkipForwardIcon() {
 
 function PlayIcon() {
   return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden
-    >
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M8 5v14l11-7L8 5z" />
     </svg>
   )
@@ -270,13 +249,7 @@ function PlayIcon() {
 
 function PauseIcon() {
   return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden
-    >
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M6 5h4v14H6V5zm8 0h4v14h-4V5z" />
     </svg>
   )

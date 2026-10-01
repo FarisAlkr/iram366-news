@@ -1,5 +1,6 @@
-import { HeroMode } from '@/domain/enums'
+import { ArticleStatus, HeroMode } from '@/domain/enums'
 import { getAdsForPlacements } from '@/lib/ads'
+import { ARTICLES_PER_PAGE, archivePageHref } from '@/lib/pagination'
 import { getPayloadClient } from '@/lib/payload'
 import { getCategories, getSiteSettings, listPublishedArticles } from '@/lib/queries'
 import type { Article, Category } from '@/types/payload'
@@ -9,6 +10,7 @@ import { ArticleCard } from '@/components/ArticleCard'
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
 import { HeroSection } from '@/components/HeroSection'
+import { Pagination } from '@/components/Pagination'
 import { SectionHeading } from '@/components/SectionHeading'
 import { Sidebar } from '@/components/Sidebar'
 
@@ -38,19 +40,31 @@ async function resolveHero(
   }
 
   const payload = await getPayloadClient()
+  // Manual picks are stored by reference, so an article pinned here and
+  // later unpublished, archived, or re-scheduled would otherwise keep
+  // showing on the homepage. Anything not publicly visible falls back to
+  // the auto-selected backfill below.
+  const isPublic = (a: Article) =>
+    a.status === ArticleStatus.Published &&
+    Boolean(a.publishedAt) &&
+    new Date(a.publishedAt as string).getTime() <= Date.now()
   const hydrate = async (ref: unknown): Promise<Article | null> => {
     if (!ref) return null
-    if (typeof ref === 'object' && 'id' in (ref as object)) return ref as Article
-    try {
-      const doc = await payload.findByID({
-        collection: 'articles',
-        id: ref as string | number,
-        depth: 2,
-      })
-      return doc as unknown as Article
-    } catch {
-      return null
+    let doc: Article
+    if (typeof ref === 'object' && 'id' in (ref as object)) {
+      doc = ref as Article
+    } else {
+      try {
+        doc = (await payload.findByID({
+          collection: 'articles',
+          id: ref as string | number,
+          depth: 2,
+        })) as unknown as Article
+      } catch {
+        return null
+      }
     }
+    return isPublic(doc) ? doc : null
   }
 
   const mainHydrated = await hydrate(config.mainArticle)
@@ -98,7 +112,7 @@ export default async function HomePage() {
     getCategories(),
     listPublishedArticles({ isBreaking: true, limit: 5, depth: 0 }),
     listPublishedArticles({ isFeatured: true, limit: 4 }),
-    listPublishedArticles({ limit: 12 }),
+    listPublishedArticles({ limit: ARTICLES_PER_PAGE }),
     listPublishedArticles({ limit: 5, sort: '-views', depth: 1 }),
     getAdsForPlacements(HOMEPAGE_AD_PLACEMENTS),
   ])
@@ -173,6 +187,13 @@ export default async function HomePage() {
                   <ArticleCard key={article.id} article={article} />
                 ))}
               </div>
+              {/* The homepage list is page 1 of the archive; older articles
+                  continue at /page/2, /page/3, … */}
+              <Pagination
+                currentPage={1}
+                totalPages={latestResult.totalPages}
+                hrefFor={archivePageHref}
+              />
             </div>
 
             <div className="hidden space-y-4 lg:block">

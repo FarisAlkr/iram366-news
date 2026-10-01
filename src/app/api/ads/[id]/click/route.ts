@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
+import { getChatbotPool } from '@/lib/chatbot/db'
 import { getPayloadClient } from '@/lib/payload'
 import { logger } from '@/lib/logger'
 import { RateLimits, enforce } from '@/lib/rate-limit'
@@ -33,7 +34,6 @@ export async function GET(req: NextRequest, { params }: RouteCtx) {
 
     const adData = ad as unknown as {
       targetUrl?: string
-      clicks?: number
       status?: string
     }
 
@@ -59,15 +59,11 @@ export async function GET(req: NextRequest, { params }: RouteCtx) {
       return NextResponse.json({ error: 'invalid target' }, { status: 400 })
     }
 
-    // Don't count clicks on inactive ads
+    // Don't count clicks on inactive ads. Atomic raw SQL instead of
+    // payload.update() — see the impression route for why.
     if (adData.status === 'active') {
-      payload
-        .update({
-          collection: 'ads',
-          id: Number(id),
-          data: { clicks: (adData.clicks || 0) + 1 } as never,
-          overrideAccess: true,
-        })
+      getChatbotPool()
+        .query(`UPDATE ads SET clicks = COALESCE(clicks, 0) + 1 WHERE id = $1`, [Number(id)])
         .catch((err) => logger.error('ads.click.update_failed', { err, adId: id }))
     }
 

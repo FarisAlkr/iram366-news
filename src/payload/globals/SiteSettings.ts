@@ -265,6 +265,16 @@ export const SiteSettings: GlobalConfig = {
       },
       fields: [
         {
+          name: 'enableSplash',
+          type: 'checkbox',
+          defaultValue: true,
+          label: 'إظهار شاشة الترحيب (شاشة التحميل)',
+          admin: {
+            description:
+              'شاشة الشعار التي تظهر عند دخول الزائر للموقع أو عند تحديث الصفحة. لا تظهر أثناء التنقل بين المقالات والأقسام.',
+          },
+        },
+        {
           name: 'enableCursorInk',
           type: 'checkbox',
           defaultValue: true,

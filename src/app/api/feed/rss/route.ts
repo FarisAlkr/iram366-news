@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
-import { ArticleStatus } from '@/domain/enums'
+import { logger } from '@/lib/logger'
 import { getPayloadClient } from '@/lib/payload'
+import { publiclyVisibleWhere } from '@/lib/queries'
 import { RateLimits, enforce } from '@/lib/rate-limit'
 import { resolveRef } from '@/types/payload'
 import type { Article, Category, SiteSettings, User } from '@/types/payload'
@@ -30,7 +31,7 @@ function renderItem(article: Article, fallbackAuthor: string): string {
       <link>${link}</link>
       <description><![CDATA[${escapeCdata(article.excerpt)}]]></description>
       <pubDate>${pubDate}</pubDate>
-      <author>${escapeCdata(author?.name || fallbackAuthor)}</author>${categoryLine}
+      <author><![CDATA[${escapeCdata(author?.name || fallbackAuthor)}]]></author>${categoryLine}
       <guid isPermaLink="true">${link}</guid>
     </item>`
 }
@@ -39,18 +40,24 @@ export async function GET(request: NextRequest) {
   const limited = enforce(request, RateLimits.rss)
   if (limited) return limited
 
-  const payload = await getPayloadClient()
-
-  const [siteSettings, articles] = await Promise.all([
-    payload.findGlobal({ slug: 'site-settings' }) as Promise<SiteSettings>,
-    payload.find({
-      collection: 'articles',
-      where: { status: { equals: ArticleStatus.Published } },
-      limit: RSS_LIMIT,
-      sort: '-publishedAt',
-      depth: 1,
-    }),
-  ])
+  let siteSettings: SiteSettings
+  let articles: { docs: unknown[] }
+  try {
+    const payload = await getPayloadClient()
+    ;[siteSettings, articles] = await Promise.all([
+      payload.findGlobal({ slug: 'site-settings' }) as Promise<SiteSettings>,
+      payload.find({
+        collection: 'articles',
+        where: publiclyVisibleWhere(),
+        limit: RSS_LIMIT,
+        sort: '-publishedAt',
+        depth: 1,
+      }),
+    ])
+  } catch (err) {
+    logger.error('rss.build_failed', { err })
+    return new NextResponse('Feed temporarily unavailable', { status: 503 })
+  }
 
   const siteName = siteSettings.siteName || 'إرم 366 الإخبارية'
   const siteDescription = siteSettings.siteDescription || ''
@@ -61,7 +68,7 @@ export async function GET(request: NextRequest) {
   const rss = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>${escapeCdata(siteName)}</title>
+    <title><![CDATA[${escapeCdata(siteName)}]]></title>
     <link>${SITE_URL}</link>
     <description><![CDATA[${escapeCdata(siteDescription)}]]></description>
     <language>ar</language>

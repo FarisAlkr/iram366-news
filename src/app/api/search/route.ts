@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
-import { ArticleStatus } from '@/domain/enums'
+import { logger } from '@/lib/logger'
 import { getPayloadClient } from '@/lib/payload'
+import { publiclyVisibleWhere } from '@/lib/queries'
 import { RateLimits, enforce } from '@/lib/rate-limit'
 import { normalizeArabic } from '@/lib/slug'
 import type { Article } from '@/types/payload'
@@ -42,25 +43,27 @@ export async function GET(request: NextRequest) {
   const titleClauses = variants.map((v) => ({ title: { contains: v } }))
   const excerptClauses = variants.map((v) => ({ excerpt: { contains: v } }))
 
-  const payload = await getPayloadClient()
-  const result = await payload.find({
-    collection: 'articles',
-    where: {
-      and: [
-        { status: { equals: ArticleStatus.Published } },
-        { or: [...titleClauses, ...excerptClauses] },
-      ],
-    },
-    limit,
-    sort: '-publishedAt',
-    depth: 0,
-  })
+  try {
+    const payload = await getPayloadClient()
+    const result = await payload.find({
+      collection: 'articles',
+      where: {
+        and: [publiclyVisibleWhere(), { or: [...titleClauses, ...excerptClauses] }],
+      },
+      limit,
+      sort: '-publishedAt',
+      depth: 0,
+    })
 
-  const results: SearchHit[] = (result.docs as unknown as Article[]).map((doc) => ({
-    title: doc.title,
-    slug: doc.slug,
-    excerpt: doc.excerpt,
-  }))
+    const results: SearchHit[] = (result.docs as unknown as Article[]).map((doc) => ({
+      title: doc.title,
+      slug: doc.slug,
+      excerpt: doc.excerpt,
+    }))
 
-  return NextResponse.json({ results, totalDocs: result.totalDocs })
+    return NextResponse.json({ results, totalDocs: result.totalDocs })
+  } catch (err) {
+    logger.error('search.failed', { err, q: rawQ })
+    return NextResponse.json({ error: 'search failed' }, { status: 500 })
+  }
 }

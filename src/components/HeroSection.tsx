@@ -37,6 +37,7 @@ export function HeroSection({ main, secondary }: HeroProps) {
               {mainCategory && (
                 <div className="absolute start-3 top-3 lg:hidden">
                   <CategoryBadge
+                    asLink={false}
                     name={mainCategory.name}
                     slug={mainCategory.slug}
                     color={mainCategory.color}
@@ -49,6 +50,7 @@ export function HeroSection({ main, secondary }: HeroProps) {
               {mainCategory && (
                 <div className="hidden lg:block">
                   <CategoryBadge
+                    asLink={false}
                     name={mainCategory.name}
                     slug={mainCategory.slug}
                     color={mainCategory.color}
@@ -103,7 +105,7 @@ function SecondaryHeroCard({ article }: { article: Article }) {
           {/* Mobile: badge in the image corner (matches ArticleCard default). */}
           {cat && (
             <div className="absolute start-3 top-3 lg:hidden">
-              <CategoryBadge name={cat.name} slug={cat.slug} color={cat.color} />
+              <CategoryBadge asLink={false} name={cat.name} slug={cat.slug} color={cat.color} />
             </div>
           )}
         </div>
@@ -111,7 +113,7 @@ function SecondaryHeroCard({ article }: { article: Article }) {
           {/* Desktop: badge inline above title in the overlay. */}
           {cat && (
             <div className="hidden lg:block">
-              <CategoryBadge name={cat.name} slug={cat.slug} color={cat.color} />
+              <CategoryBadge asLink={false} name={cat.name} slug={cat.slug} color={cat.color} />
             </div>
           )}
           <h3 className="line-clamp-2 font-display text-[15px] font-bold leading-snug text-ink transition-colors duration-150 group-hover:text-accent-red lg:mt-2 lg:text-lg lg:text-white lg:group-hover:text-white">
