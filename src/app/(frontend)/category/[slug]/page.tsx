@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import {
@@ -12,8 +11,11 @@ import {
 import { ArticleCard } from '@/components/ArticleCard'
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
+import { Pagination } from '@/components/Pagination'
 
-export const revalidate = 60
+// Reads `?page=` from searchParams, which makes this route render per
+// request regardless of any `revalidate` export — say so explicitly.
+export const dynamic = 'force-dynamic'
 
 const PAGE_SIZE = 12
 
@@ -93,9 +95,13 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
               ))}
             </div>
 
-            {totalPages > 1 && (
-              <Pagination slug={slug} totalPages={totalPages} currentPage={currentPage} />
-            )}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              hrefFor={(page) =>
+                page <= 1 ? `/category/${slug}` : `/category/${slug}?page=${page}`
+              }
+            />
           </>
         )}
       </main>
@@ -108,37 +114,5 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
         enableFooterCamel={siteSettings.signatureUi?.enableFooterCamel !== false}
       />
     </>
-  )
-}
-
-function Pagination({
-  slug,
-  totalPages,
-  currentPage,
-}: {
-  slug: string
-  totalPages: number
-  currentPage: number
-}) {
-  return (
-    <nav className="mt-10 flex items-center justify-center gap-2" aria-label="التنقل بين الصفحات">
-      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-        const isCurrent = page === currentPage
-        return (
-          <Link
-            key={page}
-            href={`/category/${slug}?page=${page}`}
-            aria-current={isCurrent ? 'page' : undefined}
-            className={`flex h-10 w-10 items-center justify-center rounded text-sm font-medium transition-colors duration-150 ${
-              isCurrent
-                ? 'bg-accent-red text-white'
-                : 'bg-surface text-ink shadow-[var(--shadow-card)] hover:bg-cream-dark'
-            }`}
-          >
-            {page.toLocaleString('ar-EG')}
-          </Link>
-        )
-      })}
-    </nav>
   )
 }

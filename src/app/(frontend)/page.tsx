@@ -1,5 +1,6 @@
 import { HeroMode } from '@/domain/enums'
 import { getAdsForPlacements } from '@/lib/ads'
+import { ARTICLES_PER_PAGE, archivePageHref } from '@/lib/pagination'
 import { getPayloadClient } from '@/lib/payload'
 import { getCategories, getSiteSettings, listPublishedArticles } from '@/lib/queries'
 import type { Article, Category } from '@/types/payload'
@@ -9,6 +10,7 @@ import { ArticleCard } from '@/components/ArticleCard'
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
 import { HeroSection } from '@/components/HeroSection'
+import { Pagination } from '@/components/Pagination'
 import { SectionHeading } from '@/components/SectionHeading'
 import { Sidebar } from '@/components/Sidebar'
 
@@ -98,7 +100,7 @@ export default async function HomePage() {
     getCategories(),
     listPublishedArticles({ isBreaking: true, limit: 5, depth: 0 }),
     listPublishedArticles({ isFeatured: true, limit: 4 }),
-    listPublishedArticles({ limit: 12 }),
+    listPublishedArticles({ limit: ARTICLES_PER_PAGE }),
     listPublishedArticles({ limit: 5, sort: '-views', depth: 1 }),
     getAdsForPlacements(HOMEPAGE_AD_PLACEMENTS),
   ])
@@ -173,6 +175,13 @@ export default async function HomePage() {
                   <ArticleCard key={article.id} article={article} />
                 ))}
               </div>
+              {/* The homepage list is page 1 of the archive; older articles
+                  continue at /page/2, /page/3, … */}
+              <Pagination
+                currentPage={1}
+                totalPages={latestResult.totalPages}
+                hrefFor={archivePageHref}
+              />
             </div>
 
             <div className="hidden space-y-4 lg:block">
