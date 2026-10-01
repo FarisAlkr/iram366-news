@@ -4,6 +4,8 @@ import { headers as getHeaders } from 'next/headers'
 import { redirect } from 'next/navigation'
 
 import { ArticleStatus, HeroMode } from '@/domain/enums'
+import { plainTextToLexical } from '@/lib/lexical-paragraphs'
+import { logger } from '@/lib/logger'
 import { getPayloadClient } from '@/lib/payload'
 
 export type Placement = 'main' | 'secondary-1' | 'secondary-2' | 'secondary-3' | 'none'
@@ -11,51 +13,6 @@ export type Placement = 'main' | 'secondary-1' | 'secondary-2' | 'secondary-3' |
 export interface CreateState {
   error?: string
   fieldErrors?: Partial<Record<'title' | 'excerpt' | 'body' | 'category' | 'image', string>>
-}
-
-function plainTextToLexical(text: string) {
-  const paragraphs = text
-    .split(/\n{2,}/)
-    .map((p) => p.trim())
-    .filter(Boolean)
-  return {
-    root: {
-      type: 'root',
-      format: '',
-      indent: 0,
-      version: 1,
-      direction: 'rtl' as const,
-      children: paragraphs.length
-        ? paragraphs.map((p) => ({
-            type: 'paragraph',
-            format: '',
-            indent: 0,
-            version: 1,
-            direction: 'rtl' as const,
-            children: [
-              {
-                type: 'text',
-                text: p,
-                format: 0,
-                style: '',
-                mode: 'normal',
-                detail: 0,
-                version: 1,
-              },
-            ],
-          }))
-        : [
-            {
-              type: 'paragraph',
-              format: '',
-              indent: 0,
-              version: 1,
-              direction: 'rtl' as const,
-              children: [],
-            },
-          ],
-    },
-  }
 }
 
 function refId(ref: unknown): string | number | null {
@@ -85,7 +42,11 @@ export async function createArticleAction(
   formData: FormData,
 ): Promise<CreateState> {
   const title = String(formData.get('title') ?? '').trim()
-  const excerpt = String(formData.get('excerpt') ?? '').trim()
+  // The excerpt renders as one line in cards and meta tags, and textarea
+  // submissions carry CRLF line breaks that also count against maxLength.
+  const excerpt = String(formData.get('excerpt') ?? '')
+    .replace(/\s+/g, ' ')
+    .trim()
   const bodyText = String(formData.get('body') ?? '').trim()
   const categoryId = String(formData.get('category') ?? '')
   const status = String(formData.get('status') ?? 'draft')
@@ -138,7 +99,7 @@ export async function createArticleAction(
       })
       mediaId = mediaDoc.id
     } catch (err) {
-      console.error('[mobile] media upload failed:', err)
+      logger.error('mobile.article.media_upload_failed', { err, userId: auth.user.id })
       return { error: friendlyError(err), fieldErrors: { image: 'تعذّر رفع الصورة' } }
     }
   }
@@ -162,7 +123,11 @@ export async function createArticleAction(
       })
       galleryItems.push({ image: media.id })
     } catch (err) {
-      console.error('[mobile] gallery upload failed for one file:', err)
+      logger.warn('mobile.article.gallery_upload_failed', {
+        err,
+        userId: auth.user.id,
+        file: file.name,
+      })
     }
   }
 
@@ -187,7 +152,7 @@ export async function createArticleAction(
     })
     createdId = created.id
   } catch (err) {
-    console.error('[mobile] article create failed:', err)
+    logger.error('mobile.article.create_failed', { err, userId: auth.user.id })
     return { error: friendlyError(err) }
   }
 
@@ -237,7 +202,11 @@ export async function createArticleAction(
     } catch (err) {
       // Don't fail the whole publish if hero update fails — article is
       // already saved. Log and continue.
-      console.error('[mobile] hero placement update failed:', err)
+      logger.error('mobile.article.hero_placement_failed', {
+        err,
+        articleId: createdId,
+        placement,
+      })
     }
   }
 

@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { splitParagraphOnNewlines } from '@/lib/lexical-paragraphs'
+
 // Simplified Lexical rich text renderer for Payload CMS
 // Renders the serialized Lexical editor state to HTML
 
@@ -55,6 +57,21 @@ function renderNode(node: LexicalNode, index: number): React.ReactNode {
 
   // Linebreak
   if (node.type === 'linebreak') return <br key={index} />
+
+  // Articles published from the mobile composer before the CRLF fix store
+  // the whole body as one paragraph with raw line breaks in the text.
+  if (node.type === 'paragraph') {
+    const parts = splitParagraphOnNewlines(node)
+    if (parts.length !== 1 || parts[0] !== node) {
+      return (
+        <React.Fragment key={index}>
+          {parts.map((part, i) => (
+            <p key={i}>{part.children?.map((child, j) => renderNode(child, j))}</p>
+          ))}
+        </React.Fragment>
+      )
+    }
+  }
 
   const children = node.children?.map((child, i) => renderNode(child, i))
 

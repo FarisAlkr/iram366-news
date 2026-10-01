@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { ArticleStatus, UserRole } from '../../domain/enums.ts'
 import { computeStats } from '../../lib/article-stats.ts'
+import { normalizeLexicalParagraphs } from '../../lib/lexical-paragraphs.ts'
 import { ensureSlug } from '../../lib/slug.ts'
 import { logger } from '../../lib/logger.ts'
 import { isAdmin, isAuthenticated, isOwnerOrAdminEditor } from '../access/index.ts'
@@ -569,6 +570,9 @@ export const Articles: CollectionConfig = {
         // helper as the admin widget — keeps the displayed estimate and
         // the persisted value in sync.
         if (data.body !== undefined) {
+          // Re-saving a legacy mobile article splits its newline-joined
+          // single paragraph into real paragraphs (no-op for editor content).
+          data.body = normalizeLexicalParagraphs(data.body)
           data.readingTime = computeStats(data.body).readingMinutes
         }
 
