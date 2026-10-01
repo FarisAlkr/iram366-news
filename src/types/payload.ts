@@ -164,6 +164,7 @@ export interface SiteSettings {
   } | null
   footerText?: string | null
   signatureUi?: {
+    enableSplash?: boolean
     enableCursorInk?: boolean
     enableFooterCamel?: boolean
     enableEidSheep?: boolean

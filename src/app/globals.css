@@ -903,17 +903,25 @@
   }
 }
 
-/* ===== Splash screen (first-visit, 3s) ===== */
+/* ===== Splash screen (landing + refresh only — see SplashScreen.tsx) =====
+   The whole timeline is CSS: intro, hold, then `splash-exit` fades the
+   overlay out and leaves it `visibility: hidden` (so it can never block the
+   page, even without JS); SplashOverlay unmounts it on `animationend`. */
 .iram-splash {
   position: fixed;
   inset: 0;
   z-index: 100;
   display: grid;
   place-items: center;
-  background: radial-gradient(ellipse at center, #0d3640 0%, #061a1e 65%, #020c0d 100%), #020c0d;
-  animation: splash-bg-in 600ms ease-out both;
-  transition: opacity 1100ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* Tinted to the logo's own teal so the logo tile sits in it naturally. */
+  background: radial-gradient(ellipse at center, #1b4f4d 0%, #0b2a2c 58%, #041314 100%), #041314;
+  animation:
+    splash-bg-in 600ms ease-out both,
+    splash-exit 1100ms cubic-bezier(0.4, 0, 0.2, 1) 3300ms forwards;
   overflow: hidden;
+}
+html[data-splash='skip'] .iram-splash {
+  display: none;
 }
 .iram-splash::before {
   /* Slow rotating beam — adds depth without being noisy */
@@ -929,10 +937,6 @@
     transparent 360deg
   );
   animation: splash-beam 14s linear infinite;
-  pointer-events: none;
-}
-.iram-splash--out {
-  opacity: 0;
   pointer-events: none;
 }
 .iram-splash__inner {
@@ -955,14 +959,23 @@
   animation: splash-halo 3.2s ease-out 0.3s both;
   pointer-events: none;
 }
+.iram-splash__picture {
+  display: block;
+  line-height: 0;
+}
 .iram-splash__logo {
-  width: clamp(220px, 46vw, 420px);
+  /* The logo artwork runs almost edge to edge (the yellow plate nearly
+     touches the sides), so it is framed as a rounded tile rather than
+     masked — a mask would fade the lettering itself. */
+  display: block;
+  width: clamp(200px, 58vw, 340px);
   height: auto;
-  /* Soft radial mask so the JPEG's teal background fades into the
-     splash bg instead of showing a hard rectangle edge. */
-  -webkit-mask-image: radial-gradient(ellipse at center, black 55%, transparent 92%);
-  mask-image: radial-gradient(ellipse at center, black 55%, transparent 92%);
-  filter: drop-shadow(0 6px 30px rgba(200, 168, 78, 0.35));
+  aspect-ratio: 1;
+  border-radius: 22%;
+  box-shadow:
+    0 0 0 1px rgba(239, 226, 184, 0.16),
+    0 18px 48px rgba(0, 0, 0, 0.5),
+    0 0 70px rgba(200, 168, 78, 0.2);
   animation: splash-logo-fall 1900ms cubic-bezier(0.16, 1, 0.3, 1) both;
   will-change: transform, opacity;
   transform-origin: center;
@@ -1020,6 +1033,12 @@
   }
   to {
     opacity: 1;
+  }
+}
+@keyframes splash-exit {
+  to {
+    opacity: 0;
+    visibility: hidden;
   }
 }
 @keyframes splash-beam {
@@ -1192,7 +1211,14 @@
 
 /* Respect users who prefer no motion */
 @media (prefers-reduced-motion: reduce) {
-  .iram-splash,
+  /* No movement: the splash shows statically, then a short plain fade.
+     The exit itself must stay, or the overlay would never leave. */
+  .iram-splash {
+    animation: splash-exit 300ms linear 1800ms forwards !important;
+  }
+  .iram-splash__bar {
+    display: none;
+  }
   .iram-splash::before,
   .iram-splash__logo,
   .iram-splash__name,

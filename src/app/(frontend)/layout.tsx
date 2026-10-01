@@ -95,6 +95,9 @@ export default async function FrontendLayout({ children }: { children: React.Rea
   // Eid al-Adha falling-sheep overlay. Default is off (seasonal); the admin
   // flips it on for the Eid window and back off afterward.
   const showEidSheep = siteSettings.signatureUi?.enableEidSheep === true
+  // Splash: on by default (the column defaults to true); the admin can turn
+  // it off from Site Settings → لمسات بصرية.
+  const showSplash = siteSettings.signatureUi?.enableSplash !== false
   // Pass only the platforms the hub surfaces. YouTube and email stay
   // in the CMS — YouTube is intentionally hidden from this hub (the
   // footer link list handles it); email is a different channel
@@ -159,7 +162,7 @@ export default async function FrontendLayout({ children }: { children: React.Rea
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
         />
-        <SplashScreen siteName="إرم 366 الإخبارية" />
+        {showSplash && <SplashScreen siteName="إرم 366 الإخبارية" />}
         <BackToHomeFallback />
         <ScrollProgress />
         {children}

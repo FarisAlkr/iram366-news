@@ -1,49 +1,46 @@
-'use client'
+import { SplashOverlay } from './SplashOverlay'
 
-import { useEffect, useState } from 'react'
-
-const TOTAL_MS = 4200
-const FADE_OUT_AT_MS = 3300
-const TAGLINE = 'منصة إخبارية مستقلة برؤية مختلفة — نواكب الأحداث لحظة بلحظة من رهط والنقب'
-
-interface SplashScreenProps {
-  siteName: string
-}
-
-export function SplashScreen({ siteName }: SplashScreenProps) {
-  // `null` = SSR / pre-mount, decide after hydration
-  const [phase, setPhase] = useState<'hidden' | 'in' | 'out'>('hidden')
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    setPhase('in')
-    const t1 = window.setTimeout(() => setPhase('out'), FADE_OUT_AT_MS)
-    const t2 = window.setTimeout(() => setPhase('hidden'), TOTAL_MS)
-    return () => {
-      window.clearTimeout(t1)
-      window.clearTimeout(t2)
+/**
+ * Decides, before the overlay is parsed (so before it can paint), whether
+ * this document load should show the splash at all:
+ *
+ *   • reload                            → show (reader refreshed the page)
+ *   • navigate from another site / none → show (landing: Google, WhatsApp,
+ *                                          typed URL, bookmark)
+ *   • navigate from this site           → skip (a full-page hop between our
+ *                                          own pages, incl. the admin's live
+ *                                          preview frame)
+ *   • back_forward / prerender          → skip
+ *
+ * Client-side navigations never re-run this at all — the frontend layout,
+ * and the overlay with it, stays mounted across <Link> transitions.
+ * Skipping sets `data-splash="skip"` on <html> so CSS hides the overlay
+ * before first paint, plus a window flag for SplashOverlay — if hydration
+ * ever fails, React re-renders <html> and drops attributes it didn't render,
+ * but the flag survives. (Removing the node here would break hydration.)
+ */
+const SPLASH_GATE = `(function () {
+  try {
+    var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+    var type = nav ? nav.type : (performance.navigation && performance.navigation.type === 1 ? 'reload' : 'navigate');
+    var show = type === 'reload';
+    if (type === 'navigate') {
+      var internal = false;
+      try { internal = !!document.referrer && new URL(document.referrer).host === location.host; } catch (e) {}
+      show = !internal;
     }
-  }, [])
+    if (!show) {
+      window.__iramSplashSkip = true;
+      document.documentElement.setAttribute('data-splash', 'skip');
+    }
+  } catch (e) {}
+})();`
 
-  if (phase === 'hidden') return null
-
+export function SplashScreen({ siteName }: { siteName: string }) {
   return (
-    <div
-      className={`iram-splash ${phase === 'out' ? 'iram-splash--out' : ''}`}
-      role="status"
-      aria-live="polite"
-      aria-label={siteName}
-    >
-      <div className="iram-splash__inner">
-        <div className="iram-splash__halo" aria-hidden />
-        {/* eslint-disable-next-line @next/next/no-img-element -- needs CSS mask animation, Next/Image strips style */}
-        <img src="/splash-logo.jpeg" alt="" aria-hidden className="iram-splash__logo" />
-        <div className="iram-splash__name">{siteName}</div>
-        <div className="iram-splash__tagline">{TAGLINE}</div>
-        <div className="iram-splash__bar" aria-hidden>
-          <div className="iram-splash__bar-fill" />
-        </div>
-      </div>
-    </div>
+    <>
+      <script dangerouslySetInnerHTML={{ __html: SPLASH_GATE }} />
+      <SplashOverlay siteName={siteName} />
+    </>
   )
 }
