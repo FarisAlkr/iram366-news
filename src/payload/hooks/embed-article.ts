@@ -4,6 +4,7 @@ import { isChatbotEnabled } from '@/lib/chatbot/config'
 import { embedText, vectorLiteral } from '@/lib/chatbot/embeddings'
 import { getChatbotPool } from '@/lib/chatbot/db'
 import { extractText } from '@/lib/article-stats'
+import { logger } from '@/lib/logger'
 
 interface ArticleLite {
   id: number | string
@@ -73,7 +74,7 @@ export const embedArticleAfterChange: CollectionAfterChangeHook = async ({ doc, 
   // Schedule the embedding generation off the request path.
   setImmediate(() => {
     void runEmbedArticle(a).catch((err) => {
-      console.error('[chatbot] embed-article-background failed:', err)
+      logger.error('chatbot.embed_article.failed', { err, articleId: a.id })
     })
   })
 

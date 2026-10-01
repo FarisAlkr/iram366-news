@@ -16,7 +16,15 @@ function getStatsPool(): Pool {
   if (!pool) {
     const url = process.env.DATABASE_URL
     if (!url) throw new Error('DATABASE_URL not set')
-    pool = new Pool({ connectionString: url, max: 3 })
+    // Same timeouts as the Payload and raw-SQL pools: an aggregate stuck on
+    // a lock must not hold a connection (or the admin request) forever.
+    pool = new Pool({
+      connectionString: url,
+      max: 3,
+      idleTimeoutMillis: 30_000,
+      connectionTimeoutMillis: 10_000,
+      statement_timeout: 30_000,
+    })
   }
   return pool
 }

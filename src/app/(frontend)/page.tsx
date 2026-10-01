@@ -1,4 +1,4 @@
-import { HeroMode } from '@/domain/enums'
+import { ArticleStatus, HeroMode } from '@/domain/enums'
 import { getAdsForPlacements } from '@/lib/ads'
 import { ARTICLES_PER_PAGE, archivePageHref } from '@/lib/pagination'
 import { getPayloadClient } from '@/lib/payload'
@@ -40,19 +40,31 @@ async function resolveHero(
   }
 
   const payload = await getPayloadClient()
+  // Manual picks are stored by reference, so an article pinned here and
+  // later unpublished, archived, or re-scheduled would otherwise keep
+  // showing on the homepage. Anything not publicly visible falls back to
+  // the auto-selected backfill below.
+  const isPublic = (a: Article) =>
+    a.status === ArticleStatus.Published &&
+    Boolean(a.publishedAt) &&
+    new Date(a.publishedAt as string).getTime() <= Date.now()
   const hydrate = async (ref: unknown): Promise<Article | null> => {
     if (!ref) return null
-    if (typeof ref === 'object' && 'id' in (ref as object)) return ref as Article
-    try {
-      const doc = await payload.findByID({
-        collection: 'articles',
-        id: ref as string | number,
-        depth: 2,
-      })
-      return doc as unknown as Article
-    } catch {
-      return null
+    let doc: Article
+    if (typeof ref === 'object' && 'id' in (ref as object)) {
+      doc = ref as Article
+    } else {
+      try {
+        doc = (await payload.findByID({
+          collection: 'articles',
+          id: ref as string | number,
+          depth: 2,
+        })) as unknown as Article
+      } catch {
+        return null
+      }
     }
+    return isPublic(doc) ? doc : null
   }
 
   const mainHydrated = await hydrate(config.mainArticle)

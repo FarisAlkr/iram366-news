@@ -30,6 +30,9 @@ interface RichTextProps {
 // `javascript:` scheme runs inline.
 const ALLOWED_LINK_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:'])
 
+// `tag` comes from stored JSON; never hand an arbitrary string to createElement.
+const HEADING_TAGS = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+
 function safeHref(raw: string | undefined | null): string {
   if (!raw) return '#'
   try {
@@ -80,7 +83,7 @@ function renderNode(node: LexicalNode, index: number): React.ReactNode {
       return <p key={index}>{children}</p>
 
     case 'heading': {
-      const tag = node.tag || 'h2'
+      const tag = node.tag && HEADING_TAGS.has(node.tag) ? node.tag : 'h2'
       return React.createElement(tag, { key: index }, children)
     }
 
