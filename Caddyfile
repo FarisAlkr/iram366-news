@@ -44,7 +44,12 @@
 		#     `https:` wildcard already permits both (and UserWay's API calls),
 		#     but explicit entries document intent so a future tightening that
 		#     drops the wildcard doesn't silently break monitoring.
-		Content-Security-Policy "default-src 'self'; img-src 'self' data: https: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.userway.org; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://cdn.userway.org; font-src 'self' https://fonts.gstatic.com https://cdn.userway.org data:; connect-src 'self' https: https://cloudflareinsights.com https://*.ingest.de.sentry.io; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+		# `?` = set only if the upstream didn't send its own CSP. This block is
+		# deferred (it deletes headers), so a plain set REPLACED upstream
+		# policies — notably Payload's `script-src 'none'` on SVG files served
+		# from /api/media/file/*, letting a script inside an uploaded SVG run on
+		# this origin. Next/Payload pages send no CSP, so they still get this one.
+		?Content-Security-Policy "default-src 'self'; img-src 'self' data: https: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.userway.org; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://cdn.userway.org; font-src 'self' https://fonts.gstatic.com https://cdn.userway.org data:; connect-src 'self' https: https://cloudflareinsights.com https://*.ingest.de.sentry.io; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
 		-Server
 		-X-Powered-By
 	}
