@@ -833,16 +833,17 @@ const ActivityIcon: React.FC<{ status: string }> = ({ status }) => {
 // ==========================================================================
 // Main Component
 // ==========================================================================
-export const AnalyticsWidget: React.FC = async () => {
+export const AnalyticsWidget: React.FC<{ user?: UserRow | null }> = async ({ user: viewer }) => {
   const payload = await getPayload({ config })
 
-  // Get current user — pick first admin if no request context.
-  // The dashboard widget renders without a request body in some Payload
-  // versions, so we fall back to the admin row.
-  const user = await payload
-    .find({ collection: 'users', where: { role: { equals: 'admin' } }, limit: 1 })
-    .then((r) => (r.docs[0] as unknown as UserRow | undefined) ?? null)
-    .catch(() => null)
+  // The dashboard passes the logged-in user as a server prop; greet them.
+  // Fall back to the admin row only if a Payload version omits it.
+  const user =
+    viewer ??
+    (await payload
+      .find({ collection: 'users', where: { role: { equals: 'admin' } }, limit: 1 })
+      .then((r) => (r.docs[0] as unknown as UserRow | undefined) ?? null)
+      .catch(() => null))
 
   const stats = await getStats(user)
 

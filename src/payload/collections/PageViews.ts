@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { isAdmin, isAdminOrEditor, isPublic } from '../access/index.ts'
+import { denied, isAdmin, isAdminOrEditor } from '../access/index.ts'
 
 export const PageViews: CollectionConfig = {
   slug: 'page-views',
@@ -33,7 +33,10 @@ export const PageViews: CollectionConfig = {
   ],
   access: {
     read: isAdminOrEditor,
-    create: isPublic, // Anonymous tracking from /api/articles/[slug]/view
+    // Rows are written by /api/articles/[slug]/view through the Local API
+    // (which bypasses access). A public create let anyone POST
+    // /api/page-views and inflate the stats.
+    create: denied,
     update: isAdmin,
     delete: isAdmin,
   },

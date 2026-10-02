@@ -92,7 +92,8 @@ export async function getAdsForPlacements(
   categoryId?: number | string,
 ): Promise<Map<string, PublicAd | null>> {
   const out = new Map<string, PublicAd | null>(placements.map((p) => [p, null]))
-  if (placements.length === 0) return out
+  // `next build` runs without a database (see lib/queries.ts IS_BUILD).
+  if (placements.length === 0 || process.env.NEXT_PHASE === 'phase-production-build') return out
 
   try {
     const payload = await getPayloadClient()
