@@ -5,7 +5,7 @@
  * and a role change cannot drift between files.
  */
 
-import type { Access, AccessArgs } from 'payload'
+import type { Access, AccessArgs, FieldAccess } from 'payload'
 import { UserRole } from '../../domain/enums.ts'
 
 type Req = AccessArgs['req']
@@ -46,3 +46,26 @@ export const isOwnerOrAdminEditor =
     }
     return false
   }
+
+/**
+ * Admin sees/edits every user; anyone else only their own account. Used on
+ * the Users collection so an editor can't change another account's email
+ * or password (including the admin's).
+ */
+export const isAdminOrSelf: Access = ({ req }) => {
+  if (role(req) === UserRole.Admin) return true
+  if (!req.user) return false
+  return { id: { equals: req.user.id } }
+}
+
+/** Admin/editor see every user (bylines, review assignment); others only themselves. */
+export const isAdminEditorOrSelf: Access = ({ req }) => {
+  const r = role(req)
+  if (r === UserRole.Admin || r === UserRole.Editor) return true
+  if (!req.user) return false
+  return { id: { equals: req.user.id } }
+}
+
+/** Field-level: only the admin may write this field (e.g. a user's role). */
+export const adminOnlyField: FieldAccess = ({ req }) =>
+  (req.user?.role as UserRole | undefined) === UserRole.Admin
