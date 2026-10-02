@@ -2,6 +2,7 @@ import type { CollectionConfig, FieldAccess } from 'payload'
 
 import { ArticleStatus, UserRole } from '../../domain/enums.ts'
 import { computeStats } from '../../lib/article-stats.ts'
+import { effectiveStatus } from '../../lib/editorial-roles.ts'
 import { normalizeLexicalParagraphs } from '../../lib/lexical-paragraphs.ts'
 import { ensureSlug } from '../../lib/slug.ts'
 import { logger } from '../../lib/logger.ts'
@@ -558,18 +559,17 @@ export const Articles: CollectionConfig = {
           data.author = req.user.id
         }
 
+        // Authors cannot self-publish — an attempted publish (on create as
+        // well as update; the mobile composer creates directly) becomes a
+        // review submission. Runs before the publishedAt stamp so a later
+        // approval gets the approval time, not the author's attempt time.
+        if (req.user && data.status !== undefined) {
+          data.status = effectiveStatus(req.user.role, data.status)
+        }
+
         // Auto-set publishedAt when crossing into Published
         if (data.status === ArticleStatus.Published && !data.publishedAt) {
           data.publishedAt = new Date().toISOString()
-        }
-
-        // Authors cannot self-publish — downgrade to in-review on attempted publish
-        if (
-          operation === 'update' &&
-          req.user?.role === UserRole.Author &&
-          data.status === ArticleStatus.Published
-        ) {
-          data.status = ArticleStatus.InReview
         }
 
         // Compute reading time from body content. Uses the same shared

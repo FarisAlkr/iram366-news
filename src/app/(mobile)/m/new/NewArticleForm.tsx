@@ -5,6 +5,8 @@ import { createArticleAction, type Placement } from './actions'
 
 interface Props {
   categories: Array<{ id: string; name: string }>
+  /** Editors/admin publish; authors submit for review (and can't place the hero). */
+  canPublish: boolean
 }
 
 const PLACEMENTS: Array<{ value: Placement; emoji: string; label: string; hint: string }> = [
@@ -26,9 +28,10 @@ interface GalleryItem {
   url: string
 }
 
-export function NewArticleForm({ categories }: Props) {
+export function NewArticleForm({ categories, canPublish }: Props) {
   const [state, action, pending] = useActionState(createArticleAction, {})
-  const [status, setStatus] = useState<'draft' | 'published'>('draft')
+  const [status, setStatus] = useState<'draft' | 'published' | 'in-review'>('draft')
+  const submitStatus = canPublish ? 'published' : 'in-review'
   const [isBreaking, setIsBreaking] = useState(false)
   const [placement, setPlacement] = useState<Placement>('none')
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -246,14 +249,19 @@ export function NewArticleForm({ categories }: Props) {
             <button
               type="button"
               role="radio"
-              aria-checked={status === 'published'}
-              onClick={() => setStatus('published')}
-              className={`m-toggle__btn ${status === 'published' ? 'm-toggle__btn--active' : ''}`}
+              aria-checked={status === submitStatus}
+              onClick={() => setStatus(submitStatus)}
+              className={`m-toggle__btn ${status === submitStatus ? 'm-toggle__btn--active' : ''}`}
             >
-              🚀 نشر فوراً
+              {canPublish ? '🚀 نشر فوراً' : '📨 إرسال للمراجعة'}
             </button>
           </div>
           <input type="hidden" name="status" value={status} />
+          {!canPublish && (
+            <p className="m-help">
+              ينشر المحرر المقال بعد مراجعته، وستصلك إشعارات بقراره في لوحة التحكم.
+            </p>
+          )}
         </Field>
 
         <Field
@@ -281,39 +289,45 @@ export function NewArticleForm({ categories }: Props) {
           <input type="hidden" name="isBreaking" value={isBreaking ? 'true' : 'false'} />
         </Field>
 
-        <Field
-          label="موضع المقال على الصفحة الرئيسية"
-          help={
-            status === 'draft'
-              ? 'يتم تطبيق الموضع فقط على المقالات المنشورة. غيّر الحالة إلى "نشر فوراً" لاستخدامه.'
-              : 'سيُعرض المقال في الموضع المختار من الصفحة الرئيسية.'
-          }
-        >
-          <div className="m-placement" role="radiogroup" aria-label="موضع المقال">
-            {PLACEMENTS.map((p) => {
-              const checked = placement === p.value
-              const disabled = status === 'draft' && p.value !== 'none'
-              return (
-                <button
-                  key={p.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={checked}
-                  disabled={disabled}
-                  onClick={() => !disabled && setPlacement(p.value)}
-                  className={`m-placement__btn ${checked ? 'm-placement__btn--active' : ''}`}
-                >
-                  <span className="m-placement__emoji" aria-hidden>
-                    {p.emoji}
-                  </span>
-                  <span className="m-placement__label">{p.label}</span>
-                  <span className="m-placement__hint">{p.hint}</span>
-                </button>
-              )
-            })}
-          </div>
-          <input type="hidden" name="placement" value={status === 'draft' ? 'none' : placement} />
-        </Field>
+        {canPublish && (
+          <Field
+            label="موضع المقال على الصفحة الرئيسية"
+            help={
+              status !== 'published'
+                ? 'يتم تطبيق الموضع فقط على المقالات المنشورة. غيّر الحالة إلى "نشر فوراً" لاستخدامه.'
+                : 'سيُعرض المقال في الموضع المختار من الصفحة الرئيسية.'
+            }
+          >
+            <div className="m-placement" role="radiogroup" aria-label="موضع المقال">
+              {PLACEMENTS.map((p) => {
+                const checked = placement === p.value
+                const disabled = status !== 'published' && p.value !== 'none'
+                return (
+                  <button
+                    key={p.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={checked}
+                    disabled={disabled}
+                    onClick={() => !disabled && setPlacement(p.value)}
+                    className={`m-placement__btn ${checked ? 'm-placement__btn--active' : ''}`}
+                  >
+                    <span className="m-placement__emoji" aria-hidden>
+                      {p.emoji}
+                    </span>
+                    <span className="m-placement__label">{p.label}</span>
+                    <span className="m-placement__hint">{p.hint}</span>
+                  </button>
+                )
+              })}
+            </div>
+            <input
+              type="hidden"
+              name="placement"
+              value={status === 'published' ? placement : 'none'}
+            />
+          </Field>
+        )}
       </Section>
 
       <button type="submit" disabled={pending} className="m-btn m-btn--gold m-btn--big">
@@ -324,6 +338,8 @@ export function NewArticleForm({ categories }: Props) {
           </>
         ) : status === 'draft' ? (
           '💾 حفظ كمسودة'
+        ) : status === 'in-review' ? (
+          '📨 إرسال للمراجعة'
         ) : (
           '🚀 نشر المقال'
         )}

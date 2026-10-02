@@ -3,23 +3,18 @@
 import { headers as getHeaders } from 'next/headers'
 import { redirect } from 'next/navigation'
 
-import { ArticleStatus, HeroMode } from '@/domain/enums'
+import { ArticleStatus } from '@/domain/enums'
+import { canPlaceHero, effectiveStatus } from '@/lib/editorial-roles'
+import { applyHeroPlacement, isHeroPlacement, type HeroPlacement } from '@/lib/hero-placement'
 import { plainTextToLexical } from '@/lib/lexical-paragraphs'
 import { logger } from '@/lib/logger'
 import { getPayloadClient } from '@/lib/payload'
 
-export type Placement = 'main' | 'secondary-1' | 'secondary-2' | 'secondary-3' | 'none'
+export type Placement = HeroPlacement
 
 export interface CreateState {
   error?: string
   fieldErrors?: Partial<Record<'title' | 'excerpt' | 'body' | 'category' | 'image', string>>
-}
-
-function refId(ref: unknown): string | number | null {
-  if (ref == null) return null
-  if (typeof ref === 'object' && 'id' in (ref as object)) return (ref as { id: string | number }).id
-  if (typeof ref === 'string' || typeof ref === 'number') return ref
-  return null
 }
 
 function friendlyError(err: unknown): string {
@@ -72,8 +67,7 @@ export async function createArticleAction(
     return { error: 'حالة المقال غير صالحة.' }
   }
 
-  const validPlacements: Placement[] = ['main', 'secondary-1', 'secondary-2', 'secondary-3', 'none']
-  if (!validPlacements.includes(placement)) {
+  if (!isHeroPlacement(placement)) {
     return { error: 'موضع المقال غير صالح.' }
   }
 
@@ -81,6 +75,11 @@ export async function createArticleAction(
   const headers = await getHeaders()
   const auth = await payload.auth({ headers })
   if (!auth.user) return { error: 'انتهت الجلسة. سجّل الدخول مجدداً.' }
+
+  // Authors submit for review instead of publishing (the Articles hook
+  // enforces the same rule); hero curation is for editors and the admin.
+  const role = (auth.user as { role?: string }).role
+  const finalStatus = effectiveStatus(role, status)
 
   // 1) Upload image (optional)
   let mediaId: string | number | undefined
@@ -96,6 +95,7 @@ export async function createArticleAction(
         data: { alt: title.slice(0, 120) },
         file: { data: buffer, mimetype: image.type, name: image.name, size: image.size },
         user: auth.user,
+        overrideAccess: false,
       })
       mediaId = mediaDoc.id
     } catch (err) {
@@ -120,6 +120,7 @@ export async function createArticleAction(
         data: { alt: title.slice(0, 120) },
         file: { data: buf, mimetype: file.type, name: file.name, size: file.size },
         user: auth.user,
+        overrideAccess: false,
       })
       galleryItems.push({ image: media.id })
     } catch (err) {
@@ -142,13 +143,17 @@ export async function createArticleAction(
         body: plainTextToLexical(bodyText),
         category: Number(categoryId) || categoryId,
         author: auth.user.id,
-        status,
+        status: finalStatus,
         isBreaking,
         ...(mediaId ? { featuredImage: mediaId } : {}),
         ...(galleryItems.length > 0 ? { gallery: galleryItems } : {}),
-        ...(status === ArticleStatus.Published ? { publishedAt: new Date().toISOString() } : {}),
+        ...(finalStatus === ArticleStatus.Published
+          ? { publishedAt: new Date().toISOString() }
+          : {}),
       },
       user: auth.user,
+      // The Local API skips access control unless told otherwise.
+      overrideAccess: false,
     })
     createdId = created.id
   } catch (err) {
@@ -156,49 +161,17 @@ export async function createArticleAction(
     return { error: friendlyError(err) }
   }
 
-  // 4) Apply hero placement (if non-default and article was published)
-  if (placement !== 'none' && createdId && status === ArticleStatus.Published) {
+  // 4) Apply hero placement (editors/admin only, published articles only).
+  //    applyHeroPlacement elevates the write past the admin-only global, so
+  //    the canPlaceHero check here is what keeps authors out.
+  if (
+    placement !== 'none' &&
+    createdId &&
+    finalStatus === ArticleStatus.Published &&
+    canPlaceHero(role)
+  ) {
     try {
-      const settings = (await payload.findGlobal({
-        slug: 'site-settings',
-        depth: 0,
-      })) as {
-        homepageHero?: {
-          mode?: string
-          mainArticle?: unknown
-          secondaryArticles?: unknown[]
-        }
-      }
-      const current = settings.homepageHero ?? {}
-      const newHero: {
-        mode: string
-        mainArticle: string | number | null
-        secondaryArticles: (string | number)[]
-      } = {
-        mode: HeroMode.Manual,
-        mainArticle: refId(current.mainArticle),
-        secondaryArticles: (current.secondaryArticles ?? [])
-          .map(refId)
-          .filter((x): x is string | number => x != null),
-      }
-
-      if (placement === 'main') {
-        newHero.mainArticle = createdId
-        newHero.secondaryArticles = newHero.secondaryArticles.filter((x) => x !== createdId)
-      } else if (placement.startsWith('secondary-')) {
-        const slot = Number(placement.split('-')[1]) - 1
-        const arr = newHero.secondaryArticles.filter((x) => x !== createdId)
-        while (arr.length <= slot) arr.push(0)
-        arr[slot] = createdId
-        newHero.secondaryArticles = arr.filter((x) => x !== 0)
-        if (newHero.mainArticle === createdId) newHero.mainArticle = null
-      }
-
-      await payload.updateGlobal({
-        slug: 'site-settings',
-        data: { homepageHero: newHero },
-        user: auth.user,
-      })
+      await applyHeroPlacement(payload, { articleId: createdId, placement, user: auth.user })
     } catch (err) {
       // Don't fail the whole publish if hero update fails — article is
       // already saved. Log and continue.
