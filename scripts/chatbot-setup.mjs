@@ -5,7 +5,7 @@
  *   1. Enables the `vector` extension in Postgres.
  *   2. Creates the `article_embeddings` table with the right vector
  *      dimensions for the chosen embedding provider.
- *   3. Creates an ivfflat index for fast cosine-similarity search.
+ *   3. Creates an HNSW index for fast cosine-similarity search.
  *
  * Usage (run once on the VPS, AFTER setting EMBEDDINGS_PROVIDER and the
  * provider's API key in /opt/iram366/.env):
@@ -63,11 +63,13 @@ try {
     )
   }
 
-  console.log('→ creating cosine index (ivfflat, lists=50)...')
+  // HNSW, not ivfflat: ivfflat trains its clusters on the rows present when
+  // the index is built — here an empty table — and then misses most
+  // articles. HNSW needs no training. See the 20261002_122651 migration.
+  console.log('→ creating cosine index (hnsw)...')
   await pool.query(`
-    CREATE INDEX IF NOT EXISTS article_embeddings_cosine_idx
-    ON article_embeddings USING ivfflat (embedding vector_cosine_ops)
-    WITH (lists = 50)
+    CREATE INDEX IF NOT EXISTS article_embeddings_hnsw_idx
+    ON article_embeddings USING hnsw (embedding vector_cosine_ops)
   `)
 
   console.log('✓ chatbot setup complete')
