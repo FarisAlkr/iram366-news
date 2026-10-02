@@ -26,11 +26,21 @@ function refId(v: unknown): number | string | undefined {
 
 /**
  * Article afterChange hook — emits notifications when:
+ *   - an article enters "in-review" — created that way (e.g. an author
+ *     submitting from /m/new) or moved there from draft / published
+ *     (an author's edit to a live article sends it back for review)
+ *     → every editor and the admin
  *   - status flips from "in-review" → "published"  (notify author: yours is live)
  *   - status flips from "in-review" → "draft"      (notify author: needs work)
  *
  * Idempotent: only triggers on the transition, not on re-saves of the same
- * status. Failures are logged, never thrown — notifications are best-effort.
+ * status. Nobody is notified about their own action. Failures are logged,
+ * never thrown — notifications are best-effort.
+ *
+ * Every nested call passes `req` so it runs inside the save's transaction.
+ * Without it the insert used a second connection that couldn't see a newly
+ * created article (FK violation) and blocked on the row lock of an updated
+ * one until statement_timeout — a 30 s hang on every approval.
  */
 export const notifyOnArticleStatusChange: CollectionAfterChangeHook = async ({
   doc,
@@ -38,98 +48,82 @@ export const notifyOnArticleStatusChange: CollectionAfterChangeHook = async ({
   req,
   operation,
 }) => {
-  if (operation !== 'update') return doc
+  if (operation !== 'create' && operation !== 'update') return doc
 
-  const before = (previousDoc || {}) as ArticleLite
   const after = (doc || {}) as ArticleLite
+  const beforeStatus =
+    operation === 'create' ? undefined : ((previousDoc || {}) as ArticleLite).status
+  if (beforeStatus === after.status) return doc
 
-  if (before.status === after.status) return doc
+  const title = after.title || 'بلا عنوان'
+  const actorId = req.user?.id
+  const isActor = (id: number | string) => actorId != null && String(actorId) === String(id)
 
-  const authorId = refId(after.author)
-  if (!authorId) return doc
+  let recipients: Array<number | string> = []
+  let type: string
+  let message: string
+  let notificationTitle: string
 
-  const transitions: Array<{
-    from: string
-    to: string
-    type: string
-    title: string
-    message: string
-  }> = [
-    {
-      from: 'in-review',
-      to: 'published',
-      type: 'article.published',
-      title: `تم نشر مقالك «${after.title || 'بلا عنوان'}»`,
-      message: 'وافق المحرر على المقال وأصبح منشوراً للقراء.',
-    },
-    {
-      from: 'in-review',
-      to: 'draft',
-      type: 'article.rejected',
-      title: `أُعيد مقالك «${after.title || 'بلا عنوان'}» للمسودات`,
-      message: 'يحتاج المقال إلى تعديلات قبل النشر. راجع تعليقات المحرر.',
-    },
-    {
-      from: 'draft',
-      to: 'in-review',
-      type: 'article.in-review',
-      title: `مقال جديد بانتظار المراجعة: «${after.title || 'بلا عنوان'}»`,
-      message: 'أرسل الكاتب المقال للمراجعة. افتحه واتخذ قراراً.',
-    },
-  ]
-
-  const t = transitions.find((x) => x.from === before.status && x.to === after.status)
-  if (!t) return doc
-
-  // For "in-review" notifications, the recipient is editors/admins, not the author.
-  // For others, recipient is the author.
-  let recipientId: number | string | undefined = authorId
-  if (t.type === 'article.in-review') {
-    // Find the first admin/editor (best-effort) — production should fan-out to all
+  if (after.status === 'in-review') {
+    type = 'article.in-review'
+    notificationTitle = `مقال بانتظار المراجعة: «${title}»`
+    message =
+      beforeStatus === 'published'
+        ? 'عُدّل مقال منشور وأُعيد للمراجعة — لن يظهر للقراء حتى تتم الموافقة عليه.'
+        : 'أرسل الكاتب المقال للمراجعة. افتحه واتخذ قراراً.'
     try {
-      const admins = await req.payload.find({
+      const staff = await req.payload.find({
         collection: 'users',
-        where: {
-          or: [{ role: { equals: 'admin' } }, { role: { equals: 'editor' } }],
-        },
-        limit: 1,
+        where: { role: { in: ['admin', 'editor'] } },
+        limit: 100,
+        depth: 0,
+        overrideAccess: true,
+        req,
       })
-      const adminUser = admins.docs[0] as { id?: number | string } | undefined
-      recipientId = adminUser?.id
+      recipients = staff.docs.map((u) => (u as { id: number | string }).id)
     } catch (err) {
       logger.error('notify.find_editors_failed', { err, articleId: after.id })
       return doc
     }
+  } else if (beforeStatus === 'in-review' && after.status === 'published') {
+    type = 'article.published'
+    notificationTitle = `تم نشر مقالك «${title}»`
+    message = 'وافق المحرر على المقال وأصبح منشوراً للقراء.'
+    const authorId = refId(after.author)
+    if (authorId) recipients = [authorId]
+  } else if (beforeStatus === 'in-review' && after.status === 'draft') {
+    type = 'article.rejected'
+    notificationTitle = `أُعيد مقالك «${title}» للمسودات`
+    message = 'يحتاج المقال إلى تعديلات قبل النشر. راجع تعليقات المحرر.'
+    const authorId = refId(after.author)
+    if (authorId) recipients = [authorId]
+  } else {
+    return doc
   }
 
-  if (!recipientId) return doc
-
-  // Don't notify users about their own action. Compared against the
-  // recipient, not the author: draft → in-review is almost always done by
-  // the author, and the recipient there is an editor.
-  const actorId = req.user?.id
-  if (actorId != null && String(actorId) === String(recipientId)) return doc
-
-  try {
-    await req.payload.create({
-      collection: 'notifications',
-      data: {
-        recipient: recipientId,
-        type: t.type,
-        title: t.title,
-        message: t.message,
-        link: `/admin/collections/articles/${after.id}`,
-        relatedArticle: after.id,
-      },
-      overrideAccess: true,
-    })
-  } catch (err) {
-    logger.error('notify.create_failed', {
-      err,
-      articleId: after.id,
-      type: t.type,
-      recipientId,
-    })
+  const results = await Promise.allSettled(
+    recipients
+      .filter((id) => !isActor(id))
+      .map((recipient) =>
+        req.payload.create({
+          collection: 'notifications',
+          data: {
+            recipient,
+            type,
+            title: notificationTitle,
+            message,
+            link: `/admin/collections/articles/${after.id}`,
+            relatedArticle: after.id,
+          },
+          overrideAccess: true,
+          req,
+        }),
+      ),
+  )
+  for (const r of results) {
+    if (r.status === 'rejected') {
+      logger.error('notify.create_failed', { err: r.reason, articleId: after.id, type })
+    }
   }
 
   return doc
@@ -152,6 +146,7 @@ export const notifyOnReviewCreated: CollectionAfterChangeHook = async ({ doc, re
       id: articleId,
       depth: 0,
       overrideAccess: true,
+      req,
     })
     const authorId = refId((article as ArticleLite).author)
     if (!authorId) return doc
@@ -171,6 +166,7 @@ export const notifyOnReviewCreated: CollectionAfterChangeHook = async ({ doc, re
         relatedArticle: articleId,
       },
       overrideAccess: true,
+      req,
     })
   } catch (err) {
     logger.error('notify.review_create_failed', {
