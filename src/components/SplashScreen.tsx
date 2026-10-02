@@ -1,3 +1,5 @@
+import { SPLASH_SKIP_ONCE_KEY } from '@/lib/splash'
+
 import { SplashOverlay } from './SplashOverlay'
 
 /**
@@ -11,6 +13,8 @@ import { SplashOverlay } from './SplashOverlay'
  *                                          own pages, incl. the admin's live
  *                                          preview frame)
  *   • back_forward / prerender          → skip
+ *   • a load flagged with SPLASH_SKIP_ONCE_KEY (e.g. BackToHomeFallback's
+ *     same-URL hop, which Chromium reports as a reload) → skip
  *
  * Client-side navigations never re-run this at all — the frontend layout,
  * and the overlay with it, stays mounted across <Link> transitions.
@@ -29,6 +33,12 @@ const SPLASH_GATE = `(function () {
       try { internal = !!document.referrer && new URL(document.referrer).host === location.host; } catch (e) {}
       show = !internal;
     }
+    try {
+      if (sessionStorage.getItem('${SPLASH_SKIP_ONCE_KEY}')) {
+        sessionStorage.removeItem('${SPLASH_SKIP_ONCE_KEY}');
+        show = false;
+      }
+    } catch (e) {}
     if (!show) {
       window.__iramSplashSkip = true;
       document.documentElement.setAttribute('data-splash', 'skip');
