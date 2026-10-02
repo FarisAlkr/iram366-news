@@ -154,8 +154,23 @@ intentional, battle-tested helpers; duplicating them is the most common mistake.
 ### Access control (`@/payload/access`)
 
 - `isAdmin`, `isEditor`, `isAuthor`, `isAdminOrEditor`, `isAuthenticated`, `isPublic`,
-  `denied`, `isOwnerOrAdminEditor('author')`. **Always** use these in collection access
-  configs — never re-implement the role check inline.
+  `denied`, `isOwnerOrAdminEditor('author')`, `isAdminOrSelf`, `isAdminEditorOrSelf`, and the
+  field-level `adminOnlyField`. **Always** use these in collection access configs — never
+  re-implement the role check inline.
+- Users: everyone edits only their own account, the admin edits anyone, and only the admin
+  can change `role` (field access). Never give editors `update` on Users again — that let
+  them reset the admin's password.
+- **Local API pitfall:** `payload.create/update/updateGlobal` default to
+  `overrideAccess: true` even when you pass `user`. In request-driven code (server actions,
+  routes) pass `overrideAccess: false` unless you are deliberately elevating.
+
+### Editorial roles (`@/lib/editorial-roles`, `@/lib/hero-placement`)
+
+- `canPublishDirectly(role)` / `canPlaceHero(role)` / `effectiveStatus(role, status)` — authors
+  submit for review; editors/admin publish and curate the hero. `Articles.beforeChange`,
+  the mobile composer and the hero endpoint all use these; don't re-derive the rules.
+- `placeInHero` (pure) + `applyHeroPlacement` — the only hero-merge logic; used by
+  `/api/admin/hero-placement` and `/m/new`.
 
 ---
 
