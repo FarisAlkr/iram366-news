@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { isAdminOrEditor, isPublic } from '../access/index.ts'
+import { isAdminOrEditor } from '../access/index.ts'
 
 export const Subscribers: CollectionConfig = {
   slug: 'subscribers',
@@ -74,9 +74,10 @@ export const Subscribers: CollectionConfig = {
   ],
   access: {
     read: isAdminOrEditor,
-    // Subscriptions are created via a public newsletter form; restrict
-    // direct admin reads to staff but accept public POSTs.
-    create: isPublic,
+    // No public newsletter form exists yet, so an open create was only a
+    // spam surface. When one ships, give it a rate-limited route that
+    // creates via the Local API rather than reopening this.
+    create: isAdminOrEditor,
     update: isAdminOrEditor,
     delete: isAdminOrEditor,
   },

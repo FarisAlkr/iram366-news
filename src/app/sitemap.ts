@@ -12,6 +12,8 @@ export const revalidate = 3600
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
+const STATIC_PAGES = ['about', 'contact', 'privacy', 'terms', 'accessibility-statement'] as const
+
 interface SitemapDoc {
   slug: string
   publishedAt?: string | null
@@ -24,10 +26,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // real data and ISR keeps it fresh on the 1-hour revalidate cadence.
   let articles = { docs: [] as Array<unknown> }
   let categories = { docs: [] as Array<unknown> }
-  let pages = { docs: [] as Array<unknown> }
   try {
     const payload = await getPayloadClient()
-    ;[articles, categories, pages] = await Promise.all([
+    ;[articles, categories] = await Promise.all([
       payload.find({
         collection: 'articles',
         where: publiclyVisibleWhere(),
@@ -36,7 +37,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         depth: 0,
       }),
       payload.find({ collection: 'categories', limit: 100, depth: 0 }),
-      payload.find({ collection: 'pages', limit: 100, depth: 0 }),
     ])
   } catch {
     // fall through with empty arrays
@@ -69,12 +69,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })
   }
 
-  for (const page of pages.docs as unknown as SitemapDoc[]) {
+  // The site's static pages are files under src/app/(frontend)/. The Pages
+  // collection has no public route, so its slugs must not be listed here.
+  for (const path of STATIC_PAGES) {
     entries.push({
-      url: `${SITE_URL}/${page.slug}`,
-      lastModified: new Date(page.publishedAt || page.updatedAt),
-      changeFrequency: 'monthly',
-      priority: 0.5,
+      url: `${SITE_URL}/${path}`,
+      changeFrequency: 'yearly',
+      priority: 0.3,
     })
   }
 

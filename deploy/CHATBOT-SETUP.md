@@ -66,7 +66,7 @@ with it unless you have a reason to switch.
    ```
 
    This installs the `vector` Postgres extension, creates the
-   `article_embeddings` table with the right dimensions, and adds an ivfflat
+   `article_embeddings` table with the right dimensions, and adds an HNSW
    index for fast cosine-similarity search. Idempotent — safe to re-run.
 
 5. **Backfill embeddings for all existing articles**:

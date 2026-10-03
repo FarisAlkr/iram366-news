@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
+import { canPublishDirectly } from '@/lib/editorial-roles'
 import { getPayloadClient } from '@/lib/payload'
 import { getMobileUser } from '../auth'
 import { NewArticleForm } from './NewArticleForm'
@@ -42,7 +43,7 @@ export default async function MobileNewArticlePage() {
       </header>
 
       <main className="m-main">
-        <NewArticleForm categories={categories} />
+        <NewArticleForm categories={categories} canPublish={canPublishDirectly(user.role)} />
       </main>
     </>
   )

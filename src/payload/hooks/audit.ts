@@ -69,6 +69,11 @@ async function writeLog(
       // by burying it under noise — and audit rows can't be cleaned up
       // selectively without admin intervention since update is denied).
       overrideAccess: true,
+      // Same transaction as the save being audited. On a separate connection
+      // the insert's FK check on `user` waited for the row lock held by a
+      // user editing their own account — every self-save hung for the 30 s
+      // statement_timeout and the audit row was lost.
+      req,
     })
   } catch (err) {
     // Auditing must not break user actions — but we want failures to be

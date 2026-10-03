@@ -6,10 +6,15 @@ import { getChatbotPool } from '@/lib/chatbot/db'
 import { logger } from '@/lib/logger'
 import { getPayloadClient } from '@/lib/payload'
 import { relativeTime } from '@/lib/date'
+import { canPublishDirectly } from '@/lib/editorial-roles'
 import type { Media } from '@/types/payload'
 import { resolveRef, pickMediaUrl } from '@/types/payload'
 import { getMobileUser } from './auth'
 import { BreakingToggle } from './BreakingToggle'
+
+function resolveId(ref: unknown): unknown {
+  return ref && typeof ref === 'object' && 'id' in ref ? (ref as { id: unknown }).id : ref
+}
 
 // Raw SQL for the SUM — Payload's local API has no aggregates. Shares the
 // small raw-SQL pool (timeouts set) instead of opening a dedicated one.
@@ -51,6 +56,12 @@ export default async function MobileDashboardPage() {
 
   const payload = await getPayloadClient()
 
+  // Mirrors the Articles update rule (isOwnerOrAdminEditor): authors may
+  // only flip عاجل on their own articles, so don't offer it elsewhere.
+  const canEdit = (article: object) =>
+    canPublishDirectly(user.role) ||
+    String(resolveId((article as { author?: unknown }).author)) === String(user.id)
+
   const [published, inReview, breaking, recent, totalViews] = await Promise.all([
     payload.count({
       collection: 'articles',
@@ -66,11 +77,15 @@ export default async function MobileDashboardPage() {
         and: [{ status: { equals: ArticleStatus.Published } }, { isBreaking: { equals: true } }],
       },
     }),
+    // Scoped by the collection's read access: authors see their own
+    // articles plus published ones, never other authors' drafts.
     payload.find({
       collection: 'articles',
       limit: 8,
       sort: '-updatedAt',
       depth: 1,
+      user,
+      overrideAccess: false,
     }),
     fetchTotalPublishedViews(),
   ])
@@ -167,7 +182,7 @@ export default async function MobileDashboardPage() {
                     </div>
                   </div>
                 </Link>
-                <BreakingToggle id={a.id} initial={Boolean(a.isBreaking)} />
+                {canEdit(a) && <BreakingToggle id={a.id} initial={Boolean(a.isBreaking)} />}
               </div>
             )
           })}

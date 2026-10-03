@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { UserRole } from '../../domain/enums.ts'
-import { isAdmin, isAdminOrEditor } from '../access/index.ts'
+import { adminOnlyField, isAdmin, isAdminEditorOrSelf, isAdminOrSelf } from '../access/index.ts'
 import { auditAfterChange, auditAfterDelete } from '../hooks/audit.ts'
 
 const ROLE_OPTIONS: Array<{ label: string; value: UserRole }> = [
@@ -29,7 +29,8 @@ export const Users: CollectionConfig = {
   labels: { singular: 'مستخدم', plural: 'المستخدمون' },
   admin: {
     useAsTitle: 'name',
-    description: 'حسابات المحررين والكتّاب. المدير وحده يمكنه إنشاء حسابات جديدة وتعيين الأدوار.',
+    description:
+      'حسابات المحررين والكتّاب. المدير وحده يمكنه إنشاء الحسابات وتعديلها وتعيين الأدوار؛ كل مستخدم يعدّل حسابه فقط.',
   },
   fields: [
     {
@@ -49,6 +50,8 @@ export const Users: CollectionConfig = {
       defaultValue: UserRole.Editor,
       options: ROLE_OPTIONS,
       label: 'الدور',
+      // Users may edit their own account, but never their own role.
+      access: { create: adminOnlyField, update: adminOnlyField },
       admin: {
         description:
           'مدير: صلاحيات كاملة (مستخدم واحد فقط). محرر: يكتب وينشر ويعدّل أي مقال. كاتب: يكتب مسودات فقط تحتاج لموافقة المحرر.',
@@ -112,6 +115,7 @@ export const Users: CollectionConfig = {
       type: 'date',
       label: 'تاريخ الحذف (السلة)',
       index: true,
+      access: { update: adminOnlyField },
       admin: {
         position: 'sidebar',
         date: { pickerAppearance: 'dayAndTime' },
@@ -156,9 +160,12 @@ export const Users: CollectionConfig = {
     afterDelete: [auditAfterDelete],
   },
   access: {
-    read: isAdminOrEditor,
+    read: isAdminEditorOrSelf,
     create: isAdmin,
-    update: isAdminOrEditor,
+    // Was isAdminOrEditor, which let any editor change any account's email
+    // or password — including the admin's. Now: admin edits anyone, every
+    // user edits only themselves (with role locked by field access).
+    update: isAdminOrSelf,
     delete: isAdmin,
   },
 }
